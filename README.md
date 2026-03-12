@@ -285,7 +285,7 @@ workflow building.
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0 through Phase 4 runtime implementation
+- `src/` - Phase 0 through Phase 5 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
@@ -346,7 +346,7 @@ Print every generated prompt variant explicitly:
 ./build/beast2 --generator examples/wan22_walk_cycle.b2 --all-prompts
 ```
 
-Execute a generator through the Phase 4 runtime + media library pipeline:
+Execute a generator through the Phase 5 scheduler + runtime + media library pipeline:
 
 ```sh
 ./build/beast2 --run-generator examples/sdxl_character_concept.b2

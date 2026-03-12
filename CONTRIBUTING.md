@@ -61,7 +61,7 @@ Phase 1 parser example:
 ./build/beast2 --generator examples/wan22_walk_cycle.b2
 ```
 
-Phase 4 runtime + media library execution example:
+Phase 5 scheduler + runtime + media library execution example:
 
 ```sh
 ./build/beast2 --run-generator examples/sdxl_character_concept.b2
