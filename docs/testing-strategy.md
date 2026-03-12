@@ -40,9 +40,11 @@ Current automated coverage:
 - `test_tensor_memory` for CPU/GPU tensor pool reuse, telemetry, and reused-byte
   accounting
 - `test_explorer` for latent interpolation, preview generation, and preview-cache reuse
+- `test_llm` for prompt mutation, generator editing, tag generation, and
+  database-query LLM workflows
 - CLI integration tests for help output, parser mode, parser all-prompts mode,
   runtime boot, image execution mode, video execution mode, latent explorer mode,
-  and invalid generator input
+  llm execution mode, and invalid generator input
 
 ## Testing principles
 
@@ -98,7 +100,7 @@ tested.
 ### Layer 1: unit tests
 
 Initial unit tests should target the code that is already implemented, and that
-is now the case for the first seven core areas:
+is now the case for the first eight core areas:
 
 - parser logic
 - config parsing
@@ -107,6 +109,7 @@ is now the case for the first seven core areas:
 - model runtime behavior
 - tensor memory behavior
 - scheduler behavior
+- llm workflow behavior
 
 Implemented files:
 
@@ -114,6 +117,7 @@ Implemented files:
 - `tests/test_config.c`
 - `tests/test_filesystem.c`
 - `tests/test_execution.c`
+- `tests/test_llm.c`
 - `tests/test_runtime.c`
 - `tests/test_tensor_memory.c`
 
@@ -254,6 +258,20 @@ The highest-value immediate tests are:
 - repeated preview requests hit the preview cache
 - preview jobs run through the scheduler as interactive-priority work
 
+### LLM workflow behavior
+
+- prompt-mutation generators emit deterministic prompt variants
+- generator-edit workflows create candidate `.b2` files
+- tag-generation workflows persist generated tags through the media layer
+- database-query workflows summarize local SQLite query results
+
+### LLM workflow behavior
+
+- prompt-mutation generators emit multiple deterministic prompt variants
+- generator-edit workflows create candidate `.b2` generator files
+- tag-generation workflows emit and persist generated tags
+- database-query workflows summarize local SQLite results through the LLM layer
+
 ### Model runtime behavior
 
 - runtime category selection is stable for diffusion, video, and LLM engines
@@ -291,6 +309,7 @@ The automated harness now exists, but there is still important coverage missing:
 - no real external-backend tensor pooling tests yet
 - no direct external-backend latent export tests yet
 - no full desktop/UI latent explorer tests yet
+- no external llama.cpp integration tests yet
 
 ## Suggested next rollout order
 
@@ -304,3 +323,4 @@ The automated harness now exists, but there is still important coverage missing:
 8. add direct external-backend latent export and validation tests
 9. add gallery/query-layer and advanced media-library query tests
 10. add full interactive latent-explorer UI tests
+11. add external llama.cpp-backed LLM task validation tests

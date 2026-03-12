@@ -8,6 +8,7 @@
 
 #include "beast2/filesystem.h"
 #include "beast2/latent_library.h"
+#include "beast2/llm_integration.h"
 #include "beast2/parser.h"
 #include "beast2/runtime.h"
 
@@ -35,6 +36,7 @@ typedef struct beast2_execution_job {
 typedef struct beast2_scheduled_job {
     beast2_execution_job job;
     beast2_model_request request;
+    char prepared_prompt[32768];
     beast2_model_category category;
     beast2_runtime_backend backend;
     beast2_precision_mode precision;
@@ -62,6 +64,11 @@ typedef struct beast2_execution_context {
     const char *precision;
     const char *runtime;
     const char *model_type;
+    const char *llm_task_name;
+    const char *llm_instruction;
+    const char *llm_source_generator;
+    const char *llm_query_sql;
+    size_t llm_attempts;
     const char *output_template;
     const char *artifact_template;
     const char *state_template;
@@ -545,6 +552,11 @@ static int beast2_prepare_execution_context(
     context->precision = "fp32";
     context->runtime = NULL;
     context->model_type = NULL;
+    context->llm_task_name = NULL;
+    context->llm_instruction = NULL;
+    context->llm_source_generator = NULL;
+    context->llm_query_sql = NULL;
+    context->llm_attempts = 0;
     context->output_ext_override = NULL;
     context->resolved_output_ext = NULL;
     context->priority_label = "batch";
@@ -607,6 +619,31 @@ static int beast2_prepare_execution_context(
         value = beast2_metadata_first_value(context->workflow_section, "b2_model_type");
         if (value != NULL && *value != '\0') {
             context->model_type = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_llm_task");
+        if (value != NULL && *value != '\0') {
+            context->llm_task_name = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_llm_instruction");
+        if (value != NULL && *value != '\0') {
+            context->llm_instruction = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_llm_source_generator");
+        if (value != NULL && *value != '\0') {
+            context->llm_source_generator = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_llm_query");
+        if (value != NULL && *value != '\0') {
+            context->llm_query_sql = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_llm_attempts");
+        if (value != NULL && *value != '\0') {
+            context->llm_attempts = (size_t) strtoull(value, NULL, 10);
         }
 
         value = beast2_metadata_first_value(context->workflow_section, "b2_output_template");
@@ -1130,6 +1167,9 @@ int beast2_execute_generator(
 
     variant_count = beast2_prompt_block_variant_count(context.prompt_block);
     summary->total_jobs = variant_count;
+    if (context.llm_task_name != NULL && *context.llm_task_name != '\0') {
+        snprintf(summary->llm_task, sizeof(summary->llm_task), "%s", context.llm_task_name);
+    }
     scheduled_jobs = (beast2_scheduled_job *) calloc(variant_count, sizeof(*scheduled_jobs));
 
     if (scheduled_jobs == NULL) {
@@ -1141,7 +1181,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase eight execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
+        "phase ten execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
         context.generator_name,
         context.engine,
         variant_count,
@@ -1157,6 +1197,8 @@ int beast2_execute_generator(
     for (variant_index = 0; variant_index < variant_count; variant_index++) {
         beast2_scheduled_job *scheduled_job = &scheduled_jobs[variant_index];
         beast2_gpu_job_request scheduler_request;
+        beast2_llm_workflow llm_workflow;
+        beast2_model_category inferred_category = BEAST2_MODEL_CATEGORY_UNKNOWN;
         const char *output_ext = NULL;
         size_t model_vram_mb = 0;
         size_t job_vram_mb = 0;
@@ -1165,6 +1207,7 @@ int beast2_execute_generator(
 
         memset(scheduled_job, 0, sizeof(*scheduled_job));
         memset(&scheduler_request, 0, sizeof(scheduler_request));
+        memset(&llm_workflow, 0, sizeof(llm_workflow));
         scheduled_job->job.variant_index = variant_index;
         scheduled_job->job.status = BEAST2_JOB_STATUS_PENDING;
 
@@ -1195,9 +1238,53 @@ int beast2_execute_generator(
 
         beast2_build_job_id(&context, &scheduled_job->job);
 
+        llm_workflow.kind = beast2_llm_task_kind_from_string(context.llm_task_name);
+        llm_workflow.task_name = context.llm_task_name;
+        llm_workflow.instruction = context.llm_instruction;
+        llm_workflow.source_generator_path = context.llm_source_generator;
+        llm_workflow.query_sql = context.llm_query_sql;
+        llm_workflow.attempts = context.llm_attempts;
+        inferred_category = beast2_model_request_category(
+            &(beast2_model_request) {
+                context.engine,
+                context.checkpoint,
+                scheduled_job->job.prompt,
+                context.seed,
+                context.steps,
+                context.resolution,
+                context.duration_seconds,
+                context.frames_per_second,
+                context.backend,
+                context.precision,
+                context.runtime,
+                context.model_type
+            }
+        );
+
+        if (
+            (inferred_category == BEAST2_MODEL_CATEGORY_LLM || llm_workflow.kind != BEAST2_LLM_TASK_NONE) &&
+            beast2_llm_prepare_prompt(
+                media_library,
+                &llm_workflow,
+                scheduled_job->job.prompt,
+                scheduled_job->prepared_prompt,
+                sizeof(scheduled_job->prepared_prompt),
+                error_message,
+                error_message_size
+            ) != 0
+        ) {
+            summary->failed_jobs++;
+            free(scheduled_jobs);
+            beast2_generator_document_free(&document);
+            return -1;
+        }
+
         scheduled_job->request.engine = context.engine;
         scheduled_job->request.checkpoint = context.checkpoint;
-        scheduled_job->request.prompt = scheduled_job->job.prompt;
+        scheduled_job->request.prompt =
+            scheduled_job->prepared_prompt[0] != '\0'
+                ? scheduled_job->prepared_prompt
+                : scheduled_job->job.prompt;
         scheduled_job->request.seed = context.seed;
         scheduled_job->request.steps = context.steps;
         scheduled_job->request.resolution = context.resolution;
@@ -1272,6 +1359,8 @@ int beast2_execute_generator(
         beast2_media_record_result media_result;
         beast2_latent_capture_request latent_request;
         beast2_latent_capture_result latent_result;
+        beast2_llm_workflow llm_workflow;
+        beast2_llm_task_result llm_result;
         beast2_model_handle handle;
         beast2_model_result result;
         beast2_gpu_job_ticket active_ticket;
@@ -1281,6 +1370,8 @@ int beast2_execute_generator(
         memset(&media_result, 0, sizeof(media_result));
         memset(&latent_request, 0, sizeof(latent_request));
         memset(&latent_result, 0, sizeof(latent_result));
+        memset(&llm_workflow, 0, sizeof(llm_workflow));
+        memset(&llm_result, 0, sizeof(llm_result));
         memset(&handle, 0, sizeof(handle));
         memset(&result, 0, sizeof(result));
         memset(&active_ticket, 0, sizeof(active_ticket));
@@ -1361,6 +1452,13 @@ int beast2_execute_generator(
             handle.cache_hit ? "true" : "false"
         );
 
+        llm_workflow.kind = beast2_llm_task_kind_from_string(context.llm_task_name);
+        llm_workflow.task_name = context.llm_task_name;
+        llm_workflow.instruction = context.llm_instruction;
+        llm_workflow.source_generator_path = context.llm_source_generator;
+        llm_workflow.query_sql = context.llm_query_sql;
+        llm_workflow.attempts = context.llm_attempts;
+
         if (
             beast2_model_infer(
                 runtime_context,
@@ -1369,7 +1467,57 @@ int beast2_execute_generator(
                 &result,
                 error_message,
                 error_message_size
-            ) != 0 ||
+            ) != 0
+        ) {
+            scheduled_job->job.status = BEAST2_JOB_STATUS_FAILED;
+            beast2_model_unload(runtime_context, &handle);
+            beast2_gpu_scheduler_fail(
+                scheduler,
+                &active_ticket,
+                error_message,
+                error_message_size
+            );
+            summary->failed_jobs++;
+            free(scheduled_jobs);
+            beast2_generator_document_free(&document);
+            return -1;
+        }
+
+        if (
+            handle.category == BEAST2_MODEL_CATEGORY_LLM ||
+            llm_workflow.kind != BEAST2_LLM_TASK_NONE
+        ) {
+            if (
+                beast2_llm_finalize_output(
+                    config,
+                    &llm_workflow,
+                    scheduled_job->job.job_id,
+                    scheduled_job->request.prompt,
+                    result.content,
+                    &llm_result,
+                    error_message,
+                    error_message_size
+                ) != 0
+            ) {
+                scheduled_job->job.status = BEAST2_JOB_STATUS_FAILED;
+                beast2_model_unload(runtime_context, &handle);
+                beast2_gpu_scheduler_fail(
+                    scheduler,
+                    &active_ticket,
+                    error_message,
+                    error_message_size
+                );
+                summary->failed_jobs++;
+                free(scheduled_jobs);
+                beast2_generator_document_free(&document);
+                return -1;
+            }
+
+            snprintf(result.content, sizeof(result.content), "%s", llm_result.final_output);
+            result.content_length = strlen(result.content);
+        }
+
+        if (
             beast2_write_model_output(&result, &scheduled_job->job, error_message, error_message_size) != 0
         ) {
             scheduled_job->job.status = BEAST2_JOB_STATUS_FAILED;
@@ -1441,9 +1589,12 @@ int beast2_execute_generator(
         media_record.precision = beast2_precision_mode_name(handle.precision);
         media_record.seed = context.seed;
         media_record.resolution = context.resolution;
-        media_record.prompt = scheduled_job->job.prompt;
+        media_record.prompt = scheduled_job->request.prompt;
         media_record.prompt_hash = scheduled_job->job.prompt_hash;
-        media_record.tags_csv = context.tags_joined;
+        media_record.tags_csv =
+            llm_result.generated_tags_csv[0] != '\0'
+                ? llm_result.generated_tags_csv
+                : context.tags_joined;
 
         if (
             beast2_media_library_record_output(
@@ -1557,6 +1708,31 @@ int beast2_execute_generator(
                 "%s",
                 latent_result.first_motion_path
             );
+            if (llm_result.has_generated_generator) {
+                snprintf(
+                    summary->generated_generator_path,
+                    sizeof(summary->generated_generator_path),
+                    "%s",
+                    llm_result.generated_generator_path
+                );
+            }
+        }
+
+        if (
+            beast2_write_model_output(&result, &scheduled_job->job, error_message, error_message_size) != 0
+        ) {
+            scheduled_job->job.status = BEAST2_JOB_STATUS_FAILED;
+            beast2_model_unload(runtime_context, &handle);
+            beast2_gpu_scheduler_fail(
+                scheduler,
+                &active_ticket,
+                error_message,
+                error_message_size
+            );
+            summary->failed_jobs++;
+            free(scheduled_jobs);
+            beast2_generator_document_free(&document);
+            return -1;
         }
 
         beast2_logger_log(
@@ -1580,7 +1756,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase eight execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
+        "phase ten execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
         context.generator_name,
         summary->completed_jobs,
         summary->failed_jobs,

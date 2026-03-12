@@ -198,6 +198,12 @@ If you want the original design rationale, start with these:
   - preview cache for repeated latent/cursor combinations
   - deterministic image latent previews
   - deterministic video latent previews
+- [x] **Phase 10 - LLM Integration**
+  - prompt mutation generators
+  - generator editing generators
+  - tag generation generators
+  - database query generators
+  - generated candidate `.b2` files for generator-edit workflows
 
 Today the repository contains a working native baseline, a DSL parser, an
 execution engine, a model runtime layer, a media library, a GPU scheduler, and
@@ -210,7 +216,8 @@ metadata into a local SQLite database with thumbnail sidecars while the
 scheduler arbitrates queue order and VRAM reservations and the tensor memory
 system reuses pooled CPU/GPU buffers across inference work. Phase 8 now also
 stores deterministic latent library artifacts for image and video generations,
-and Phase 9 adds a scheduler-backed latent preview explorer.
+Phase 9 adds a scheduler-backed latent preview explorer, and Phase 10 adds
+task-specific local LLM generator workflows.
 
 ### Implemented now
 
@@ -237,6 +244,9 @@ and Phase 9 adds a scheduler-backed latent preview explorer.
 - bilinear latent interpolation for 2D exploration
 - preview caching for repeated latent positions
 - deterministic latent image/video previews
+- local LLM workflows for prompt mutation, generator editing, tag generation,
+  and media-database querying
+- generated candidate generator files from LLM editing tasks
 - reproducibility sidecars written next to generated outputs
 - SQLite-backed media metadata indexing
 - generated thumbnails and preview sidecars
@@ -262,6 +272,8 @@ and Phase 9 adds a scheduler-backed latent preview explorer.
   not direct backend-native tensor dumps from external inference engines yet
 - the Phase 9 explorer is currently a CLI-based preview workflow rather than a
   full interactive desktop UI
+- the Phase 10 LLM layer currently uses deterministic native LLM adapters rather
+  than external llama.cpp inference
 - the automated harness is still early and does not yet include sanitizers,
   fuzzing, or golden-output comparison tests
 
@@ -313,6 +325,7 @@ possible:
 - **Phase 7** adds short local video clip generation
 - **Phase 8** stores reusable latent vectors and motion data
 - **Phase 9** adds latent interpolation and preview exploration
+- **Phase 10** adds task-specific local LLM generator workflows
 
 Short version:
 
@@ -325,6 +338,7 @@ Short version:
 - then emit real short video clips for video-model workflows
 - then persist reusable latent and motion artifacts for future workflows
 - then explore those latents through cached interpolated previews
+- then use local LLMs to mutate prompts, edit generators, tag outputs, and query local data
 
 The first major usable milestone is the vertical slice described in the docs:
 
@@ -339,7 +353,7 @@ workflow building.
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0 through Phase 9 runtime implementation
+- `src/` - Phase 0 through Phase 10 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
@@ -374,9 +388,10 @@ Current automated coverage includes:
 - tensor-memory unit tests
 - latent persistence checks within execution tests
 - latent explorer unit tests
+- llm workflow unit tests
 - CLI integration tests for help, parser mode, parser all-prompts mode, runtime
-  boot, image execution mode, video execution mode, latent explorer mode, and
-  invalid input
+  boot, image execution mode, video execution mode, latent explorer mode, llm
+  execution mode, and invalid input
 
 ## Run
 
@@ -424,6 +439,18 @@ B=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents whe
 C=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 2;")
 D=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 3;")
 ./build/beast2 --explore-latents --latent-a "$A" --latent-b "$B" --latent-c "$C" --latent-d "$D" --x 0.5 --y 0.5
+```
+
+Run an LLM prompt mutator:
+
+```sh
+./build/beast2 --run-generator examples/qwen-prompt-mutator-demo.b2
+```
+
+Run an LLM generator editor:
+
+```sh
+./build/beast2 --run-generator examples/llama-generator-editor-demo.b2
 ```
 
 ## Default workspace layout

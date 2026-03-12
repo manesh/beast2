@@ -16,7 +16,7 @@ function(beast2_add_unit_test target_name source_file)
     beast2_apply_warnings(${target_name})
 
     add_test(NAME ${target_name} COMMAND ${target_name})
-    set_tests_properties(${target_name} PROPERTIES WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+    set_tests_properties(${target_name} PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
 endfunction()
 
 beast2_add_unit_test(test_parser test_parser.c)
@@ -26,6 +26,7 @@ beast2_add_unit_test(test_scheduler test_scheduler.c)
 beast2_add_unit_test(test_tensor_memory test_tensor_memory.c)
 beast2_add_unit_test(test_explorer test_explorer.c)
 beast2_add_unit_test(test_execution test_execution.c)
+beast2_add_unit_test(test_llm test_llm.c)
 beast2_add_unit_test(test_runtime test_runtime.c)
 
 add_test(NAME beast2_cli_help COMMAND beast2 --help)
@@ -92,3 +93,12 @@ add_test(
          ./build/beast2 --config tests/fixtures/config/execution-test.conf --explore-latents --latent-a $A --latent-b $B --latent-c $C --latent-d $D --x 0.5 --y 0.5 >/dev/null"
 )
 set_tests_properties(beast2_cli_explore_latents PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+
+add_test(
+    NAME beast2_cli_execute_llm_generator
+    COMMAND
+        beast2
+        --config "${PROJECT_SOURCE_DIR}/tests/fixtures/config/execution-test.conf"
+        --run-generator "${PROJECT_SOURCE_DIR}/tests/fixtures/valid/llm_prompt_mutator.b2"
+)
+set_tests_properties(beast2_cli_execute_llm_generator PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")

@@ -1,0 +1,21 @@
+$b2_generator
+b2_name phase10_database_query
+
+$b2_positive_prompt
+b2_section request
+b2_snippet summarize the first generated media rows
+
+$b2_tags
+b2_tag demo
+b2_tag llm
+b2_tag database-query
+
+$b2_workflow
+b2_engine qwen
+b2_checkpoint qwen#query001
+b2_backend llama.cpp
+b2_precision int8
+b2_model_type llm
+b2_llm_task database_query
+b2_llm_instruction summarize the query results for a human user
+b2_llm_query SELECT type, path, checkpoint FROM media ORDER BY media_id LIMIT 2;

@@ -1,0 +1,21 @@
+$b2_generator
+b2_name phase10_prompt_mutator
+
+$b2_positive_prompt
+b2_section prompt
+b2_snippet Subject: a futuristic city skyline at dawn
+
+$b2_tags
+b2_tag demo
+b2_tag llm
+b2_tag prompt-mutation
+
+$b2_workflow
+b2_engine qwen
+b2_checkpoint qwen#mutator001
+b2_backend llama.cpp
+b2_precision int8
+b2_model_type llm
+b2_llm_task prompt_mutation
+b2_llm_instruction create alternate lighting and mood variations
+b2_llm_attempts 3

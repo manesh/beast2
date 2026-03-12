@@ -392,13 +392,13 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
             sizeof(error_message)
         ) != 0
     ) {
-        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase eight execution failed: %s", error_message);
+        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase ten execution failed: %s", error_message);
         beast2_cleanup_runtime(&runtime);
         fprintf(stderr, "beast2: failed to execute generator: %s\n", error_message);
         return 1;
     }
 
-    printf("Beast2 phase eight execution complete.\n");
+    printf("Beast2 phase ten execution complete.\n");
     printf("Generator: %s\n", summary.generator_name);
     printf("Engine: %s\n", summary.engine);
     printf("Checkpoint: %s\n", summary.checkpoint);
@@ -406,6 +406,9 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
     printf("Precision: %s\n", summary.precision);
     printf("Model type: %s\n", summary.model_category);
     printf("Output kind: %s\n", summary.output_kind);
+    if (summary.llm_task[0] != '\0') {
+        printf("LLM task: %s\n", summary.llm_task);
+    }
     printf("Seed: %s\n", summary.seed);
     printf(
         "Job summary: total=%zu completed=%zu failed=%zu cache_hits=%zu cache_misses=%zu "
@@ -430,6 +433,9 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
     printf("First thumbnail: %s\n", summary.first_thumbnail_path);
     printf("First generator artifact: %s\n", summary.first_generator_artifact_path);
     printf("First latent: %s\n", summary.first_latent_path);
+    if (summary.generated_generator_path[0] != '\0') {
+        printf("Generated generator: %s\n", summary.generated_generator_path);
+    }
     if (summary.first_motion_latent_path[0] != '\0') {
         printf("First motion latent: %s\n", summary.first_motion_latent_path);
     }

@@ -48,6 +48,7 @@ Current harness coverage includes:
 - scheduler unit tests
 - tensor-memory unit tests
 - latent-explorer unit tests
+- llm workflow unit tests
 - CLI integration tests
 
 ## Run
@@ -84,6 +85,18 @@ B=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents whe
 C=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 2;")
 D=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 3;")
 ./build/beast2 --explore-latents --latent-a "$A" --latent-b "$B" --latent-c "$C" --latent-d "$D" --x 0.5 --y 0.5
+```
+
+Phase 10 LLM prompt mutator example:
+
+```sh
+./build/beast2 --run-generator examples/qwen-prompt-mutator-demo.b2
+```
+
+Phase 10 LLM generator editor example:
+
+```sh
+./build/beast2 --run-generator examples/llama-generator-editor-demo.b2
 ```
 
 Print all prompt variants:

@@ -1,0 +1,24 @@
+# Phase 10 llm generator editor example
+
+$b2_generator
+b2_name llama_generator_editor_demo
+
+$b2_positive_prompt
+b2_section request
+b2_snippet increase realism and add lighting variations
+
+$b2_tags
+b2_tag example
+b2_tag llama
+b2_tag llm
+b2_tag generator-edit
+
+$b2_workflow
+b2_engine llama3
+b2_checkpoint llama3#demo010
+b2_backend llama.cpp
+b2_precision int8
+b2_model_type llm
+b2_llm_task generator_edit
+b2_llm_instruction improve lighting realism and add one extra style snippet
+b2_llm_source_generator examples/sdxl_character_concept.b2
