@@ -6,6 +6,7 @@
 #include "beast2/config.h"
 #include "beast2/logger.h"
 #include "beast2/media_library.h"
+#include "beast2/scheduler.h"
 #include "beast2/runtime.h"
 
 typedef struct beast2_execution_summary {
@@ -22,6 +23,9 @@ typedef struct beast2_execution_summary {
     size_t failed_jobs;
     size_t cache_hits;
     size_t cache_misses;
+    size_t scheduler_peak_queue_length;
+    size_t scheduler_model_evictions;
+    size_t scheduler_peak_reserved_vram_mb;
     char database_path[BEAST2_MAX_PATH_LENGTH];
     char first_output_path[BEAST2_MAX_PATH_LENGTH];
     char first_thumbnail_path[BEAST2_MAX_PATH_LENGTH];
@@ -32,6 +36,7 @@ int beast2_execute_generator(
     const beast2_config *config,
     beast2_logger *logger,
     beast2_media_library_context *media_library,
+    beast2_gpu_scheduler_context *scheduler,
     beast2_model_runtime_context *runtime_context,
     const char *generator_path,
     beast2_execution_summary *summary,

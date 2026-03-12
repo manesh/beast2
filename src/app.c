@@ -9,12 +9,14 @@
 #include "beast2/logger.h"
 #include "beast2/media_library.h"
 #include "beast2/parser.h"
+#include "beast2/scheduler.h"
 #include "beast2/runtime.h"
 
 typedef struct beast2_runtime_context {
     beast2_config config;
     beast2_logger logger;
     beast2_media_library_context media_library;
+    beast2_gpu_scheduler_context scheduler;
     beast2_model_runtime_context model_runtime;
     char log_path[BEAST2_MAX_PATH_LENGTH];
 } beast2_runtime_context;
@@ -113,12 +115,25 @@ static int beast2_prepare_runtime(
         return -1;
     }
 
+    {
+        beast2_gpu_scheduler_config scheduler_config;
+
+        memset(&scheduler_config, 0, sizeof(scheduler_config));
+        scheduler_config.total_vram_mb = context->config.scheduler_total_vram_mb;
+        scheduler_config.model_cache_vram_mb = context->config.scheduler_model_cache_vram_mb;
+        scheduler_config.generation_vram_mb = context->config.scheduler_generation_vram_mb;
+        scheduler_config.preview_vram_mb = context->config.scheduler_preview_vram_mb;
+        scheduler_config.buffer_vram_mb = context->config.scheduler_buffer_vram_mb;
+        beast2_gpu_scheduler_init(&context->scheduler, &scheduler_config);
+    }
+
     beast2_model_runtime_init(&context->model_runtime);
     return 0;
 }
 
 static void beast2_cleanup_runtime(beast2_runtime_context *context) {
     beast2_model_runtime_shutdown(&context->model_runtime);
+    beast2_gpu_scheduler_shutdown(&context->scheduler);
     beast2_media_library_shutdown(&context->media_library);
     beast2_logger_close(&context->logger);
 }
@@ -368,6 +383,7 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
             &runtime.config,
             &runtime.logger,
             &runtime.media_library,
+            &runtime.scheduler,
             &runtime.model_runtime,
             generator_path,
             &summary,
@@ -375,13 +391,13 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
             sizeof(error_message)
         ) != 0
     ) {
-        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase four execution failed: %s", error_message);
+        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase five execution failed: %s", error_message);
         beast2_cleanup_runtime(&runtime);
         fprintf(stderr, "beast2: failed to execute generator: %s\n", error_message);
         return 1;
     }
 
-    printf("Beast2 phase four execution complete.\n");
+    printf("Beast2 phase five execution complete.\n");
     printf("Generator: %s\n", summary.generator_name);
     printf("Engine: %s\n", summary.engine);
     printf("Checkpoint: %s\n", summary.checkpoint);
@@ -391,12 +407,16 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
     printf("Output kind: %s\n", summary.output_kind);
     printf("Seed: %s\n", summary.seed);
     printf(
-        "Job summary: total=%zu completed=%zu failed=%zu cache_hits=%zu cache_misses=%zu\n",
+        "Job summary: total=%zu completed=%zu failed=%zu cache_hits=%zu cache_misses=%zu "
+        "queue_peak=%zu model_evictions=%zu peak_reserved_vram_mb=%zu\n",
         summary.total_jobs,
         summary.completed_jobs,
         summary.failed_jobs,
         summary.cache_hits,
-        summary.cache_misses
+        summary.cache_misses,
+        summary.scheduler_peak_queue_length,
+        summary.scheduler_model_evictions,
+        summary.scheduler_peak_reserved_vram_mb
     );
     printf("Database: %s\n", summary.database_path);
     printf("First output: %s\n", summary.first_output_path);

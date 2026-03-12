@@ -44,6 +44,7 @@ Current harness coverage includes:
 - execution-engine unit tests
 - media-library persistence checks
 - model-runtime unit tests
+- scheduler unit tests
 - CLI integration tests
 
 ## Run

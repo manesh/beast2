@@ -118,6 +118,10 @@ void beast2_model_unload(
     const beast2_model_handle *handle
 );
 
+beast2_model_category beast2_model_request_category(const beast2_model_request *request);
+beast2_runtime_backend beast2_model_request_backend(const beast2_model_request *request);
+beast2_precision_mode beast2_model_request_precision(const beast2_model_request *request);
+
 const char *beast2_model_category_name(beast2_model_category category);
 const char *beast2_runtime_backend_name(beast2_runtime_backend backend);
 const char *beast2_precision_mode_name(beast2_precision_mode precision);

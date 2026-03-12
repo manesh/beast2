@@ -6,6 +6,7 @@
 #include "beast2/executor.h"
 #include "beast2/filesystem.h"
 #include "beast2/logger.h"
+#include "beast2/scheduler.h"
 #include "beast2/runtime.h"
 #include "test_support.h"
 
@@ -31,6 +32,8 @@ static int test_execute_generator_creates_outputs(void) {
     beast2_config config;
     beast2_logger logger;
     beast2_media_library_context media_library;
+    beast2_gpu_scheduler_context scheduler;
+    beast2_gpu_scheduler_config scheduler_config;
     beast2_model_runtime_context runtime_context;
     beast2_execution_summary summary;
     char error_message[512];
@@ -43,6 +46,13 @@ static int test_execute_generator_creates_outputs(void) {
     memset(&logger, 0, sizeof(logger));
     memset(&media_library, 0, sizeof(media_library));
     memset(&summary, 0, sizeof(summary));
+    memset(&scheduler_config, 0, sizeof(scheduler_config));
+    scheduler_config.total_vram_mb = 24576;
+    scheduler_config.model_cache_vram_mb = 8192;
+    scheduler_config.generation_vram_mb = 12288;
+    scheduler_config.preview_vram_mb = 2048;
+    scheduler_config.buffer_vram_mb = 2048;
+    beast2_gpu_scheduler_init(&scheduler, &scheduler_config);
     beast2_model_runtime_init(&runtime_context);
 
     BEAST2_TEST_ASSERT(beast2_test_prepare_clean_directory(workspace_root) == 0);
@@ -68,6 +78,7 @@ static int test_execute_generator_creates_outputs(void) {
             &config,
             &logger,
             &media_library,
+            &scheduler,
             &runtime_context,
             generator_path,
             &summary,
@@ -78,6 +89,7 @@ static int test_execute_generator_creates_outputs(void) {
 
     beast2_logger_close(&logger);
     beast2_media_library_shutdown(&media_library);
+    beast2_gpu_scheduler_shutdown(&scheduler);
     beast2_model_runtime_shutdown(&runtime_context);
 
     BEAST2_TEST_ASSERT_STRING_EQ(summary.generator_name, "phase3_sdxl_demo");
@@ -93,6 +105,9 @@ static int test_execute_generator_creates_outputs(void) {
     BEAST2_TEST_ASSERT(summary.failed_jobs == 0);
     BEAST2_TEST_ASSERT(summary.cache_hits == 1);
     BEAST2_TEST_ASSERT(summary.cache_misses == 1);
+    BEAST2_TEST_ASSERT(summary.scheduler_peak_queue_length == 2);
+    BEAST2_TEST_ASSERT(summary.scheduler_model_evictions == 0);
+    BEAST2_TEST_ASSERT(summary.scheduler_peak_reserved_vram_mb > 0);
     BEAST2_TEST_ASSERT(strstr(summary.database_path, "db/beast2.sqlite") != NULL);
     BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_output_path) == 1);
     BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_thumbnail_path) == 1);

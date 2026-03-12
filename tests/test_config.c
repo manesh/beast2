@@ -12,6 +12,11 @@ static int test_defaults(void) {
     BEAST2_TEST_ASSERT_STRING_EQ(config.log_file, "db/performance_logs/beast2.log");
     BEAST2_TEST_ASSERT(config.log_to_stderr == 1);
     BEAST2_TEST_ASSERT(config.create_missing_directories == 1);
+    BEAST2_TEST_ASSERT(config.scheduler_total_vram_mb == 24576);
+    BEAST2_TEST_ASSERT(config.scheduler_model_cache_vram_mb == 8192);
+    BEAST2_TEST_ASSERT(config.scheduler_generation_vram_mb == 12288);
+    BEAST2_TEST_ASSERT(config.scheduler_preview_vram_mb == 2048);
+    BEAST2_TEST_ASSERT(config.scheduler_buffer_vram_mb == 2048);
     BEAST2_TEST_ASSERT(config.scan_directory_count == 7);
     BEAST2_TEST_ASSERT_STRING_EQ(config.scan_directories[0], "models");
     BEAST2_TEST_ASSERT_STRING_EQ(config.scan_directories[6], "cache");
@@ -36,6 +41,11 @@ static int test_valid_config_load(void) {
     BEAST2_TEST_ASSERT_STRING_EQ(config.log_file, "logs/test.log");
     BEAST2_TEST_ASSERT(config.log_to_stderr == 0);
     BEAST2_TEST_ASSERT(config.create_missing_directories == 0);
+    BEAST2_TEST_ASSERT(config.scheduler_total_vram_mb == 16000);
+    BEAST2_TEST_ASSERT(config.scheduler_model_cache_vram_mb == 4000);
+    BEAST2_TEST_ASSERT(config.scheduler_generation_vram_mb == 9000);
+    BEAST2_TEST_ASSERT(config.scheduler_preview_vram_mb == 1000);
+    BEAST2_TEST_ASSERT(config.scheduler_buffer_vram_mb == 2000);
     BEAST2_TEST_ASSERT(config.scan_directory_count == 3);
     BEAST2_TEST_ASSERT_STRING_EQ(config.scan_directories[0], "generators");
     BEAST2_TEST_ASSERT_STRING_EQ(config.scan_directories[1], "outputs");

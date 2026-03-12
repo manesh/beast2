@@ -24,6 +24,24 @@ without degrading user interface responsiveness.
   
 ⸻  
   
+**Current implementation note**  
+  
+The current repository implementation provides the first working slice of the
+GPU scheduler described in this document, including:
+	•	a global queue for GPU-bound jobs  
+	•	priority-based scheduling  
+	•	VRAM partition tracking  
+	•	scheduler-side model residency caching  
+	•	LRU eviction under model-cache pressure  
+	•	queue telemetry such as peak depth and peak reserved VRAM  
+  
+At the moment, the scheduler is intentionally **simple and single-active-job**
+while still supporting queued multi-job execution. This gives Beast2 a safe
+resource arbiter now, while leaving more advanced preemption and concurrency
+behavior for future scheduler upgrades.  
+  
+⸻  
+  
 **Design Goals**  
   
 **Maximize GPU utilization**  

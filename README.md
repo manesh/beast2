@@ -168,14 +168,21 @@ If you want the original design rationale, start with these:
   - thumbnail sidecars stored under `thumbs/`
   - media/tag indexing for generated outputs
   - execution summaries now report first thumbnail and database path
+- [x] **Phase 5 - GPU Scheduler**
+  - priority-based global GPU job queue
+  - VRAM partitioning for model cache, generation jobs, preview jobs, and buffer
+  - scheduler-side model residency cache and LRU eviction
+  - queue telemetry including peak queue length and peak reserved VRAM
+  - execution now routes jobs through the scheduler before runtime inference
 
 Today the repository contains a working native baseline, a DSL parser, an
-execution engine, a model runtime layer, and a media library. The runtime can
+execution engine, a model runtime layer, a media library, and a GPU scheduler. The runtime can
 boot and inspect its local workspace, the parser can load and expand generator
 prompts, the execution engine can schedule per-variant jobs, the runtime layer
 can produce deterministic local image, video-manifest, and text outputs through
 a unified model API, and the media library persists generated outputs plus
-metadata into a local SQLite database with thumbnail sidecars.
+metadata into a local SQLite database with thumbnail sidecars while the
+scheduler arbitrates queue order and VRAM reservations.
 
 ### Implemented now
 
@@ -189,6 +196,9 @@ metadata into a local SQLite database with thumbnail sidecars.
 - unified model runtime API with load/infer/unload semantics
 - diffusion, video, and LLM runtime selection
 - loaded-model cache with cache-hit reporting
+- priority-based GPU queue scheduling
+- VRAM partitioning and scheduler telemetry
+- scheduler-side model residency eviction
 - reproducibility sidecars written next to generated outputs
 - SQLite-backed media metadata indexing
 - generated thumbnails and preview sidecars
@@ -204,6 +214,8 @@ metadata into a local SQLite database with thumbnail sidecars.
 - prompt blocks are currently identified by section names containing `prompt`
 - media persistence is local and SQLite-backed, but there is not yet a browsing
   UI or advanced query layer on top of it
+- the Phase 5 scheduler is intentionally simple and single-active-job for now,
+  even though it tracks multi-job queues and VRAM partitions
 - the automated harness is still early and does not yet include sanitizers,
   fuzzing, or golden-output comparison tests
 
@@ -250,6 +262,7 @@ possible:
 - **Phase 3** connects those workflows to a unified local model runtime layer
 - **Phase 4** stores outputs, thumbnails, tags, and metadata in a reusable
   media library
+- **Phase 5** adds queue-based GPU scheduling and VRAM arbitration
 
 Short version:
 
@@ -257,6 +270,7 @@ Short version:
 - then make them executable
 - then give execution a real model runtime interface and cache
 - then persist outputs and metadata in a local indexed library
+- then add queue-based GPU scheduling around the runtime
 
 The first major usable milestone is the vertical slice described in the docs:
 
@@ -302,6 +316,7 @@ Current automated coverage includes:
 - filesystem unit tests
 - execution-engine and media-persistence unit tests
 - model-runtime unit tests
+- scheduler unit tests
 - CLI integration tests for help, parser mode, parser all-prompts mode, runtime
   boot, execution mode, and invalid input
 
@@ -374,4 +389,9 @@ keys are:
 - `log_file`
 - `log_to_stderr`
 - `create_missing_directories`
+- `scheduler_total_vram_mb`
+- `scheduler_model_cache_vram_mb`
+- `scheduler_generation_vram_mb`
+- `scheduler_preview_vram_mb`
+- `scheduler_buffer_vram_mb`
 - `scan_directories`

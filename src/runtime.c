@@ -712,6 +712,18 @@ void beast2_model_unload(
     }
 }
 
+beast2_model_category beast2_model_request_category(const beast2_model_request *request) {
+    return beast2_runtime_parse_model_category(request);
+}
+
+beast2_runtime_backend beast2_model_request_backend(const beast2_model_request *request) {
+    return beast2_runtime_parse_backend(request, beast2_runtime_parse_model_category(request));
+}
+
+beast2_precision_mode beast2_model_request_precision(const beast2_model_request *request) {
+    return beast2_runtime_parse_precision(request);
+}
+
 const char *beast2_model_category_name(beast2_model_category category) {
     switch (category) {
         case BEAST2_MODEL_CATEGORY_DIFFUSION:

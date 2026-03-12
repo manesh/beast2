@@ -31,10 +31,20 @@ typedef struct beast2_execution_job {
     beast2_job_status status;
 } beast2_execution_job;
 
+typedef struct beast2_scheduled_job {
+    beast2_execution_job job;
+    beast2_model_request request;
+    beast2_model_category category;
+    beast2_runtime_backend backend;
+    beast2_precision_mode precision;
+    beast2_gpu_job_ticket scheduler_ticket;
+} beast2_scheduled_job;
+
 typedef struct beast2_execution_context {
     const beast2_config *config;
     beast2_logger *logger;
     beast2_model_runtime_context *runtime_context;
+    beast2_gpu_scheduler_context *scheduler;
     const beast2_generator_document *document;
     const beast2_prompt_block *prompt_block;
     const beast2_metadata_section *workflow_section;
@@ -54,7 +64,9 @@ typedef struct beast2_execution_context {
     const char *state_template;
     const char *output_ext_override;
     const char *resolved_output_ext;
+    const char *priority_label;
     beast2_model_category active_category;
+    beast2_gpu_job_priority active_priority;
     char checkpoint_hash[128];
     char tags_joined[1024];
 } beast2_execution_context;
@@ -210,6 +222,108 @@ static const char *beast2_default_output_extension_for_category(beast2_model_cat
         case BEAST2_MODEL_CATEGORY_UNKNOWN:
         default:
             return "txt";
+    }
+}
+
+static beast2_gpu_job_priority beast2_execution_parse_priority(const char *value) {
+    if (value == NULL || *value == '\0') {
+        return BEAST2_GPU_JOB_PRIORITY_BATCH_GENERATION;
+    }
+
+    if (strcmp(value, "preview") == 0 || strcmp(value, "interactive_preview") == 0) {
+        return BEAST2_GPU_JOB_PRIORITY_INTERACTIVE_PREVIEW;
+    }
+
+    if (strcmp(value, "interactive") == 0 || strcmp(value, "interactive_generation") == 0) {
+        return BEAST2_GPU_JOB_PRIORITY_INTERACTIVE_GENERATION;
+    }
+
+    if (strcmp(value, "background") == 0) {
+        return BEAST2_GPU_JOB_PRIORITY_BACKGROUND;
+    }
+
+    return BEAST2_GPU_JOB_PRIORITY_BATCH_GENERATION;
+}
+
+static void beast2_execution_estimate_vram(
+    const beast2_model_request *request,
+    beast2_gpu_job_priority priority,
+    size_t *model_vram_mb,
+    size_t *job_vram_mb,
+    size_t *ui_vram_mb,
+    size_t *runtime_ms
+) {
+    beast2_model_category category = beast2_model_request_category(request);
+    size_t width = 32;
+    size_t height = 32;
+    size_t pixels = 0;
+    size_t steps = 1;
+
+    if (request->resolution != NULL) {
+        const char *separator = strchr(request->resolution, 'x');
+
+        if (separator == NULL) {
+            separator = strchr(request->resolution, 'X');
+        }
+
+        if (separator != NULL) {
+            char width_buffer[32];
+            char height_buffer[32];
+            size_t width_length = (size_t) (separator - request->resolution);
+            size_t height_length = strlen(separator + 1);
+
+            if (
+                width_length > 0 &&
+                height_length > 0 &&
+                width_length < sizeof(width_buffer) &&
+                height_length < sizeof(height_buffer)
+            ) {
+                memcpy(width_buffer, request->resolution, width_length);
+                width_buffer[width_length] = '\0';
+                memcpy(height_buffer, separator + 1, height_length);
+                height_buffer[height_length] = '\0';
+                width = (size_t) strtoull(width_buffer, NULL, 10);
+                height = (size_t) strtoull(height_buffer, NULL, 10);
+            }
+        }
+    }
+
+    if (request->steps != NULL && *request->steps != '\0') {
+        steps = (size_t) strtoull(request->steps, NULL, 10);
+        if (steps == 0) {
+            steps = 1;
+        }
+    }
+
+    pixels = width * height;
+
+    switch (category) {
+        case BEAST2_MODEL_CATEGORY_VIDEO:
+            *model_vram_mb = 6144;
+            *job_vram_mb = 1024 + (pixels / 512);
+            *runtime_ms = 60 + (steps * 4);
+            break;
+        case BEAST2_MODEL_CATEGORY_LLM:
+            *model_vram_mb = 3072;
+            *job_vram_mb = 512 + (steps * 8);
+            *runtime_ms = 20 + (steps * 2);
+            break;
+        case BEAST2_MODEL_CATEGORY_DIFFUSION:
+        case BEAST2_MODEL_CATEGORY_UNKNOWN:
+        default:
+            *model_vram_mb = 4096;
+            *job_vram_mb = 768 + (pixels / 1024) + (steps * 4);
+            *runtime_ms = 30 + (steps * 3);
+            break;
+    }
+
+    if (priority == BEAST2_GPU_JOB_PRIORITY_INTERACTIVE_PREVIEW) {
+        *ui_vram_mb = 512 + (pixels / 2048);
+        if (*job_vram_mb > 256) {
+            *job_vram_mb = 256;
+        }
+    } else {
+        *ui_vram_mb = 0;
     }
 }
 
@@ -391,6 +505,7 @@ static int beast2_prepare_execution_context(
     beast2_execution_context *context,
     const beast2_config *config,
     beast2_logger *logger,
+    beast2_gpu_scheduler_context *scheduler,
     beast2_model_runtime_context *runtime_context,
     const beast2_generator_document *document,
     char *error_message,
@@ -408,6 +523,7 @@ static int beast2_prepare_execution_context(
 
     context->config = config;
     context->logger = logger;
+    context->scheduler = scheduler;
     context->runtime_context = runtime_context;
     context->document = document;
     context->prompt_block = prompt_block;
@@ -425,7 +541,9 @@ static int beast2_prepare_execution_context(
     context->model_type = NULL;
     context->output_ext_override = NULL;
     context->resolved_output_ext = NULL;
+    context->priority_label = "batch";
     context->active_category = BEAST2_MODEL_CATEGORY_UNKNOWN;
+    context->active_priority = BEAST2_GPU_JOB_PRIORITY_BATCH_GENERATION;
 
     if (context->workflow_section != NULL) {
         const char *value = NULL;
@@ -493,6 +611,12 @@ static int beast2_prepare_execution_context(
         value = beast2_metadata_first_value(context->workflow_section, "b2_output_ext");
         if (value != NULL && *value != '\0') {
             context->output_ext_override = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_priority");
+        if (value != NULL && *value != '\0') {
+            context->priority_label = value;
+            context->active_priority = beast2_execution_parse_priority(value);
         }
     }
 
@@ -844,10 +968,27 @@ static int beast2_write_state_report(
     return beast2_write_text_file(job->state_report_path, contents, error_message, error_message_size);
 }
 
+static beast2_scheduled_job *beast2_find_scheduled_job(
+    beast2_scheduled_job *jobs,
+    size_t job_count,
+    const char *job_key
+) {
+    size_t index = 0;
+
+    for (index = 0; index < job_count; index++) {
+        if (strcmp(jobs[index].job.job_id, job_key) == 0) {
+            return &jobs[index];
+        }
+    }
+
+    return NULL;
+}
+
 int beast2_execute_generator(
     const beast2_config *config,
     beast2_logger *logger,
     beast2_media_library_context *media_library,
+    beast2_gpu_scheduler_context *scheduler,
     beast2_model_runtime_context *runtime_context,
     const char *generator_path,
     beast2_execution_summary *summary,
@@ -856,15 +997,18 @@ int beast2_execute_generator(
 ) {
     beast2_generator_document document;
     beast2_execution_context context;
+    beast2_scheduled_job *scheduled_jobs = NULL;
+    beast2_gpu_scheduler_telemetry scheduler_telemetry;
     size_t variant_count = 0;
     size_t variant_index = 0;
 
-    if (media_library == NULL) {
-        beast2_execution_set_error(error_message, error_message_size, "media library context is required");
+    if (media_library == NULL || scheduler == NULL) {
+        beast2_execution_set_error(error_message, error_message_size, "media library and scheduler contexts are required");
         return -1;
     }
 
     memset(summary, 0, sizeof(*summary));
+    memset(&scheduler_telemetry, 0, sizeof(scheduler_telemetry));
     beast2_generator_document_init(&document);
     snprintf(summary->database_path, sizeof(summary->database_path), "%s", media_library->db_path);
 
@@ -884,6 +1028,7 @@ int beast2_execute_generator(
             &context,
             config,
             logger,
+            scheduler,
             runtime_context,
             &document,
             error_message,
@@ -901,16 +1046,24 @@ int beast2_execute_generator(
 
     variant_count = beast2_prompt_block_variant_count(context.prompt_block);
     summary->total_jobs = variant_count;
+    scheduled_jobs = (beast2_scheduled_job *) calloc(variant_count, sizeof(*scheduled_jobs));
+
+    if (scheduled_jobs == NULL) {
+        beast2_generator_document_free(&document);
+        beast2_execution_set_error(error_message, error_message_size, "out of memory while allocating scheduled jobs");
+        return -1;
+    }
 
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase four execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s",
+        "phase five execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
         context.generator_name,
         context.engine,
         variant_count,
         context.checkpoint,
-        context.seed
+        context.seed,
+        beast2_gpu_job_priority_name(context.active_priority)
     );
 
     for (variant_index = 0; variant_index < document.warning_count; variant_index++) {
@@ -918,107 +1071,203 @@ int beast2_execute_generator(
     }
 
     for (variant_index = 0; variant_index < variant_count; variant_index++) {
-        beast2_execution_job job;
-        beast2_media_record media_record;
-        beast2_media_record_result media_result;
-        beast2_model_request request;
-        beast2_model_handle handle;
-        beast2_model_result result;
+        beast2_scheduled_job *scheduled_job = &scheduled_jobs[variant_index];
+        beast2_gpu_job_request scheduler_request;
         const char *output_ext = NULL;
+        size_t model_vram_mb = 0;
+        size_t job_vram_mb = 0;
+        size_t ui_vram_mb = 0;
+        size_t runtime_ms = 0;
 
-        memset(&job, 0, sizeof(job));
-        memset(&media_record, 0, sizeof(media_record));
-        memset(&media_result, 0, sizeof(media_result));
-        memset(&request, 0, sizeof(request));
-        memset(&handle, 0, sizeof(handle));
-        memset(&result, 0, sizeof(result));
-        job.variant_index = variant_index;
-        job.status = BEAST2_JOB_STATUS_PENDING;
+        memset(scheduled_job, 0, sizeof(*scheduled_job));
+        memset(&scheduler_request, 0, sizeof(scheduler_request));
+        scheduled_job->job.variant_index = variant_index;
+        scheduled_job->job.status = BEAST2_JOB_STATUS_PENDING;
 
         beast2_logger_log(
             logger,
             BEAST2_LOG_LEVEL_INFO,
-            "job[%zu/%zu] state=pending",
+            "job[%zu/%zu] state=queued priority=%s",
             variant_index + 1,
-            variant_count
+            variant_count,
+            beast2_gpu_job_priority_name(context.active_priority)
         );
 
         if (
             beast2_prompt_block_render_variant(
                 context.prompt_block,
                 variant_index,
-                job.prompt,
-                sizeof(job.prompt),
+                scheduled_job->job.prompt,
+                sizeof(scheduled_job->job.prompt),
                 error_message,
                 error_message_size
             ) != 0
         ) {
             summary->failed_jobs++;
+            free(scheduled_jobs);
             beast2_generator_document_free(&document);
             return -1;
         }
 
-        beast2_build_job_id(&context, &job);
+        beast2_build_job_id(&context, &scheduled_job->job);
 
-        request.engine = context.engine;
-        request.checkpoint = context.checkpoint;
-        request.prompt = job.prompt;
-        request.seed = context.seed;
-        request.steps = context.steps;
-        request.resolution = context.resolution;
-        request.backend = context.backend;
-        request.precision = context.precision;
-        request.runtime = context.runtime;
-        request.model_type = context.model_type;
+        scheduled_job->request.engine = context.engine;
+        scheduled_job->request.checkpoint = context.checkpoint;
+        scheduled_job->request.prompt = scheduled_job->job.prompt;
+        scheduled_job->request.seed = context.seed;
+        scheduled_job->request.steps = context.steps;
+        scheduled_job->request.resolution = context.resolution;
+        scheduled_job->request.backend = context.backend;
+        scheduled_job->request.precision = context.precision;
+        scheduled_job->request.runtime = context.runtime;
+        scheduled_job->request.model_type = context.model_type;
+        scheduled_job->category = beast2_model_request_category(&scheduled_job->request);
+        scheduled_job->backend = beast2_model_request_backend(&scheduled_job->request);
+        scheduled_job->precision = beast2_model_request_precision(&scheduled_job->request);
+
+        output_ext = context.output_ext_override != NULL
+            ? context.output_ext_override
+            : beast2_default_output_extension_for_category(scheduled_job->category);
+        context.resolved_output_ext = output_ext;
+        context.active_category = scheduled_job->category;
+
+        if (
+            beast2_resolve_job_paths(
+                &context,
+                &scheduled_job->job,
+                error_message,
+                error_message_size
+            ) != 0
+        ) {
+            summary->failed_jobs++;
+            free(scheduled_jobs);
+            beast2_generator_document_free(&document);
+            return -1;
+        }
+
+        beast2_execution_estimate_vram(
+            &scheduled_job->request,
+            context.active_priority,
+            &model_vram_mb,
+            &job_vram_mb,
+            &ui_vram_mb,
+            &runtime_ms
+        );
+
+        scheduler_request.job_key = scheduled_job->job.job_id;
+        scheduler_request.engine = context.engine;
+        scheduler_request.checkpoint = context.checkpoint;
+        scheduler_request.category = scheduled_job->category;
+        scheduler_request.priority = context.active_priority;
+        scheduler_request.estimated_model_vram_mb = model_vram_mb;
+        scheduler_request.estimated_job_vram_mb = job_vram_mb;
+        scheduler_request.estimated_ui_vram_mb = ui_vram_mb;
+        scheduler_request.estimated_runtime_ms = runtime_ms;
+
+        if (
+            beast2_gpu_scheduler_enqueue(
+                scheduler,
+                &scheduler_request,
+                &scheduled_job->scheduler_ticket,
+                error_message,
+                error_message_size
+            ) != 0
+        ) {
+            summary->failed_jobs++;
+            free(scheduled_jobs);
+            beast2_generator_document_free(&document);
+            return -1;
+        }
+    }
+
+    for (;;) {
+        beast2_scheduled_job *scheduled_job = NULL;
+        beast2_media_record media_record;
+        beast2_media_record_result media_result;
+        beast2_model_handle handle;
+        beast2_model_result result;
+        beast2_gpu_job_ticket active_ticket;
+        int start_status = 0;
+
+        memset(&media_record, 0, sizeof(media_record));
+        memset(&media_result, 0, sizeof(media_result));
+        memset(&handle, 0, sizeof(handle));
+        memset(&result, 0, sizeof(result));
+        memset(&active_ticket, 0, sizeof(active_ticket));
+
+        start_status = beast2_gpu_scheduler_start_next(
+            scheduler,
+            &active_ticket,
+            error_message,
+            error_message_size
+        );
+
+        if (start_status < 0) {
+            summary->failed_jobs++;
+            free(scheduled_jobs);
+            beast2_generator_document_free(&document);
+            return -1;
+        }
+
+        if (start_status == 0) {
+            break;
+        }
+
+        scheduled_job = beast2_find_scheduled_job(
+            scheduled_jobs,
+            variant_count,
+            active_ticket.job_key
+        );
+
+        if (scheduled_job == NULL) {
+            beast2_execution_set_error(error_message, error_message_size, "scheduler returned an unknown job key");
+            beast2_gpu_scheduler_fail(scheduler, &active_ticket, error_message, error_message_size);
+            summary->failed_jobs++;
+            free(scheduled_jobs);
+            beast2_generator_document_free(&document);
+            return -1;
+        }
+
+        scheduled_job->job.status = BEAST2_JOB_STATUS_RUNNING;
+        beast2_logger_log(
+            logger,
+            BEAST2_LOG_LEVEL_INFO,
+            "job[%zu/%zu] state=running step=b2_prompt_build id=%s queue_priority=%s",
+            scheduled_job->job.variant_index + 1,
+            variant_count,
+            scheduled_job->job.job_id,
+            beast2_gpu_job_priority_name(active_ticket.priority)
+        );
 
         if (
             beast2_model_load(
                 runtime_context,
-                &request,
+                &scheduled_job->request,
                 &handle,
                 error_message,
                 error_message_size
             ) != 0
         ) {
+            scheduled_job->job.status = BEAST2_JOB_STATUS_FAILED;
+            beast2_gpu_scheduler_fail(scheduler, &active_ticket, error_message, error_message_size);
             summary->failed_jobs++;
+            free(scheduled_jobs);
             beast2_generator_document_free(&document);
             return -1;
         }
 
-        output_ext = context.output_ext_override != NULL
-            ? context.output_ext_override
-            : beast2_default_output_extension_for_category(handle.category);
-        context.resolved_output_ext = output_ext;
-        context.active_category = handle.category;
-
-        if (beast2_resolve_job_paths(&context, &job, error_message, error_message_size) != 0) {
-            beast2_model_unload(runtime_context, &handle);
-            summary->failed_jobs++;
-            beast2_generator_document_free(&document);
-            return -1;
-        }
-
-        job.status = BEAST2_JOB_STATUS_RUNNING;
         beast2_logger_log(
             logger,
             BEAST2_LOG_LEVEL_INFO,
-            "job[%zu/%zu] state=running step=b2_prompt_build id=%s",
-            variant_index + 1,
-            variant_count,
-            job.job_id
-        );
-
-        beast2_logger_log(
-            logger,
-            BEAST2_LOG_LEVEL_INFO,
-            "job[%zu/%zu] step=b2_model_run engine=%s checkpoint=%s backend=%s precision=%s prompt_hash=%s cache_hit=%s",
-            variant_index + 1,
+            "job[%zu/%zu] step=b2_model_run engine=%s checkpoint=%s backend=%s precision=%s prompt_hash=%s scheduler_cache_hit=%s runtime_cache_hit=%s",
+            scheduled_job->job.variant_index + 1,
             variant_count,
             context.engine,
             context.checkpoint,
             beast2_runtime_backend_name(handle.backend),
             beast2_precision_mode_name(handle.precision),
-            job.prompt_hash,
+            scheduled_job->job.prompt_hash,
+            active_ticket.model_cache_hit ? "true" : "false",
             handle.cache_hit ? "true" : "false"
         );
 
@@ -1026,16 +1275,23 @@ int beast2_execute_generator(
             beast2_model_infer(
                 runtime_context,
                 &handle,
-                &request,
+                &scheduled_job->request,
                 &result,
                 error_message,
                 error_message_size
             ) != 0 ||
-            beast2_write_model_output(&result, &job, error_message, error_message_size) != 0
+            beast2_write_model_output(&result, &scheduled_job->job, error_message, error_message_size) != 0
         ) {
-            job.status = BEAST2_JOB_STATUS_FAILED;
+            scheduled_job->job.status = BEAST2_JOB_STATUS_FAILED;
             beast2_model_unload(runtime_context, &handle);
+            beast2_gpu_scheduler_fail(
+                scheduler,
+                &active_ticket,
+                error_message,
+                error_message_size
+            );
             summary->failed_jobs++;
+            free(scheduled_jobs);
             beast2_generator_document_free(&document);
             return -1;
         }
@@ -1044,16 +1300,16 @@ int beast2_execute_generator(
             logger,
             BEAST2_LOG_LEVEL_INFO,
             "job[%zu/%zu] step=b2_save_media output=%s kind=%s",
-            variant_index + 1,
+            scheduled_job->job.variant_index + 1,
             variant_count,
-            job.output_relative_path,
+            scheduled_job->job.output_relative_path,
             beast2_output_kind_name(result.output_kind)
         );
 
         if (
             beast2_write_generator_artifact(
                 &context,
-                &job,
+                &scheduled_job->job,
                 &handle,
                 &result,
                 error_message,
@@ -1061,26 +1317,33 @@ int beast2_execute_generator(
             ) != 0 ||
             beast2_write_state_report(
                 &context,
-                &job,
+                &scheduled_job->job,
                 &handle,
                 &result,
                 error_message,
                 error_message_size
             ) != 0
         ) {
-            job.status = BEAST2_JOB_STATUS_FAILED;
+            scheduled_job->job.status = BEAST2_JOB_STATUS_FAILED;
             beast2_model_unload(runtime_context, &handle);
+            beast2_gpu_scheduler_fail(
+                scheduler,
+                &active_ticket,
+                error_message,
+                error_message_size
+            );
             summary->failed_jobs++;
+            free(scheduled_jobs);
             beast2_generator_document_free(&document);
             return -1;
         }
 
         media_record.generator_name = context.generator_name;
         media_record.generator_source_path = context.document->source_path;
-        media_record.generator_artifact_relative_path = job.generator_artifact_relative_path;
-        media_record.generator_artifact_path = job.generator_artifact_path;
-        media_record.output_relative_path = job.output_relative_path;
-        media_record.output_path = job.output_path;
+        media_record.generator_artifact_relative_path = scheduled_job->job.generator_artifact_relative_path;
+        media_record.generator_artifact_path = scheduled_job->job.generator_artifact_path;
+        media_record.output_relative_path = scheduled_job->job.output_relative_path;
+        media_record.output_path = scheduled_job->job.output_path;
         media_record.output_kind = beast2_output_kind_name(result.output_kind);
         media_record.engine = context.engine;
         media_record.checkpoint = context.checkpoint;
@@ -1088,8 +1351,8 @@ int beast2_execute_generator(
         media_record.precision = beast2_precision_mode_name(handle.precision);
         media_record.seed = context.seed;
         media_record.resolution = context.resolution;
-        media_record.prompt = job.prompt;
-        media_record.prompt_hash = job.prompt_hash;
+        media_record.prompt = scheduled_job->job.prompt;
+        media_record.prompt_hash = scheduled_job->job.prompt_hash;
         media_record.tags_csv = context.tags_joined;
 
         if (
@@ -1101,32 +1364,58 @@ int beast2_execute_generator(
                 error_message_size
             ) != 0
         ) {
-            job.status = BEAST2_JOB_STATUS_FAILED;
+            scheduled_job->job.status = BEAST2_JOB_STATUS_FAILED;
             beast2_model_unload(runtime_context, &handle);
+            beast2_gpu_scheduler_fail(
+                scheduler,
+                &active_ticket,
+                error_message,
+                error_message_size
+            );
             summary->failed_jobs++;
+            free(scheduled_jobs);
             beast2_generator_document_free(&document);
             return -1;
         }
 
         beast2_model_unload(runtime_context, &handle);
-        job.status = BEAST2_JOB_STATUS_COMPLETED;
+        if (
+            beast2_gpu_scheduler_complete(
+                scheduler,
+                &active_ticket,
+                error_message,
+                error_message_size
+            ) != 0
+        ) {
+            scheduled_job->job.status = BEAST2_JOB_STATUS_FAILED;
+            summary->failed_jobs++;
+            free(scheduled_jobs);
+            beast2_generator_document_free(&document);
+            return -1;
+        }
+
+        scheduled_job->job.status = BEAST2_JOB_STATUS_COMPLETED;
         summary->completed_jobs++;
 
         snprintf(summary->backend, sizeof(summary->backend), "%s", beast2_runtime_backend_name(handle.backend));
         snprintf(summary->precision, sizeof(summary->precision), "%s", beast2_precision_mode_name(handle.precision));
         snprintf(summary->model_category, sizeof(summary->model_category), "%s", beast2_model_category_name(handle.category));
         snprintf(summary->output_kind, sizeof(summary->output_kind), "%s", beast2_output_kind_name(result.output_kind));
-        summary->cache_hits = runtime_context->cache_hits;
-        summary->cache_misses = runtime_context->cache_misses;
+        beast2_gpu_scheduler_get_telemetry(scheduler, &scheduler_telemetry);
+        summary->cache_hits = scheduler_telemetry.cache_hits;
+        summary->cache_misses = scheduler_telemetry.cache_misses;
+        summary->scheduler_peak_queue_length = scheduler_telemetry.peak_queue_length;
+        summary->scheduler_model_evictions = scheduler_telemetry.model_evictions;
+        summary->scheduler_peak_reserved_vram_mb = scheduler_telemetry.peak_reserved_vram_mb;
 
         if (summary->first_output_path[0] == '\0') {
-            snprintf(summary->first_output_path, sizeof(summary->first_output_path), "%s", job.output_path);
+            snprintf(summary->first_output_path, sizeof(summary->first_output_path), "%s", scheduled_job->job.output_path);
             snprintf(summary->first_thumbnail_path, sizeof(summary->first_thumbnail_path), "%s", media_result.thumbnail_path);
             snprintf(
                 summary->first_generator_artifact_path,
                 sizeof(summary->first_generator_artifact_path),
                 "%s",
-                job.generator_artifact_path
+                scheduled_job->job.generator_artifact_path
             );
         }
 
@@ -1134,24 +1423,35 @@ int beast2_execute_generator(
             logger,
             BEAST2_LOG_LEVEL_INFO,
             "job[%zu/%zu] state=completed id=%s model=%s",
-            variant_index + 1,
+            scheduled_job->job.variant_index + 1,
             variant_count,
-            job.job_id,
+            scheduled_job->job.job_id,
             handle.model_id
         );
     }
 
+    beast2_gpu_scheduler_get_telemetry(scheduler, &scheduler_telemetry);
+    summary->cache_hits = scheduler_telemetry.cache_hits;
+    summary->cache_misses = scheduler_telemetry.cache_misses;
+    summary->scheduler_peak_queue_length = scheduler_telemetry.peak_queue_length;
+    summary->scheduler_model_evictions = scheduler_telemetry.model_evictions;
+    summary->scheduler_peak_reserved_vram_mb = scheduler_telemetry.peak_reserved_vram_mb;
+
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase four execution complete: generator=%s completed=%zu failed=%zu cache_hits=%zu cache_misses=%zu",
+        "phase five execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
         context.generator_name,
         summary->completed_jobs,
         summary->failed_jobs,
-        runtime_context->cache_hits,
-        runtime_context->cache_misses
+        summary->scheduler_peak_queue_length,
+        summary->cache_hits,
+        summary->cache_misses,
+        summary->scheduler_model_evictions,
+        summary->scheduler_peak_reserved_vram_mb
     );
 
+    free(scheduled_jobs);
     beast2_generator_document_free(&document);
     return 0;
 }

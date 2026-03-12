@@ -11,6 +11,11 @@ typedef struct beast2_config {
     char log_file[BEAST2_MAX_PATH_LENGTH];
     int log_to_stderr;
     int create_missing_directories;
+    size_t scheduler_total_vram_mb;
+    size_t scheduler_model_cache_vram_mb;
+    size_t scheduler_generation_vram_mb;
+    size_t scheduler_preview_vram_mb;
+    size_t scheduler_buffer_vram_mb;
     size_t scan_directory_count;
     char scan_directories[BEAST2_MAX_SCAN_DIRECTORIES][BEAST2_MAX_PATH_LENGTH];
 } beast2_config;

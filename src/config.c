@@ -88,6 +88,31 @@ static int beast2_config_parse_bool(
     return -1;
 }
 
+static int beast2_config_parse_size(
+    const char *value,
+    size_t *parsed_value,
+    char *error_message,
+    size_t error_message_size
+) {
+    unsigned long long parsed = 0;
+    char *end = NULL;
+
+    if (value == NULL || *value == '\0') {
+        beast2_config_set_error(error_message, error_message_size, "numeric configuration value cannot be empty");
+        return -1;
+    }
+
+    parsed = strtoull(value, &end, 10);
+
+    if (end == value || *end != '\0') {
+        beast2_config_set_error(error_message, error_message_size, "numeric configuration values must be base-10 integers");
+        return -1;
+    }
+
+    *parsed_value = (size_t) parsed;
+    return 0;
+}
+
 static int beast2_config_set_default_scan_directories(beast2_config *config) {
     static const char *defaults[] = {
         "models",
@@ -176,6 +201,11 @@ void beast2_config_set_defaults(beast2_config *config) {
     snprintf(config->log_file, sizeof(config->log_file), "%s", "db/performance_logs/beast2.log");
     config->log_to_stderr = 1;
     config->create_missing_directories = 1;
+    config->scheduler_total_vram_mb = 24576;
+    config->scheduler_model_cache_vram_mb = 8192;
+    config->scheduler_generation_vram_mb = 12288;
+    config->scheduler_preview_vram_mb = 2048;
+    config->scheduler_buffer_vram_mb = 2048;
     beast2_config_set_default_scan_directories(config);
 }
 
@@ -277,6 +307,66 @@ int beast2_config_load(
                 beast2_config_parse_scan_directories(
                     config,
                     value,
+                    error_message,
+                    error_message_size
+                ) != 0
+            ) {
+                fclose(file);
+                return -1;
+            }
+        } else if (strcmp(key, "scheduler_total_vram_mb") == 0) {
+            if (
+                beast2_config_parse_size(
+                    value,
+                    &config->scheduler_total_vram_mb,
+                    error_message,
+                    error_message_size
+                ) != 0
+            ) {
+                fclose(file);
+                return -1;
+            }
+        } else if (strcmp(key, "scheduler_model_cache_vram_mb") == 0) {
+            if (
+                beast2_config_parse_size(
+                    value,
+                    &config->scheduler_model_cache_vram_mb,
+                    error_message,
+                    error_message_size
+                ) != 0
+            ) {
+                fclose(file);
+                return -1;
+            }
+        } else if (strcmp(key, "scheduler_generation_vram_mb") == 0) {
+            if (
+                beast2_config_parse_size(
+                    value,
+                    &config->scheduler_generation_vram_mb,
+                    error_message,
+                    error_message_size
+                ) != 0
+            ) {
+                fclose(file);
+                return -1;
+            }
+        } else if (strcmp(key, "scheduler_preview_vram_mb") == 0) {
+            if (
+                beast2_config_parse_size(
+                    value,
+                    &config->scheduler_preview_vram_mb,
+                    error_message,
+                    error_message_size
+                ) != 0
+            ) {
+                fclose(file);
+                return -1;
+            }
+        } else if (strcmp(key, "scheduler_buffer_vram_mb") == 0) {
+            if (
+                beast2_config_parse_size(
+                    value,
+                    &config->scheduler_buffer_vram_mb,
                     error_message,
                     error_message_size
                 ) != 0

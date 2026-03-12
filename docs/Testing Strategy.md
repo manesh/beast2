@@ -34,6 +34,8 @@ Current automated coverage:
   artifacts, SQLite media persistence, tag indexing, and thumbnail generation
 - `test_runtime` for the unified model runtime API, category/backend selection,
   cache hits, and deterministic runtime outputs
+- `test_scheduler` for priority ordering, model-residency cache hits, and LRU
+  eviction under VRAM budget pressure
 - CLI integration tests for help output, parser mode, parser all-prompts mode,
   runtime boot, execution mode, and invalid generator input
 
@@ -236,6 +238,13 @@ The highest-value immediate tests are:
 - diffusion workflows emit deterministic local image files
 - LLM workflows emit deterministic text outputs
 
+### Scheduler behavior
+
+- higher-priority jobs run before lower-priority queued jobs
+- scheduler-side model residency cache produces cache hits on repeated jobs
+- LRU eviction frees model-cache VRAM when a new model cannot fit
+- queue telemetry records peak queue depth and peak reserved VRAM
+
 ## Current gaps
 
 The automated harness now exists, but there is still important coverage missing:
@@ -245,6 +254,7 @@ The automated harness now exists, but there is still important coverage missing:
 - no golden-output file comparisons yet
 - no external ONNX Runtime, TensorRT, or llama.cpp integration tests yet
 - no gallery/query-layer tests yet
+- no concurrent or preemptive scheduler integration tests yet
 
 ## Suggested next rollout order
 
@@ -253,4 +263,5 @@ The automated harness now exists, but there is still important coverage missing:
 3. expand parser fixtures for edge cases and large inputs
 4. add reproducibility-oriented fixture metadata such as checkpoint hashes
 5. expand runtime tests toward external backend adapters as real inference dependencies land
-6. add gallery/query-layer and advanced media-library query tests
+6. add concurrent/preemptive scheduler integration tests
+7. add gallery/query-layer and advanced media-library query tests
