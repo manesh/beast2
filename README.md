@@ -125,26 +125,55 @@ If you want the original design rationale, start with these:
 
 ## Current implementation status
 
-Phase 0 of the roadmap now exists as a minimal native runtime.
+- [x] **Phase 0 - Core Infrastructure**
+  - native C project scaffold
+  - configuration loading
+  - logging to stderr and file
+  - filesystem layout bootstrap
+  - startup directory scanning
+- [x] **Phase 1 - Beast2 DSL Parser**
+  - line-oriented parser for `$b2_` sections
+  - prompt section parsing with `b2_section` and `b2_snippet`
+  - support for `b2_concat_comma`, `b2_concat_space`, and `b2_concat_newline`
+  - metadata capture for sections such as `$b2_generator`, `$b2_tags`, and `$b2_workflow`
+  - prompt variant expansion and printing from parsed generators
+- [ ] **Phase 2 - Generator Execution Engine**
+- [ ] **Phase 3 - Model Runtime Layer**
+- [ ] **Phase 4 - Media Library**
 
-The current `beast2` binary can:
+Today the repository contains a working native baseline plus the first DSL
+parser milestone. The runtime can boot and inspect its local workspace, and the
+parser can load a generator file, resolve prompt combinations, and print final
+prompts without attempting model execution yet.
 
-- start from a native C executable
-- load configuration from a simple key/value config file
-- create the Phase 0 workspace layout
-- write structured logs to disk and stderr
-- scan configured directories and report what it found
+## Roadmap highlights
 
-This implementation is intentionally small and dependency-free so the repository
-has a concrete runtime baseline before the DSL parser and execution engine are
-built.
+The roadmap is intentionally staged so Beast2 becomes useful as early as
+possible:
+
+- **Phase 0** establishes the native runtime foundation
+- **Phase 1** makes generator files real by parsing the Beast2 DSL
+- **Phase 2** turns parsed generators into executable workflows
+- **Phase 3** connects those workflows to local model inference
+- **Phase 4** stores outputs and metadata in a reusable media library
+
+The first major usable milestone is the vertical slice described in the docs:
+
+```text
+generator -> model -> output -> media library
+```
+
+Everything after that expands scale and capability: scheduling, memory systems,
+video generation, latent libraries, exploration tools, and local LLM-assisted
+workflow building.
 
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0 runtime implementation
+- `src/` - Phase 0 and Phase 1 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
+- `examples/` - sample Beast2 DSL generator files
 - `docs/` - architecture and roadmap documents
 
 ## Build
@@ -168,6 +197,18 @@ Or provide a custom configuration file:
 
 ```sh
 ./build/beast2 --config path/to/custom.conf
+```
+
+Parse a generator and print prompt variants:
+
+```sh
+./build/beast2 --generator examples/wan22_walk_cycle.b2
+```
+
+Print every generated prompt variant explicitly:
+
+```sh
+./build/beast2 --generator examples/wan22_walk_cycle.b2 --all-prompts
 ```
 
 ## Default workspace layout

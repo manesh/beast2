@@ -11,6 +11,7 @@ add_executable(beast2
     src/config.c
     src/filesystem.c
     src/logger.c
+    src/parser.c
     src/main.c
 )
 
