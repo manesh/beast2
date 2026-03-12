@@ -1,7 +1,7 @@
 **The Beast2 Philosophy of Local AI**  
   
 ```
-docs/local_ai_philosophy.md
+docs/the-beast2-philosophy-of-local-ai.md
 
 ```
   

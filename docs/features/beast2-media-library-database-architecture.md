@@ -27,6 +27,23 @@ The system also supports **structured text databases used by LLM workflows**.
   
 ⸻  
   
+**Current implementation note**  
+  
+The current repository implementation provides the first working slice of the
+media library described in this document, including:
+	•	filesystem media persistence  
+	•	SQLite metadata indexing  
+	•	tag and generator metadata tables  
+	•	generator history records  
+	•	thumbnail sidecars stored under `thumbs/`  
+  
+At the moment, this is a **native local media layer** intended to support the
+current execution pipeline. Advanced browsing queries, richer preview formats,
+UI gallery loading, and large-scale import workflows are still future
+expansions.  
+  
+⸻  
+  
 **Design Goals**  
   
 **Massive local libraries**  

@@ -1,0 +1,33 @@
+# Phase 1 parser example
+
+$b2_generator
+b2_name wan22_walk_cycle_demo
+
+$b2_positive_prompt
+b2_section characters
+b2_snippet Subject: a warrior walking
+b2_snippet Subject: a knight walking
+
+b2_concat_comma
+
+b2_section styles
+b2_snippet Style: cinematic realism
+b2_snippet Style: pixel art animation
+
+b2_concat_space
+
+b2_section motion
+b2_snippet jerky motion
+b2_snippet smooth motion
+
+$b2_tags
+b2_tag demo
+b2_tag walk_cycle
+b2_tag motion
+
+$b2_workflow
+b2_engine wan22
+b2_checkpoint wan22#demo123
+b2_seed 4242
+b2_steps 30
+b2_resolution 512x512

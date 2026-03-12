@@ -1,7 +1,7 @@
 **Beast2 UI Architecture**  
   
 ```
-docs/ui_architecture.md
+docs/features/beast2-ui-architecture.md
 
 ```
   

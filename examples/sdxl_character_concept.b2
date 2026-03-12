@@ -1,0 +1,29 @@
+# Phase 3 runtime-layer example
+
+$b2_generator
+b2_name sdxl_character_concept_demo
+
+$b2_positive_prompt
+b2_section subject
+b2_snippet Subject: a cinematic sci-fi explorer portrait
+b2_snippet Subject: a fantasy knight concept portrait
+
+b2_concat_comma
+
+b2_section style
+b2_snippet Style: painterly concept art
+b2_snippet Style: high detail matte painting
+
+$b2_tags
+b2_tag example
+b2_tag sdxl
+b2_tag diffusion
+
+$b2_workflow
+b2_engine sdxl
+b2_checkpoint sdxl#demo001
+b2_backend onnx
+b2_precision fp32
+b2_seed 1337
+b2_steps 24
+b2_resolution 16x16
