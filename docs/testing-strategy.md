@@ -39,8 +39,10 @@ Current automated coverage:
   eviction under VRAM budget pressure
 - `test_tensor_memory` for CPU/GPU tensor pool reuse, telemetry, and reused-byte
   accounting
+- `test_explorer` for latent interpolation, preview generation, and preview-cache reuse
 - CLI integration tests for help output, parser mode, parser all-prompts mode,
-  runtime boot, image execution mode, video execution mode, and invalid generator input
+  runtime boot, image execution mode, video execution mode, latent explorer mode,
+  and invalid generator input
 
 ## Testing principles
 
@@ -245,6 +247,13 @@ The highest-value immediate tests are:
 - latent rows are inserted into the `latents` table
 - latent files are linked back to source media through `media_id`
 
+### Latent explorer behavior
+
+- four corner latents can be blended with bilinear interpolation
+- preview outputs are generated deterministically for image and video latents
+- repeated preview requests hit the preview cache
+- preview jobs run through the scheduler as interactive-priority work
+
 ### Model runtime behavior
 
 - runtime category selection is stable for diffusion, video, and LLM engines
@@ -281,6 +290,7 @@ The automated harness now exists, but there is still important coverage missing:
 - no concurrent or preemptive scheduler integration tests yet
 - no real external-backend tensor pooling tests yet
 - no direct external-backend latent export tests yet
+- no full desktop/UI latent explorer tests yet
 
 ## Suggested next rollout order
 
@@ -293,3 +303,4 @@ The automated harness now exists, but there is still important coverage missing:
 7. add real external-backend tensor pooling and fragmentation tests
 8. add direct external-backend latent export and validation tests
 9. add gallery/query-layer and advanced media-library query tests
+10. add full interactive latent-explorer UI tests

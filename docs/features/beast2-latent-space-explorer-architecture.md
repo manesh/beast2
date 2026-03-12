@@ -32,10 +32,12 @@ library slice needed by this explorer:
 	•	video latent files  
 	•	motion vector files  
 	•	SQLite latent metadata linked to source media  
+	•	a CLI-based bilinear latent preview workflow  
+	•	a preview cache for repeated explorations  
   
-The interactive explorer UI and interpolation workflows described in this
-document are still future phases, but the underlying latent artifacts now exist
-on disk and in the database.  
+The full interactive explorer UI described in this document is still a future
+layer, but the underlying latent artifacts, interpolation path, and preview
+generation workflow now exist in the repository.  
   
 ⸻  
   

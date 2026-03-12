@@ -192,6 +192,12 @@ If you want the original design rationale, start with these:
   - deterministic motion vector files for video outputs
   - SQLite latent metadata rows linked back to source media
   - execution summaries now report first latent and first motion latent paths
+- [x] **Phase 9 - Latent Space Explorer**
+  - bilinear interpolation across a 2D latent grid
+  - scheduler-backed interactive preview jobs
+  - preview cache for repeated latent/cursor combinations
+  - deterministic image latent previews
+  - deterministic video latent previews
 
 Today the repository contains a working native baseline, a DSL parser, an
 execution engine, a model runtime layer, a media library, a GPU scheduler, and
@@ -203,7 +209,8 @@ through a unified model API, and the media library persists generated outputs pl
 metadata into a local SQLite database with thumbnail sidecars while the
 scheduler arbitrates queue order and VRAM reservations and the tensor memory
 system reuses pooled CPU/GPU buffers across inference work. Phase 8 now also
-stores deterministic latent library artifacts for image and video generations.
+stores deterministic latent library artifacts for image and video generations,
+and Phase 9 adds a scheduler-backed latent preview explorer.
 
 ### Implemented now
 
@@ -227,6 +234,9 @@ stores deterministic latent library artifacts for image and video generations.
 - latent file generation for image and video outputs
 - motion-vector latent generation for video outputs
 - SQLite latent metadata indexing
+- bilinear latent interpolation for 2D exploration
+- preview caching for repeated latent positions
+- deterministic latent image/video previews
 - reproducibility sidecars written next to generated outputs
 - SQLite-backed media metadata indexing
 - generated thumbnails and preview sidecars
@@ -250,6 +260,8 @@ stores deterministic latent library artifacts for image and video generations.
   video-model inference yet
 - the Phase 8 latent library stores deterministic reusable latent artifacts, but
   not direct backend-native tensor dumps from external inference engines yet
+- the Phase 9 explorer is currently a CLI-based preview workflow rather than a
+  full interactive desktop UI
 - the automated harness is still early and does not yet include sanitizers,
   fuzzing, or golden-output comparison tests
 
@@ -300,6 +312,7 @@ possible:
 - **Phase 6** adds pooled tensor/buffer reuse to reduce repeated allocations
 - **Phase 7** adds short local video clip generation
 - **Phase 8** stores reusable latent vectors and motion data
+- **Phase 9** adds latent interpolation and preview exploration
 
 Short version:
 
@@ -311,6 +324,7 @@ Short version:
 - then add pooled tensor memory reuse inside the runtime layer
 - then emit real short video clips for video-model workflows
 - then persist reusable latent and motion artifacts for future workflows
+- then explore those latents through cached interpolated previews
 
 The first major usable milestone is the vertical slice described in the docs:
 
@@ -325,7 +339,7 @@ workflow building.
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0 through Phase 8 runtime implementation
+- `src/` - Phase 0 through Phase 9 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
@@ -359,8 +373,10 @@ Current automated coverage includes:
 - scheduler unit tests
 - tensor-memory unit tests
 - latent persistence checks within execution tests
+- latent explorer unit tests
 - CLI integration tests for help, parser mode, parser all-prompts mode, runtime
-  boot, image execution mode, video execution mode, and invalid input
+  boot, image execution mode, video execution mode, latent explorer mode, and
+  invalid input
 
 ## Run
 
@@ -398,6 +414,16 @@ Execute a video generator through the Phase 8 pipeline:
 
 ```sh
 ./build/beast2 --run-generator examples/wan22-short-video-demo.b2
+```
+
+Explore four latent corners with bilinear interpolation:
+
+```sh
+A=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 0;")
+B=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 1;")
+C=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 2;")
+D=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 3;")
+./build/beast2 --explore-latents --latent-a "$A" --latent-b "$B" --latent-c "$C" --latent-d "$D" --x 0.5 --y 0.5
 ```
 
 ## Default workspace layout

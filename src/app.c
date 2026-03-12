@@ -6,6 +6,7 @@
 #include "beast2/config.h"
 #include "beast2/executor.h"
 #include "beast2/filesystem.h"
+#include "beast2/latent_explorer.h"
 #include "beast2/logger.h"
 #include "beast2/media_library.h"
 #include "beast2/parser.h"
@@ -432,6 +433,64 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
     if (summary.first_motion_latent_path[0] != '\0') {
         printf("First motion latent: %s\n", summary.first_motion_latent_path);
     }
+
+    beast2_cleanup_runtime(&runtime);
+    return 0;
+}
+
+int beast2_run_latent_explorer(
+    const char *config_path,
+    const long long latent_ids[4],
+    double x,
+    double y,
+    const char *preview_mode
+) {
+    beast2_runtime_context runtime;
+    beast2_latent_explorer_request request;
+    beast2_latent_explorer_result result;
+    char error_message[512];
+
+    memset(error_message, 0, sizeof(error_message));
+    memset(&request, 0, sizeof(request));
+    memset(&result, 0, sizeof(result));
+
+    if (beast2_prepare_runtime(config_path, &runtime, error_message, sizeof(error_message)) != 0) {
+        fprintf(stderr, "beast2: failed to prepare runtime: %s\n", error_message);
+        return 1;
+    }
+
+    memcpy(request.latent_ids, latent_ids, sizeof(request.latent_ids));
+    request.x = x;
+    request.y = y;
+    request.preview_mode = preview_mode;
+
+    if (
+        beast2_latent_explorer_preview(
+            &runtime.media_library,
+            &runtime.scheduler,
+            &runtime.model_runtime.tensor_memory,
+            &request,
+            &result,
+            error_message,
+            sizeof(error_message)
+        ) != 0
+    ) {
+        beast2_cleanup_runtime(&runtime);
+        fprintf(stderr, "beast2: failed to explore latents: %s\n", error_message);
+        return 1;
+    }
+
+    printf("Beast2 phase nine latent explorer preview complete.\n");
+    printf("Model: %s\n", result.model);
+    printf("Latent type: %s\n", result.latent_type);
+    printf("Preview mode: %s\n", preview_mode);
+    printf("Preview path: %s\n", result.preview_path);
+    printf("Cache key: %s\n", result.cache_key);
+    printf("Cache hit: %s\n", result.cache_hit ? "true" : "false");
+    printf("Scheduler cache hit: %s\n", result.scheduler_cache_hit ? "true" : "false");
+    printf("Dimensions: %zux%zu\n", result.width, result.height);
+    printf("Frame count: %zu\n", result.frame_count);
+    printf("Blended bytes: %zu\n", result.blended_bytes);
 
     beast2_cleanup_runtime(&runtime);
     return 0;

@@ -47,6 +47,7 @@ Current harness coverage includes:
 - model-runtime unit tests
 - scheduler unit tests
 - tensor-memory unit tests
+- latent-explorer unit tests
 - CLI integration tests
 
 ## Run
@@ -73,6 +74,16 @@ Phase 8 video execution example:
 
 ```sh
 ./build/beast2 --run-generator examples/wan22-short-video-demo.b2
+```
+
+Phase 9 latent explorer example:
+
+```sh
+A=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 0;")
+B=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 1;")
+C=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 2;")
+D=$(sqlite3 ./runtime/beast2/db/beast2.sqlite "select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 3;")
+./build/beast2 --explore-latents --latent-a "$A" --latent-b "$B" --latent-c "$C" --latent-d "$D" --x 0.5 --y 0.5
 ```
 
 Print all prompt variants:

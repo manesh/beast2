@@ -24,6 +24,7 @@ beast2_add_unit_test(test_config test_config.c)
 beast2_add_unit_test(test_filesystem test_filesystem.c)
 beast2_add_unit_test(test_scheduler test_scheduler.c)
 beast2_add_unit_test(test_tensor_memory test_tensor_memory.c)
+beast2_add_unit_test(test_explorer test_explorer.c)
 beast2_add_unit_test(test_execution test_execution.c)
 beast2_add_unit_test(test_runtime test_runtime.c)
 
@@ -76,3 +77,18 @@ add_test(
         --run-generator "${PROJECT_SOURCE_DIR}/tests/fixtures/valid/video_generator.b2"
 )
 set_tests_properties(beast2_cli_execute_video_generator PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+
+add_test(
+    NAME beast2_cli_explore_latents
+    COMMAND
+        bash
+        -lc
+        "rm -rf ./build/test_runtime/explorer_cli; \
+         ./build/beast2 --config tests/fixtures/config/execution-test.conf --run-generator examples/sdxl_character_concept.b2 >/dev/null; \
+         A=$(sqlite3 ./build/test_runtime/execution_cli/db/beast2.sqlite \"select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 0;\"); \
+         B=$(sqlite3 ./build/test_runtime/execution_cli/db/beast2.sqlite \"select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 1;\"); \
+         C=$(sqlite3 ./build/test_runtime/execution_cli/db/beast2.sqlite \"select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 2;\"); \
+         D=$(sqlite3 ./build/test_runtime/execution_cli/db/beast2.sqlite \"select latent_id from latents where latent_type='image_latent' order by latent_id limit 1 offset 3;\"); \
+         ./build/beast2 --config tests/fixtures/config/execution-test.conf --explore-latents --latent-a $A --latent-b $B --latent-c $C --latent-d $D --x 0.5 --y 0.5 >/dev/null"
+)
+set_tests_properties(beast2_cli_explore_latents PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
