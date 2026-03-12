@@ -392,13 +392,13 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
             sizeof(error_message)
         ) != 0
     ) {
-        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase ten execution failed: %s", error_message);
+        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase eleven execution failed: %s", error_message);
         beast2_cleanup_runtime(&runtime);
         fprintf(stderr, "beast2: failed to execute generator: %s\n", error_message);
         return 1;
     }
 
-    printf("Beast2 phase ten execution complete.\n");
+    printf("Beast2 phase eleven execution complete.\n");
     printf("Generator: %s\n", summary.generator_name);
     printf("Engine: %s\n", summary.engine);
     printf("Checkpoint: %s\n", summary.checkpoint);

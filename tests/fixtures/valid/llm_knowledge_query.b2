@@ -1,0 +1,22 @@
+$b2_generator
+b2_name phase11_knowledge_query
+
+$b2_positive_prompt
+b2_section request
+b2_snippet Describe a cyberpunk city skyline with reference context
+
+$b2_tags
+b2_tag demo
+b2_tag llm
+b2_tag knowledge-query
+
+$b2_workflow
+b2_engine qwen
+b2_checkpoint qwen#knowledge001
+b2_backend llama.cpp
+b2_precision int8
+b2_model_type llm
+b2_llm_task knowledge_query
+b2_llm_instruction summarize the most relevant encyclopedia entries
+b2_knowledge_source local_encyclopedia
+b2_knowledge_terms cyberpunk city neon skyline

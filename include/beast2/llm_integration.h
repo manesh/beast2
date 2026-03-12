@@ -11,7 +11,10 @@ typedef enum beast2_llm_task_kind {
     BEAST2_LLM_TASK_PROMPT_MUTATION = 1,
     BEAST2_LLM_TASK_GENERATOR_EDIT = 2,
     BEAST2_LLM_TASK_TAG_GENERATION = 3,
-    BEAST2_LLM_TASK_DATABASE_QUERY = 4
+    BEAST2_LLM_TASK_DATABASE_QUERY = 4,
+    BEAST2_LLM_TASK_KNOWLEDGE_QUERY = 5,
+    BEAST2_LLM_TASK_BELIEF_CONDITIONING = 6,
+    BEAST2_LLM_TASK_PROMPT_LIBRARY_QUERY = 7
 } beast2_llm_task_kind;
 
 typedef struct beast2_llm_workflow {
@@ -20,6 +23,8 @@ typedef struct beast2_llm_workflow {
     const char *instruction;
     const char *source_generator_path;
     const char *query_sql;
+    const char *knowledge_source;
+    const char *knowledge_terms;
     size_t attempts;
 } beast2_llm_workflow;
 

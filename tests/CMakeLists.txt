@@ -102,3 +102,12 @@ add_test(
         --run-generator "${PROJECT_SOURCE_DIR}/tests/fixtures/valid/llm_prompt_mutator.b2"
 )
 set_tests_properties(beast2_cli_execute_llm_generator PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+
+add_test(
+    NAME beast2_cli_execute_knowledge_generator
+    COMMAND
+        beast2
+        --config "${PROJECT_SOURCE_DIR}/tests/fixtures/config/execution-test.conf"
+        --run-generator "${PROJECT_SOURCE_DIR}/tests/fixtures/valid/llm_knowledge_query.b2"
+)
+set_tests_properties(beast2_cli_execute_knowledge_generator PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")

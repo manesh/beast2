@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "beast2/filesystem.h"
+#include "beast2/knowledge_db.h"
 
 static void beast2_llm_set_error(
     char *error_message,
@@ -320,6 +321,18 @@ beast2_llm_task_kind beast2_llm_task_kind_from_string(const char *value) {
         return BEAST2_LLM_TASK_DATABASE_QUERY;
     }
 
+    if (strcmp(value, "knowledge_query") == 0) {
+        return BEAST2_LLM_TASK_KNOWLEDGE_QUERY;
+    }
+
+    if (strcmp(value, "belief_conditioning") == 0) {
+        return BEAST2_LLM_TASK_BELIEF_CONDITIONING;
+    }
+
+    if (strcmp(value, "prompt_library_query") == 0) {
+        return BEAST2_LLM_TASK_PROMPT_LIBRARY_QUERY;
+    }
+
     return BEAST2_LLM_TASK_NONE;
 }
 
@@ -404,6 +417,53 @@ int beast2_llm_prepare_prompt(
             prepared_prompt_size,
             "TASK: database_query\ninstruction: %s\n%s\nprompt:\n%s\n",
             workflow->instruction != NULL ? workflow->instruction : "",
+            query_buffer,
+            base_prompt != NULL ? base_prompt : ""
+        );
+        return 0;
+    }
+
+    if (
+        workflow->kind == BEAST2_LLM_TASK_KNOWLEDGE_QUERY ||
+        workflow->kind == BEAST2_LLM_TASK_BELIEF_CONDITIONING ||
+        workflow->kind == BEAST2_LLM_TASK_PROMPT_LIBRARY_QUERY
+    ) {
+        if (media_library == NULL || media_library->db == NULL) {
+            beast2_llm_set_error(error_message, error_message_size, "knowledge-backed llm tasks require an initialized media library database");
+            return -1;
+        }
+
+        if (workflow->knowledge_source == NULL || *workflow->knowledge_source == '\0') {
+            beast2_llm_set_error(error_message, error_message_size, "knowledge-backed llm tasks require b2_knowledge_source");
+            return -1;
+        }
+
+        if (
+            beast2_knowledge_db_fetch_context(
+                media_library,
+                workflow->knowledge_source,
+                workflow->knowledge_terms != NULL && *workflow->knowledge_terms != '\0'
+                    ? workflow->knowledge_terms
+                    : base_prompt,
+                workflow->kind == BEAST2_LLM_TASK_BELIEF_CONDITIONING
+                    ? "belief_conditioning"
+                    : (workflow->kind == BEAST2_LLM_TASK_PROMPT_LIBRARY_QUERY ? "prompt_library_query" : "knowledge_query"),
+                query_buffer,
+                sizeof(query_buffer),
+                error_message,
+                error_message_size
+            ) != 0
+        ) {
+            return -1;
+        }
+
+        snprintf(
+            prepared_prompt,
+            prepared_prompt_size,
+            "TASK: %s\ninstruction: %s\nsource: %s\n%s\nprompt:\n%s\n",
+            workflow->task_name != NULL ? workflow->task_name : "knowledge_query",
+            workflow->instruction != NULL ? workflow->instruction : "",
+            workflow->knowledge_source,
             query_buffer,
             base_prompt != NULL ? base_prompt : ""
         );
@@ -588,6 +648,39 @@ int beast2_llm_finalize_output(
                 "BEAST2_PHASE10_DATABASE_QUERY\nprompt: %s\nquery: %s\nresponse: %s\n",
                 prepared_prompt != NULL ? prepared_prompt : "",
                 workflow->query_sql != NULL ? workflow->query_sql : "",
+                runtime_output != NULL ? runtime_output : ""
+            );
+            return 0;
+
+        case BEAST2_LLM_TASK_KNOWLEDGE_QUERY:
+            snprintf(
+                result->final_output,
+                sizeof(result->final_output),
+                "BEAST2_PHASE11_KNOWLEDGE_QUERY\nsource: %s\nprompt: %s\nresponse: %s\n",
+                workflow->knowledge_source != NULL ? workflow->knowledge_source : "",
+                prepared_prompt != NULL ? prepared_prompt : "",
+                runtime_output != NULL ? runtime_output : ""
+            );
+            return 0;
+
+        case BEAST2_LLM_TASK_BELIEF_CONDITIONING:
+            snprintf(
+                result->final_output,
+                sizeof(result->final_output),
+                "BEAST2_PHASE11_BELIEF_CONDITIONING\nsource: %s\nprompt: %s\nresponse: %s\n",
+                workflow->knowledge_source != NULL ? workflow->knowledge_source : "",
+                prepared_prompt != NULL ? prepared_prompt : "",
+                runtime_output != NULL ? runtime_output : ""
+            );
+            return 0;
+
+        case BEAST2_LLM_TASK_PROMPT_LIBRARY_QUERY:
+            snprintf(
+                result->final_output,
+                sizeof(result->final_output),
+                "BEAST2_PHASE11_PROMPT_LIBRARY_QUERY\nsource: %s\nprompt: %s\nresponse: %s\n",
+                workflow->knowledge_source != NULL ? workflow->knowledge_source : "",
+                prepared_prompt != NULL ? prepared_prompt : "",
                 runtime_output != NULL ? runtime_output : ""
             );
             return 0;

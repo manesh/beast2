@@ -68,6 +68,8 @@ typedef struct beast2_execution_context {
     const char *llm_instruction;
     const char *llm_source_generator;
     const char *llm_query_sql;
+    const char *knowledge_source;
+    const char *knowledge_terms;
     size_t llm_attempts;
     const char *output_template;
     const char *artifact_template;
@@ -556,6 +558,8 @@ static int beast2_prepare_execution_context(
     context->llm_instruction = NULL;
     context->llm_source_generator = NULL;
     context->llm_query_sql = NULL;
+    context->knowledge_source = NULL;
+    context->knowledge_terms = NULL;
     context->llm_attempts = 0;
     context->output_ext_override = NULL;
     context->resolved_output_ext = NULL;
@@ -639,6 +643,16 @@ static int beast2_prepare_execution_context(
         value = beast2_metadata_first_value(context->workflow_section, "b2_llm_query");
         if (value != NULL && *value != '\0') {
             context->llm_query_sql = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_knowledge_source");
+        if (value != NULL && *value != '\0') {
+            context->knowledge_source = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_knowledge_terms");
+        if (value != NULL && *value != '\0') {
+            context->knowledge_terms = value;
         }
 
         value = beast2_metadata_first_value(context->workflow_section, "b2_llm_attempts");
@@ -1181,7 +1195,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase ten execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
+        "phase eleven execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
         context.generator_name,
         context.engine,
         variant_count,
@@ -1243,6 +1257,8 @@ int beast2_execute_generator(
         llm_workflow.instruction = context.llm_instruction;
         llm_workflow.source_generator_path = context.llm_source_generator;
         llm_workflow.query_sql = context.llm_query_sql;
+        llm_workflow.knowledge_source = context.knowledge_source;
+        llm_workflow.knowledge_terms = context.knowledge_terms;
         llm_workflow.attempts = context.llm_attempts;
         inferred_category = beast2_model_request_category(
             &(beast2_model_request) {
@@ -1457,6 +1473,8 @@ int beast2_execute_generator(
         llm_workflow.instruction = context.llm_instruction;
         llm_workflow.source_generator_path = context.llm_source_generator;
         llm_workflow.query_sql = context.llm_query_sql;
+        llm_workflow.knowledge_source = context.knowledge_source;
+        llm_workflow.knowledge_terms = context.knowledge_terms;
         llm_workflow.attempts = context.llm_attempts;
 
         if (
@@ -1756,7 +1774,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase ten execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
+        "phase eleven execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
         context.generator_name,
         summary->completed_jobs,
         summary->failed_jobs,

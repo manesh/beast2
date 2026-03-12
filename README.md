@@ -204,6 +204,13 @@ If you want the original design rationale, start with these:
   - tag generation generators
   - database query generators
   - generated candidate `.b2` files for generator-edit workflows
+- [x] **Phase 11 - Knowledge Databases**
+  - structured local knowledge sources
+  - seeded encyclopedia, belief, and prompt-library entries
+  - named source lookups for LLM workflows
+  - knowledge query generators
+  - belief conditioning generators
+  - prompt library query generators
 
 Today the repository contains a working native baseline, a DSL parser, an
 execution engine, a model runtime layer, a media library, a GPU scheduler, and
@@ -217,7 +224,8 @@ scheduler arbitrates queue order and VRAM reservations and the tensor memory
 system reuses pooled CPU/GPU buffers across inference work. Phase 8 now also
 stores deterministic latent library artifacts for image and video generations,
 Phase 9 adds a scheduler-backed latent preview explorer, and Phase 10 adds
-task-specific local LLM generator workflows.
+task-specific local LLM generator workflows. Phase 11 adds structured local
+knowledge databases that feed context into those LLM tasks.
 
 ### Implemented now
 
@@ -246,6 +254,9 @@ task-specific local LLM generator workflows.
 - deterministic latent image/video previews
 - local LLM workflows for prompt mutation, generator editing, tag generation,
   and media-database querying
+- structured local knowledge sources for encyclopedia, belief, and prompt-library
+  workflows
+- knowledge-context injection into LLM prompts
 - generated candidate generator files from LLM editing tasks
 - reproducibility sidecars written next to generated outputs
 - SQLite-backed media metadata indexing
@@ -274,6 +285,8 @@ task-specific local LLM generator workflows.
   full interactive desktop UI
 - the Phase 10 LLM layer currently uses deterministic native LLM adapters rather
   than external llama.cpp inference
+- the Phase 11 knowledge layer currently uses seeded SQLite content and keyword
+  retrieval rather than vector search or large imported corpora
 - the automated harness is still early and does not yet include sanitizers,
   fuzzing, or golden-output comparison tests
 
@@ -326,6 +339,7 @@ possible:
 - **Phase 8** stores reusable latent vectors and motion data
 - **Phase 9** adds latent interpolation and preview exploration
 - **Phase 10** adds task-specific local LLM generator workflows
+- **Phase 11** adds structured local knowledge databases
 
 Short version:
 
@@ -339,6 +353,7 @@ Short version:
 - then persist reusable latent and motion artifacts for future workflows
 - then explore those latents through cached interpolated previews
 - then use local LLMs to mutate prompts, edit generators, tag outputs, and query local data
+- then provide named structured knowledge sources for those LLM workflows
 
 The first major usable milestone is the vertical slice described in the docs:
 
@@ -353,7 +368,7 @@ workflow building.
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0 through Phase 10 runtime implementation
+- `src/` - Phase 0 through Phase 11 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
@@ -388,7 +403,7 @@ Current automated coverage includes:
 - tensor-memory unit tests
 - latent persistence checks within execution tests
 - latent explorer unit tests
-- llm workflow unit tests
+- llm and knowledge workflow unit tests
 - CLI integration tests for help, parser mode, parser all-prompts mode, runtime
   boot, image execution mode, video execution mode, latent explorer mode, llm
   execution mode, and invalid input
@@ -451,6 +466,18 @@ Run an LLM generator editor:
 
 ```sh
 ./build/beast2 --run-generator examples/llama-generator-editor-demo.b2
+```
+
+Run a local encyclopedia knowledge query:
+
+```sh
+./build/beast2 --run-generator examples/qwen-local-encyclopedia-demo.b2
+```
+
+Run a belief-conditioned LLM response:
+
+```sh
+./build/beast2 --run-generator examples/qwen-belief-conditioning-demo.b2
 ```
 
 ## Default workspace layout

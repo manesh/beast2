@@ -171,6 +171,57 @@ static int beast2_test_llm_workflows(void) {
     BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "query_results:") == 0);
     BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "row_1:") == 0);
 
+    memset(&summary, 0, sizeof(summary));
+    BEAST2_TEST_ASSERT(
+        beast2_test_run_generator_with_context(
+            &config,
+            &logger,
+            &media_library,
+            &scheduler,
+            &runtime_context,
+            BEAST2_TEST_SOURCE_DIR "/tests/fixtures/valid/llm_knowledge_query.b2",
+            &summary
+        ) == 0
+    );
+    BEAST2_TEST_ASSERT_STRING_EQ(summary.llm_task, "knowledge_query");
+    BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "BEAST2_PHASE11_KNOWLEDGE_QUERY") == 0);
+    BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "knowledge_source: local_encyclopedia") == 0);
+    BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "Cyberpunk City") == 0);
+
+    memset(&summary, 0, sizeof(summary));
+    BEAST2_TEST_ASSERT(
+        beast2_test_run_generator_with_context(
+            &config,
+            &logger,
+            &media_library,
+            &scheduler,
+            &runtime_context,
+            BEAST2_TEST_SOURCE_DIR "/tests/fixtures/valid/llm_belief_conditioning.b2",
+            &summary
+        ) == 0
+    );
+    BEAST2_TEST_ASSERT_STRING_EQ(summary.llm_task, "belief_conditioning");
+    BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "BEAST2_PHASE11_BELIEF_CONDITIONING") == 0);
+    BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "belief_1_title") == 0);
+    BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "Offline First") == 0);
+
+    memset(&summary, 0, sizeof(summary));
+    BEAST2_TEST_ASSERT(
+        beast2_test_run_generator_with_context(
+            &config,
+            &logger,
+            &media_library,
+            &scheduler,
+            &runtime_context,
+            BEAST2_TEST_SOURCE_DIR "/tests/fixtures/valid/llm_prompt_library_query.b2",
+            &summary
+        ) == 0
+    );
+    BEAST2_TEST_ASSERT_STRING_EQ(summary.llm_task, "prompt_library_query");
+    BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "BEAST2_PHASE11_PROMPT_LIBRARY_QUERY") == 0);
+    BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "prompt_snippet_1") == 0);
+    BEAST2_TEST_ASSERT(beast2_test_contains(summary.first_output_path, "painterly concept art") == 0);
+
     BEAST2_TEST_ASSERT(sqlite3_open(summary.database_path, &db) == SQLITE_OK);
     {
         sqlite3_stmt *statement = NULL;
@@ -182,6 +233,17 @@ static int beast2_test_llm_workflows(void) {
         tag_count = sqlite3_column_int(statement, 0);
         sqlite3_finalize(statement);
         BEAST2_TEST_ASSERT(tag_count >= 1);
+    }
+    {
+        sqlite3_stmt *statement = NULL;
+        int source_count = 0;
+        BEAST2_TEST_ASSERT(
+            sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM knowledge_sources;", -1, &statement, NULL) == SQLITE_OK
+        );
+        BEAST2_TEST_ASSERT(sqlite3_step(statement) == SQLITE_ROW);
+        source_count = sqlite3_column_int(statement, 0);
+        sqlite3_finalize(statement);
+        BEAST2_TEST_ASSERT(source_count >= 3);
     }
     sqlite3_close(db);
 

@@ -48,7 +48,7 @@ Current harness coverage includes:
 - scheduler unit tests
 - tensor-memory unit tests
 - latent-explorer unit tests
-- llm workflow unit tests
+- llm and knowledge workflow unit tests
 - CLI integration tests
 
 ## Run
@@ -97,6 +97,18 @@ Phase 10 LLM generator editor example:
 
 ```sh
 ./build/beast2 --run-generator examples/llama-generator-editor-demo.b2
+```
+
+Phase 11 knowledge query example:
+
+```sh
+./build/beast2 --run-generator examples/qwen-local-encyclopedia-demo.b2
+```
+
+Phase 11 belief conditioning example:
+
+```sh
+./build/beast2 --run-generator examples/qwen-belief-conditioning-demo.b2
 ```
 
 Print all prompt variants:

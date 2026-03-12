@@ -1,0 +1,22 @@
+$b2_generator
+b2_name phase11_belief_conditioning
+
+$b2_positive_prompt
+b2_section request
+b2_snippet Explain the benefits of local private generation
+
+$b2_tags
+b2_tag demo
+b2_tag llm
+b2_tag belief-conditioning
+
+$b2_workflow
+b2_engine qwen
+b2_checkpoint qwen#belief001
+b2_backend llama.cpp
+b2_precision int8
+b2_model_type llm
+b2_llm_task belief_conditioning
+b2_llm_instruction respond using the belief database perspective
+b2_knowledge_source belief_db
+b2_knowledge_terms offline local privacy reproducibility

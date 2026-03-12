@@ -41,7 +41,7 @@ Current automated coverage:
   accounting
 - `test_explorer` for latent interpolation, preview generation, and preview-cache reuse
 - `test_llm` for prompt mutation, generator editing, tag generation, and
-  database-query LLM workflows
+  database-query, encyclopedia, belief, and prompt-library LLM workflows
 - CLI integration tests for help output, parser mode, parser all-prompts mode,
   runtime boot, image execution mode, video execution mode, latent explorer mode,
   llm execution mode, and invalid generator input
@@ -265,12 +265,13 @@ The highest-value immediate tests are:
 - tag-generation workflows persist generated tags through the media layer
 - database-query workflows summarize local SQLite query results
 
-### LLM workflow behavior
+### Knowledge database behavior
 
-- prompt-mutation generators emit multiple deterministic prompt variants
-- generator-edit workflows create candidate `.b2` generator files
-- tag-generation workflows emit and persist generated tags
-- database-query workflows summarize local SQLite results through the LLM layer
+- named sources exist for local encyclopedia, belief database, and prompt library
+- knowledge queries retrieve matching encyclopedia entries
+- belief conditioning injects belief-source context into llm prompts
+- prompt-library queries retrieve reusable prompt snippets
+- seeded example data is available immediately in the local SQLite database
 
 ### Model runtime behavior
 
@@ -310,6 +311,7 @@ The automated harness now exists, but there is still important coverage missing:
 - no direct external-backend latent export tests yet
 - no full desktop/UI latent explorer tests yet
 - no external llama.cpp integration tests yet
+- no large imported knowledge-corpus tests yet
 
 ## Suggested next rollout order
 
@@ -324,3 +326,4 @@ The automated harness now exists, but there is still important coverage missing:
 9. add gallery/query-layer and advanced media-library query tests
 10. add full interactive latent-explorer UI tests
 11. add external llama.cpp-backed LLM task validation tests
+12. add large knowledge-corpus import and retrieval tests

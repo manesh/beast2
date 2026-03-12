@@ -1,0 +1,22 @@
+$b2_generator
+b2_name phase11_prompt_library_query
+
+$b2_positive_prompt
+b2_section request
+b2_snippet Find reusable cinematic dusk prompt snippets
+
+$b2_tags
+b2_tag demo
+b2_tag llm
+b2_tag prompt-library
+
+$b2_workflow
+b2_engine qwen
+b2_checkpoint qwen#promptlib001
+b2_backend llama.cpp
+b2_precision int8
+b2_model_type llm
+b2_llm_task prompt_library_query
+b2_llm_instruction return matching prompt snippets
+b2_knowledge_source prompt_library
+b2_knowledge_terms cinematic dusk painterly

@@ -10,6 +10,7 @@
 #include <time.h>
 
 #include "beast2/filesystem.h"
+#include "beast2/knowledge_db.h"
 
 static void beast2_media_set_error(
     char *error_message,
@@ -696,6 +697,12 @@ int beast2_media_library_init(
     }
 
     if (beast2_media_exec_sql(context->db, schema_sql, error_message, error_message_size) != 0) {
+        sqlite3_close(context->db);
+        context->db = NULL;
+        return -1;
+    }
+
+    if (beast2_knowledge_db_init(context, error_message, error_message_size) != 0) {
         sqlite3_close(context->db);
         context->db = NULL;
         return -1;

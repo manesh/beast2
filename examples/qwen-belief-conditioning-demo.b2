@@ -1,0 +1,24 @@
+# Phase 11 belief conditioning example
+
+$b2_generator
+b2_name qwen_belief_conditioning_demo
+
+$b2_positive_prompt
+b2_section request
+b2_snippet Describe why local private generation matters for a cinematic workflow
+
+$b2_tags
+b2_tag example
+b2_tag qwen
+b2_tag belief-db
+
+$b2_workflow
+b2_engine qwen
+b2_checkpoint qwen#belief010
+b2_backend llama.cpp
+b2_precision int8
+b2_model_type llm
+b2_llm_task belief_conditioning
+b2_llm_instruction answer from the perspective of an offline-first local tool
+b2_knowledge_source belief_db
+b2_knowledge_terms offline private local reproducibility

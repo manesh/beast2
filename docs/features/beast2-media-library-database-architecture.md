@@ -37,6 +37,7 @@ media library described in this document, including:
 	•	generator history records  
 	•	thumbnail sidecars stored under `thumbs/`  
 	•	latent records stored in the `latents` table  
+	•	named local knowledge sources and entries stored in SQLite  
   
 At the moment, this is a **native local media layer** intended to support the
 current execution pipeline. Advanced browsing queries, richer preview formats,
