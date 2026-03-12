@@ -23,6 +23,7 @@ beast2_add_unit_test(test_parser test_parser.c)
 beast2_add_unit_test(test_config test_config.c)
 beast2_add_unit_test(test_filesystem test_filesystem.c)
 beast2_add_unit_test(test_execution test_execution.c)
+beast2_add_unit_test(test_runtime test_runtime.c)
 
 add_test(NAME beast2_cli_help COMMAND beast2 --help)
 set_tests_properties(beast2_cli_help PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")

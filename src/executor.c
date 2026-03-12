@@ -8,6 +8,7 @@
 
 #include "beast2/filesystem.h"
 #include "beast2/parser.h"
+#include "beast2/runtime.h"
 
 typedef enum beast2_job_status {
     BEAST2_JOB_STATUS_PENDING = 0,
@@ -33,6 +34,7 @@ typedef struct beast2_execution_job {
 typedef struct beast2_execution_context {
     const beast2_config *config;
     beast2_logger *logger;
+    beast2_model_runtime_context *runtime_context;
     const beast2_generator_document *document;
     const beast2_prompt_block *prompt_block;
     const beast2_metadata_section *workflow_section;
@@ -43,10 +45,16 @@ typedef struct beast2_execution_context {
     const char *seed;
     const char *steps;
     const char *resolution;
+    const char *backend;
+    const char *precision;
+    const char *runtime;
+    const char *model_type;
     const char *output_template;
     const char *artifact_template;
     const char *state_template;
-    const char *output_ext;
+    const char *output_ext_override;
+    const char *resolved_output_ext;
+    beast2_model_category active_category;
     char checkpoint_hash[128];
     char tags_joined[1024];
 } beast2_execution_context;
@@ -193,6 +201,30 @@ static int beast2_join_tags(
     return 0;
 }
 
+static const char *beast2_default_output_extension_for_category(beast2_model_category category) {
+    switch (category) {
+        case BEAST2_MODEL_CATEGORY_DIFFUSION:
+            return "ppm";
+        case BEAST2_MODEL_CATEGORY_VIDEO:
+        case BEAST2_MODEL_CATEGORY_LLM:
+        case BEAST2_MODEL_CATEGORY_UNKNOWN:
+        default:
+            return "txt";
+    }
+}
+
+static const char *beast2_default_output_root_for_category(beast2_model_category category) {
+    switch (category) {
+        case BEAST2_MODEL_CATEGORY_VIDEO:
+            return "outputs/videos";
+        case BEAST2_MODEL_CATEGORY_DIFFUSION:
+        case BEAST2_MODEL_CATEGORY_LLM:
+        case BEAST2_MODEL_CATEGORY_UNKNOWN:
+        default:
+            return "outputs/images";
+    }
+}
+
 static const char *beast2_template_variable_value(
     const beast2_execution_context *context,
     const beast2_execution_job *job,
@@ -230,7 +262,15 @@ static const char *beast2_template_variable_value(
     }
 
     if (strcmp(name, "ext") == 0) {
-        return context->output_ext;
+        if (context->resolved_output_ext != NULL) {
+            return context->resolved_output_ext;
+        }
+
+        if (context->output_ext_override != NULL) {
+            return context->output_ext_override;
+        }
+
+        return "txt";
     }
 
     return NULL;
@@ -351,6 +391,7 @@ static int beast2_prepare_execution_context(
     beast2_execution_context *context,
     const beast2_config *config,
     beast2_logger *logger,
+    beast2_model_runtime_context *runtime_context,
     const beast2_generator_document *document,
     char *error_message,
     size_t error_message_size
@@ -367,17 +408,24 @@ static int beast2_prepare_execution_context(
 
     context->config = config;
     context->logger = logger;
+    context->runtime_context = runtime_context;
     context->document = document;
     context->prompt_block = prompt_block;
     context->workflow_section = beast2_generator_find_metadata_section(document, "b2_workflow");
     context->tags_section = beast2_generator_find_metadata_section(document, "b2_tags");
     context->generator_name = document->generator_name != NULL ? document->generator_name : "unnamed_generator";
-    context->engine = "mock_model";
-    context->checkpoint = "mock_model#default";
+    context->engine = "stable_diffusion";
+    context->checkpoint = "stable_diffusion#default";
     context->seed = "0";
     context->steps = "1";
-    context->resolution = "unknown";
-    context->output_ext = "txt";
+    context->resolution = "32x32";
+    context->backend = NULL;
+    context->precision = "fp32";
+    context->runtime = NULL;
+    context->model_type = NULL;
+    context->output_ext_override = NULL;
+    context->resolved_output_ext = NULL;
+    context->active_category = BEAST2_MODEL_CATEGORY_UNKNOWN;
 
     if (context->workflow_section != NULL) {
         const char *value = NULL;
@@ -407,6 +455,26 @@ static int beast2_prepare_execution_context(
             context->resolution = value;
         }
 
+        value = beast2_metadata_first_value(context->workflow_section, "b2_backend");
+        if (value != NULL && *value != '\0') {
+            context->backend = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_precision");
+        if (value != NULL && *value != '\0') {
+            context->precision = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_runtime");
+        if (value != NULL && *value != '\0') {
+            context->runtime = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_model_type");
+        if (value != NULL && *value != '\0') {
+            context->model_type = value;
+        }
+
         value = beast2_metadata_first_value(context->workflow_section, "b2_output_template");
         if (value != NULL && *value != '\0') {
             context->output_template = value;
@@ -424,7 +492,7 @@ static int beast2_prepare_execution_context(
 
         value = beast2_metadata_first_value(context->workflow_section, "b2_output_ext");
         if (value != NULL && *value != '\0') {
-            context->output_ext = value;
+            context->output_ext_override = value;
         }
     }
 
@@ -477,6 +545,8 @@ static int beast2_build_default_paths(
     size_t error_message_size
 ) {
     char shard[3];
+    const char *output_root = beast2_default_output_root_for_category(context->active_category);
+    const char *output_ext = context->resolved_output_ext != NULL ? context->resolved_output_ext : "txt";
 
     shard[0] = job->job_id[0];
     shard[1] = job->job_id[1];
@@ -486,10 +556,11 @@ static int beast2_build_default_paths(
         snprintf(
             job->output_relative_path,
             sizeof(job->output_relative_path),
-            "outputs/images/%s/%s.%s",
+            "%s/%s/%s.%s",
+            output_root,
             shard,
             job->job_id,
-            context->output_ext
+            output_ext
         ) >= (int) sizeof(job->output_relative_path)
     ) {
         beast2_execution_set_error(error_message, error_message_size, "default output path exceeds supported length");
@@ -500,7 +571,8 @@ static int beast2_build_default_paths(
         snprintf(
             job->generator_artifact_relative_path,
             sizeof(job->generator_artifact_relative_path),
-            "outputs/images/%s/%s.b2",
+            "%s/%s/%s.b2",
+            output_root,
             shard,
             job->job_id
         ) >= (int) sizeof(job->generator_artifact_relative_path)
@@ -610,53 +682,19 @@ static int beast2_resolve_job_paths(
 }
 
 static int beast2_write_model_output(
-    const beast2_execution_context *context,
+    const beast2_model_result *result,
     const beast2_execution_job *job,
     char *error_message,
     size_t error_message_size
 ) {
-    char contents[16384];
-
-    if (
-        snprintf(
-            contents,
-            sizeof(contents),
-            "BEAST2_PHASE2_OUTPUT\n"
-            "kind: simulated_media\n"
-            "generator: %s\n"
-            "engine: %s\n"
-            "checkpoint: %s\n"
-            "seed: %s\n"
-            "steps: %s\n"
-            "resolution: %s\n"
-            "variant: %zu\n"
-            "job_id: %s\n"
-            "prompt_hash: %s\n"
-            "prompt: %s\n"
-            "tags: %s\n",
-            context->generator_name,
-            context->engine,
-            context->checkpoint,
-            context->seed,
-            context->steps,
-            context->resolution,
-            job->variant_index + 1,
-            job->job_id,
-            job->prompt_hash,
-            job->prompt,
-            context->tags_joined[0] == '\0' ? "(none)" : context->tags_joined
-        ) >= (int) sizeof(contents)
-    ) {
-        beast2_execution_set_error(error_message, error_message_size, "simulated output exceeds supported length");
-        return -1;
-    }
-
-    return beast2_write_text_file(job->output_path, contents, error_message, error_message_size);
+    return beast2_write_text_file(job->output_path, result->content, error_message, error_message_size);
 }
 
 static int beast2_write_generator_artifact(
     const beast2_execution_context *context,
     const beast2_execution_job *job,
+    const beast2_model_handle *handle,
+    const beast2_model_result *result,
     char *error_message,
     size_t error_message_size
 ) {
@@ -667,7 +705,7 @@ static int beast2_write_generator_artifact(
     length += (size_t) snprintf(
         contents + length,
         sizeof(contents) - length,
-        "# Beast2 phase 2 reproducibility artifact\n\n"
+        "# Beast2 phase 3 reproducibility artifact\n\n"
         "$b2_generator\n"
         "b2_name %s\n"
         "b2_variant %zu\n"
@@ -725,6 +763,10 @@ static int beast2_write_generator_artifact(
         "b2_save_media %s\n"
         "b2_engine %s\n"
         "b2_checkpoint %s\n"
+        "b2_backend %s\n"
+        "b2_precision %s\n"
+        "b2_model_type %s\n"
+        "b2_output_kind %s\n"
         "b2_seed %s\n"
         "b2_steps %s\n"
         "b2_resolution %s\n"
@@ -733,6 +775,10 @@ static int beast2_write_generator_artifact(
         job->job_id,
         context->engine,
         context->checkpoint,
+        beast2_runtime_backend_name(handle->backend),
+        beast2_precision_mode_name(handle->precision),
+        beast2_model_category_name(handle->category),
+        beast2_output_kind_name(result->output_kind),
         context->seed,
         context->steps,
         context->resolution,
@@ -750,6 +796,8 @@ static int beast2_write_generator_artifact(
 static int beast2_write_state_report(
     const beast2_execution_context *context,
     const beast2_execution_job *job,
+    const beast2_model_handle *handle,
+    const beast2_model_result *result,
     char *error_message,
     size_t error_message_size
 ) {
@@ -763,14 +811,28 @@ static int beast2_write_state_report(
             "generator: %s\n"
             "job_id: %s\n"
             "variant: %zu\n"
+            "engine: %s\n"
+            "checkpoint: %s\n"
+            "backend: %s\n"
+            "precision: %s\n"
+            "model_type: %s\n"
+            "output_kind: %s\n"
             "step_1: b2_prompt_build completed\n"
             "step_2: b2_model_run completed\n"
             "step_3: b2_save_media completed\n"
+            "inference_steps: %zu\n"
             "output_path: %s\n"
             "generator_artifact: %s\n",
             context->generator_name,
             job->job_id,
             job->variant_index + 1,
+            context->engine,
+            context->checkpoint,
+            beast2_runtime_backend_name(handle->backend),
+            beast2_precision_mode_name(handle->precision),
+            beast2_model_category_name(handle->category),
+            beast2_output_kind_name(result->output_kind),
+            result->inference_steps,
             job->output_relative_path,
             job->generator_artifact_relative_path
         ) >= (int) sizeof(contents)
@@ -785,6 +847,7 @@ static int beast2_write_state_report(
 int beast2_execute_generator(
     const beast2_config *config,
     beast2_logger *logger,
+    beast2_model_runtime_context *runtime_context,
     const char *generator_path,
     beast2_execution_summary *summary,
     char *error_message,
@@ -814,6 +877,7 @@ int beast2_execute_generator(
             &context,
             config,
             logger,
+            runtime_context,
             &document,
             error_message,
             error_message_size
@@ -834,7 +898,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase two execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s",
+        "phase three execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s",
         context.generator_name,
         context.engine,
         variant_count,
@@ -848,8 +912,15 @@ int beast2_execute_generator(
 
     for (variant_index = 0; variant_index < variant_count; variant_index++) {
         beast2_execution_job job;
+        beast2_model_request request;
+        beast2_model_handle handle;
+        beast2_model_result result;
+        const char *output_ext = NULL;
 
         memset(&job, 0, sizeof(job));
+        memset(&request, 0, sizeof(request));
+        memset(&handle, 0, sizeof(handle));
+        memset(&result, 0, sizeof(result));
         job.variant_index = variant_index;
         job.status = BEAST2_JOB_STATUS_PENDING;
 
@@ -878,7 +949,39 @@ int beast2_execute_generator(
 
         beast2_build_job_id(&context, &job);
 
+        request.engine = context.engine;
+        request.checkpoint = context.checkpoint;
+        request.prompt = job.prompt;
+        request.seed = context.seed;
+        request.steps = context.steps;
+        request.resolution = context.resolution;
+        request.backend = context.backend;
+        request.precision = context.precision;
+        request.runtime = context.runtime;
+        request.model_type = context.model_type;
+
+        if (
+            beast2_model_load(
+                runtime_context,
+                &request,
+                &handle,
+                error_message,
+                error_message_size
+            ) != 0
+        ) {
+            summary->failed_jobs++;
+            beast2_generator_document_free(&document);
+            return -1;
+        }
+
+        output_ext = context.output_ext_override != NULL
+            ? context.output_ext_override
+            : beast2_default_output_extension_for_category(handle.category);
+        context.resolved_output_ext = output_ext;
+        context.active_category = handle.category;
+
         if (beast2_resolve_job_paths(&context, &job, error_message, error_message_size) != 0) {
+            beast2_model_unload(runtime_context, &handle);
             summary->failed_jobs++;
             beast2_generator_document_free(&document);
             return -1;
@@ -897,16 +1000,30 @@ int beast2_execute_generator(
         beast2_logger_log(
             logger,
             BEAST2_LOG_LEVEL_INFO,
-            "job[%zu/%zu] step=b2_model_run engine=%s checkpoint=%s prompt_hash=%s",
+            "job[%zu/%zu] step=b2_model_run engine=%s checkpoint=%s backend=%s precision=%s prompt_hash=%s cache_hit=%s",
             variant_index + 1,
             variant_count,
             context.engine,
             context.checkpoint,
-            job.prompt_hash
+            beast2_runtime_backend_name(handle.backend),
+            beast2_precision_mode_name(handle.precision),
+            job.prompt_hash,
+            handle.cache_hit ? "true" : "false"
         );
 
-        if (beast2_write_model_output(&context, &job, error_message, error_message_size) != 0) {
+        if (
+            beast2_model_infer(
+                runtime_context,
+                &handle,
+                &request,
+                &result,
+                error_message,
+                error_message_size
+            ) != 0 ||
+            beast2_write_model_output(&result, &job, error_message, error_message_size) != 0
+        ) {
             job.status = BEAST2_JOB_STATUS_FAILED;
+            beast2_model_unload(runtime_context, &handle);
             summary->failed_jobs++;
             beast2_generator_document_free(&document);
             return -1;
@@ -915,34 +1032,48 @@ int beast2_execute_generator(
         beast2_logger_log(
             logger,
             BEAST2_LOG_LEVEL_INFO,
-            "job[%zu/%zu] step=b2_save_media output=%s",
+            "job[%zu/%zu] step=b2_save_media output=%s kind=%s",
             variant_index + 1,
             variant_count,
-            job.output_relative_path
+            job.output_relative_path,
+            beast2_output_kind_name(result.output_kind)
         );
 
         if (
             beast2_write_generator_artifact(
                 &context,
                 &job,
+                &handle,
+                &result,
                 error_message,
                 error_message_size
             ) != 0 ||
             beast2_write_state_report(
                 &context,
                 &job,
+                &handle,
+                &result,
                 error_message,
                 error_message_size
             ) != 0
         ) {
             job.status = BEAST2_JOB_STATUS_FAILED;
+            beast2_model_unload(runtime_context, &handle);
             summary->failed_jobs++;
             beast2_generator_document_free(&document);
             return -1;
         }
 
+        beast2_model_unload(runtime_context, &handle);
         job.status = BEAST2_JOB_STATUS_COMPLETED;
         summary->completed_jobs++;
+
+        snprintf(summary->backend, sizeof(summary->backend), "%s", beast2_runtime_backend_name(handle.backend));
+        snprintf(summary->precision, sizeof(summary->precision), "%s", beast2_precision_mode_name(handle.precision));
+        snprintf(summary->model_category, sizeof(summary->model_category), "%s", beast2_model_category_name(handle.category));
+        snprintf(summary->output_kind, sizeof(summary->output_kind), "%s", beast2_output_kind_name(result.output_kind));
+        summary->cache_hits = runtime_context->cache_hits;
+        summary->cache_misses = runtime_context->cache_misses;
 
         if (summary->first_output_path[0] == '\0') {
             snprintf(summary->first_output_path, sizeof(summary->first_output_path), "%s", job.output_path);
@@ -957,20 +1088,23 @@ int beast2_execute_generator(
         beast2_logger_log(
             logger,
             BEAST2_LOG_LEVEL_INFO,
-            "job[%zu/%zu] state=completed id=%s",
+            "job[%zu/%zu] state=completed id=%s model=%s",
             variant_index + 1,
             variant_count,
-            job.job_id
+            job.job_id,
+            handle.model_id
         );
     }
 
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase two execution complete: generator=%s completed=%zu failed=%zu",
+        "phase three execution complete: generator=%s completed=%zu failed=%zu cache_hits=%zu cache_misses=%zu",
         context.generator_name,
         summary->completed_jobs,
-        summary->failed_jobs
+        summary->failed_jobs,
+        runtime_context->cache_hits,
+        runtime_context->cache_misses
     );
 
     beast2_generator_document_free(&document);

@@ -42,6 +42,7 @@ Current harness coverage includes:
 - config unit tests
 - filesystem unit tests
 - execution-engine unit tests
+- model-runtime unit tests
 - CLI integration tests
 
 ## Run
@@ -58,10 +59,10 @@ Phase 1 parser example:
 ./build/beast2 --generator examples/wan22_walk_cycle.b2
 ```
 
-Phase 2 execution example:
+Phase 3 runtime-backed execution example:
 
 ```sh
-./build/beast2 --run-generator examples/wan22_walk_cycle.b2
+./build/beast2 --run-generator examples/sdxl_character_concept.b2
 ```
 
 Print all prompt variants:

@@ -1,5 +1,5 @@
 $b2_generator
-b2_name phase2_execution_demo
+b2_name phase3_sdxl_demo
 
 $b2_positive_prompt
 b2_section subject
@@ -11,8 +11,10 @@ b2_tag demo
 b2_tag reproducible
 
 $b2_workflow
-b2_engine wan22
-b2_checkpoint wan22#abc123
+b2_engine sdxl
+b2_checkpoint sdxl#abc123
+b2_backend onnx
+b2_precision fp32
 b2_seed 9001
 b2_steps 20
-b2_resolution 512x512
+b2_resolution 8x8

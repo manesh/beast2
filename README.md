@@ -154,16 +154,22 @@ If you want the original design rationale, start with these:
     - `b2_prompt_build`
     - `b2_model_run`
     - `b2_save_media`
-  - deterministic simulated model outputs written to the filesystem
+  - deterministic execution outputs written to the filesystem
   - output-side generator artifacts with reproducibility metadata
-- [ ] **Phase 3 - Model Runtime Layer**
+- [x] **Phase 3 - Model Runtime Layer**
+  - unified `model_load()` / `model_infer()` / `model_unload()` API
+  - runtime selection across diffusion, video, and LLM model categories
+  - backend selection for ONNX, TensorRT, llama.cpp, and Python fallback modes
+  - deterministic local runtime implementations for image, video-manifest, and text outputs
+  - loaded-model cache with stable cache-hit tracking across variant jobs
 - [ ] **Phase 4 - Media Library**
 
-Today the repository contains a working native baseline, a DSL parser, and a
-minimal execution engine. The runtime can boot and inspect its local workspace,
-the parser can load and expand generator prompts, and the execution engine can
-run prompt variants through a deterministic Phase 2 pipeline that produces
-filesystem outputs and reproducibility sidecars.
+Today the repository contains a working native baseline, a DSL parser, an
+execution engine, and a model runtime layer. The runtime can boot and inspect
+its local workspace, the parser can load and expand generator prompts, the
+execution engine can schedule per-variant jobs, and the runtime layer can
+produce deterministic local image, video-manifest, and text outputs through a
+unified model API.
 
 ### Implemented now
 
@@ -174,16 +180,21 @@ filesystem outputs and reproducibility sidecars.
 - metadata capture for generator, tag, and workflow sections
 - CLI inspection of rendered prompt variants
 - workflow execution with deterministic per-variant jobs
+- unified model runtime API with load/infer/unload semantics
+- diffusion, video, and LLM runtime selection
+- loaded-model cache with cache-hit reporting
 - reproducibility sidecars written next to generated outputs
-- initial CTest harness with unit and CLI integration tests
+- deterministic local image generation for diffusion-model workflows
+- initial CTest harness with unit and CLI integration tests, including runtime tests
 
 ### Current limitations
 
-- Phase 2 uses a deterministic simulated model runner, not a real inference backend
+- Phase 3 uses deterministic native runtime implementations rather than external
+  ONNX Runtime, TensorRT, or llama.cpp dependencies
 - workflow metadata is only minimally interpreted at execution time
 - prompt blocks are currently identified by section names containing `prompt`
-- reproducibility conventions are now partially enforced in output artifacts, but
-  not yet by a full model runtime or media database
+- reproducibility conventions are enforced in output artifacts and runtime
+  selection, but not yet by a full media database
 - the automated harness is still early and does not yet include sanitizers,
   fuzzing, or golden-output comparison tests
 
@@ -227,14 +238,14 @@ possible:
 - **Phase 0** establishes the native runtime foundation
 - **Phase 1** makes generator files real by parsing the Beast2 DSL
 - **Phase 2** turns parsed generators into executable workflows
-- **Phase 3** connects those workflows to local model inference
+- **Phase 3** connects those workflows to a unified local model runtime layer
 - **Phase 4** stores outputs and metadata in a reusable media library
 
 Short version:
 
 - first make generators parseable
 - then make them executable
-- then make them reproducible against exact local model artifacts
+- then give execution a real model runtime interface and cache
 - then make outputs searchable, reusable, and scalable
 
 The first major usable milestone is the vertical slice described in the docs:
@@ -250,7 +261,7 @@ workflow building.
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0, Phase 1, and Phase 2 runtime implementation
+- `src/` - Phase 0, Phase 1, Phase 2, and Phase 3 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
@@ -280,6 +291,7 @@ Current automated coverage includes:
 - config unit tests
 - filesystem unit tests
 - execution-engine unit tests
+- model-runtime unit tests
 - CLI integration tests for help, parser mode, parser all-prompts mode, runtime
   boot, execution mode, and invalid input
 
@@ -309,10 +321,10 @@ Print every generated prompt variant explicitly:
 ./build/beast2 --generator examples/wan22_walk_cycle.b2 --all-prompts
 ```
 
-Execute a generator through the Phase 2 workflow engine:
+Execute a generator through the Phase 3 runtime-backed workflow engine:
 
 ```sh
-./build/beast2 --run-generator examples/wan22_walk_cycle.b2
+./build/beast2 --run-generator examples/sdxl_character_concept.b2
 ```
 
 ## Default workspace layout

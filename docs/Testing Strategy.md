@@ -30,8 +30,10 @@ Current automated coverage:
 - `test_parser` for parser behavior and prompt rendering
 - `test_config` for config defaults and config-file validation
 - `test_filesystem` for path helpers, layout creation, and directory scanning
-- `test_execution` for deterministic Phase 2 execution and output-side
+- `test_execution` for deterministic execution and output-side
   reproducibility artifacts
+- `test_runtime` for the unified model runtime API, category/backend selection,
+  cache hits, and deterministic runtime outputs
 - CLI integration tests for help output, parser mode, parser all-prompts mode,
   runtime boot, execution mode, and invalid generator input
 
@@ -89,12 +91,13 @@ tested.
 ### Layer 1: unit tests
 
 Initial unit tests should target the code that is already implemented, and that
-is now the case for the first four core areas:
+is now the case for the first five core areas:
 
 - parser logic
 - config parsing
 - filesystem utilities
 - execution engine behavior
+- model runtime behavior
 
 Implemented files:
 
@@ -102,6 +105,7 @@ Implemented files:
 - `tests/test_config.c`
 - `tests/test_filesystem.c`
 - `tests/test_execution.c`
+- `tests/test_runtime.c`
 
 Current harness:
 
@@ -216,6 +220,14 @@ The highest-value immediate tests are:
 - output-side generator artifacts record checkpoint and seed provenance
 - job summaries report completed and failed counts
 
+### Model runtime behavior
+
+- runtime category selection is stable for diffusion, video, and LLM engines
+- backend defaults resolve consistently
+- runtime cache hits occur on repeated model loads
+- diffusion workflows emit deterministic local image files
+- LLM workflows emit deterministic text outputs
+
 ## Current gaps
 
 The automated harness now exists, but there is still important coverage missing:
@@ -223,7 +235,7 @@ The automated harness now exists, but there is still important coverage missing:
 - no sanitizer build targets yet
 - no fuzz testing yet
 - no golden-output file comparisons yet
-- no real model-runtime determinism tests yet
+- no external ONNX Runtime, TensorRT, or llama.cpp integration tests yet
 - no media-library persistence tests yet
 
 ## Suggested next rollout order
@@ -232,5 +244,5 @@ The automated harness now exists, but there is still important coverage missing:
 2. add golden-output CLI comparison tests
 3. expand parser fixtures for edge cases and large inputs
 4. add reproducibility-oriented fixture metadata such as checkpoint hashes
-5. expand execution-engine tests beyond the current deterministic placeholder runner
-6. add model-runtime determinism and provenance tests as Phase 3 lands
+5. expand runtime tests toward external backend adapters as real inference dependencies land
+6. add media-library persistence and indexing tests as Phase 4 lands

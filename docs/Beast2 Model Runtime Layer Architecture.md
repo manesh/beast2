@@ -23,6 +23,24 @@ The runtime layer allows Beast2 to run these models locally without requiring Py
   
 ⸻  
   
+**Current implementation note**  
+  
+The current repository implementation provides the **runtime layer abstraction**
+and unified model API described in this document, including:
+	•	model load / infer / unload flow  
+	•	model category selection  
+	•	backend selection metadata  
+	•	loaded-model caching  
+	•	deterministic local runtime outputs  
+  
+At the moment, the concrete backends are implemented as **deterministic native
+adapters** rather than direct integrations with external inference libraries.
+This means the runtime layer exists and is testable now, while direct ++ONNX
+Runtime++, ++TensorRT++, and ++llama.cpp++ integration remain future backend
+upgrades.  
+  
+⸻  
+  
 **Design Goals**  
   
 **Minimal dependencies**  

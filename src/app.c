@@ -8,10 +8,12 @@
 #include "beast2/filesystem.h"
 #include "beast2/logger.h"
 #include "beast2/parser.h"
+#include "beast2/runtime.h"
 
 typedef struct beast2_runtime_context {
     beast2_config config;
     beast2_logger logger;
+    beast2_model_runtime_context model_runtime;
     char log_path[BEAST2_MAX_PATH_LENGTH];
 } beast2_runtime_context;
 
@@ -97,10 +99,12 @@ static int beast2_prepare_runtime(
         return -1;
     }
 
+    beast2_model_runtime_init(&context->model_runtime);
     return 0;
 }
 
 static void beast2_cleanup_runtime(beast2_runtime_context *context) {
+    beast2_model_runtime_shutdown(&context->model_runtime);
     beast2_logger_close(&context->logger);
 }
 
@@ -348,28 +352,35 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
         beast2_execute_generator(
             &runtime.config,
             &runtime.logger,
+            &runtime.model_runtime,
             generator_path,
             &summary,
             error_message,
             sizeof(error_message)
         ) != 0
     ) {
-        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase two execution failed: %s", error_message);
+        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase three execution failed: %s", error_message);
         beast2_cleanup_runtime(&runtime);
         fprintf(stderr, "beast2: failed to execute generator: %s\n", error_message);
         return 1;
     }
 
-    printf("Beast2 phase two execution complete.\n");
+    printf("Beast2 phase three execution complete.\n");
     printf("Generator: %s\n", summary.generator_name);
     printf("Engine: %s\n", summary.engine);
     printf("Checkpoint: %s\n", summary.checkpoint);
+    printf("Backend: %s\n", summary.backend);
+    printf("Precision: %s\n", summary.precision);
+    printf("Model type: %s\n", summary.model_category);
+    printf("Output kind: %s\n", summary.output_kind);
     printf("Seed: %s\n", summary.seed);
     printf(
-        "Job summary: total=%zu completed=%zu failed=%zu\n",
+        "Job summary: total=%zu completed=%zu failed=%zu cache_hits=%zu cache_misses=%zu\n",
         summary.total_jobs,
         summary.completed_jobs,
-        summary.failed_jobs
+        summary.failed_jobs,
+        summary.cache_hits,
+        summary.cache_misses
     );
     printf("First output: %s\n", summary.first_output_path);
     printf("First generator artifact: %s\n", summary.first_generator_artifact_path);
