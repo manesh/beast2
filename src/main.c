@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
         }
 
         if (strcmp(argv[argument_index], "--version") == 0) {
-            printf("beast2 0.7.0\n");
+            printf("beast2 0.8.0\n");
             return 0;
         }
 

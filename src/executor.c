@@ -55,6 +55,8 @@ typedef struct beast2_execution_context {
     const char *seed;
     const char *steps;
     const char *resolution;
+    const char *duration_seconds;
+    const char *frames_per_second;
     const char *backend;
     const char *precision;
     const char *runtime;
@@ -218,6 +220,7 @@ static const char *beast2_default_output_extension_for_category(beast2_model_cat
         case BEAST2_MODEL_CATEGORY_DIFFUSION:
             return "ppm";
         case BEAST2_MODEL_CATEGORY_VIDEO:
+            return "webm";
         case BEAST2_MODEL_CATEGORY_LLM:
         case BEAST2_MODEL_CATEGORY_UNKNOWN:
         default:
@@ -300,7 +303,7 @@ static void beast2_execution_estimate_vram(
     switch (category) {
         case BEAST2_MODEL_CATEGORY_VIDEO:
             *model_vram_mb = 6144;
-            *job_vram_mb = 1024 + (pixels / 512);
+            *job_vram_mb = 1024 + (pixels / 512) + (steps * 6);
             *runtime_ms = 60 + (steps * 4);
             break;
         case BEAST2_MODEL_CATEGORY_LLM:
@@ -535,6 +538,8 @@ static int beast2_prepare_execution_context(
     context->seed = "0";
     context->steps = "1";
     context->resolution = "32x32";
+    context->duration_seconds = "5";
+    context->frames_per_second = "6";
     context->backend = NULL;
     context->precision = "fp32";
     context->runtime = NULL;
@@ -571,6 +576,16 @@ static int beast2_prepare_execution_context(
         value = beast2_metadata_first_value(context->workflow_section, "b2_resolution");
         if (value != NULL && *value != '\0') {
             context->resolution = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_duration_seconds");
+        if (value != NULL && *value != '\0') {
+            context->duration_seconds = value;
+        }
+
+        value = beast2_metadata_first_value(context->workflow_section, "b2_fps");
+        if (value != NULL && *value != '\0') {
+            context->frames_per_second = value;
         }
 
         value = beast2_metadata_first_value(context->workflow_section, "b2_backend");
@@ -805,12 +820,80 @@ static int beast2_resolve_job_paths(
     return 0;
 }
 
+static int beast2_write_video_output(
+    const beast2_model_result *result,
+    const beast2_execution_job *job,
+    char *error_message,
+    size_t error_message_size
+) {
+    char command[8192];
+    char parent_path[BEAST2_MAX_PATH_LENGTH];
+    size_t overlay_width = result->width / 4;
+    size_t overlay_height = result->height / 4;
+    size_t horizontal_speed = result->frames_per_second > 0 ? result->frames_per_second + 1 : 3;
+    size_t vertical_speed = result->frames_per_second > 1 ? result->frames_per_second - 1 : 2;
+
+    if (overlay_width == 0) {
+        overlay_width = 8;
+    }
+
+    if (overlay_height == 0) {
+        overlay_height = 8;
+    }
+
+    if (beast2_fs_parent_directory(job->output_path, parent_path, sizeof(parent_path)) != 0) {
+        beast2_execution_set_error(error_message, error_message_size, "failed to derive video output directory");
+        return -1;
+    }
+
+    if (beast2_fs_mkdirs(parent_path, error_message, error_message_size) != 0) {
+        return -1;
+    }
+
+    if (
+        snprintf(
+            command,
+            sizeof(command),
+            "ffmpeg -hide_banner -loglevel error -y "
+            "-f lavfi -i \"color=c=#%s:size=%zux%zu:rate=%zu\" "
+            "-t %zu "
+            "-vf \"drawbox=x=t*%zu:y=t*%zu:w=%zu:h=%zu:color=#%s@0.85:t=fill,format=yuv420p\" "
+            "-an -c:v libvpx-vp9 -crf 35 -b:v 0 \"%s\"",
+            result->video_base_color,
+            result->width,
+            result->height,
+            result->frames_per_second,
+            result->duration_seconds,
+            horizontal_speed,
+            vertical_speed,
+            overlay_width,
+            overlay_height,
+            result->video_overlay_color,
+            job->output_path
+        ) >= (int) sizeof(command)
+    ) {
+        beast2_execution_set_error(error_message, error_message_size, "video ffmpeg command exceeded supported length");
+        return -1;
+    }
+
+    if (system(command) != 0) {
+        snprintf(error_message, error_message_size, "ffmpeg failed to generate video output: %s", job->output_path);
+        return -1;
+    }
+
+    return 0;
+}
+
 static int beast2_write_model_output(
     const beast2_model_result *result,
     const beast2_execution_job *job,
     char *error_message,
     size_t error_message_size
 ) {
+    if (result->output_kind == BEAST2_OUTPUT_KIND_VIDEO) {
+        return beast2_write_video_output(result, job, error_message, error_message_size);
+    }
+
     return beast2_write_text_file(job->output_path, result->content, error_message, error_message_size);
 }
 
@@ -1057,7 +1140,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase six execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
+        "phase seven execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
         context.generator_name,
         context.engine,
         variant_count,
@@ -1117,6 +1200,8 @@ int beast2_execute_generator(
         scheduled_job->request.seed = context.seed;
         scheduled_job->request.steps = context.steps;
         scheduled_job->request.resolution = context.resolution;
+        scheduled_job->request.duration_seconds = context.duration_seconds;
+        scheduled_job->request.frames_per_second = context.frames_per_second;
         scheduled_job->request.backend = context.backend;
         scheduled_job->request.precision = context.precision;
         scheduled_job->request.runtime = context.runtime;
@@ -1446,7 +1531,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase six execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
+        "phase seven execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
         context.generator_name,
         summary->completed_jobs,
         summary->failed_jobs,

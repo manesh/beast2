@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include <sqlite3.h>
+#include <sys/stat.h>
 
 #include "beast2/config.h"
 #include "beast2/executor.h"
@@ -159,6 +160,110 @@ static int test_execute_generator_creates_outputs(void) {
     return 0;
 }
 
+static int test_execute_video_generator_creates_webm_outputs(void) {
+    const char *workspace_root = BEAST2_TEST_BINARY_DIR "/test-workspaces/execution-video";
+    const char *generator_path = BEAST2_TEST_SOURCE_DIR "/tests/fixtures/valid/video_generator.b2";
+    beast2_config config;
+    beast2_logger logger;
+    beast2_media_library_context media_library;
+    beast2_gpu_scheduler_context scheduler;
+    beast2_gpu_scheduler_config scheduler_config;
+    beast2_model_runtime_context runtime_context;
+    beast2_execution_summary summary;
+    char error_message[512];
+    char log_path[BEAST2_MAX_PATH_LENGTH];
+    char artifact_contents[8192];
+    struct stat output_stat;
+    struct stat preview_stat;
+    sqlite3 *db = NULL;
+
+    memset(&logger, 0, sizeof(logger));
+    memset(&media_library, 0, sizeof(media_library));
+    memset(&summary, 0, sizeof(summary));
+    memset(&scheduler_config, 0, sizeof(scheduler_config));
+    scheduler_config.total_vram_mb = 24576;
+    scheduler_config.model_cache_vram_mb = 8192;
+    scheduler_config.generation_vram_mb = 12288;
+    scheduler_config.preview_vram_mb = 2048;
+    scheduler_config.buffer_vram_mb = 2048;
+    beast2_gpu_scheduler_init(&scheduler, &scheduler_config);
+    beast2_model_runtime_init(&runtime_context);
+
+    BEAST2_TEST_ASSERT(beast2_test_prepare_clean_directory(workspace_root) == 0);
+    BEAST2_TEST_ASSERT(
+        beast2_fs_ensure_layout(workspace_root, error_message, sizeof(error_message)) == 0
+    );
+    beast2_config_set_defaults(&config);
+    snprintf(config.workspace_root, sizeof(config.workspace_root), "%s", workspace_root);
+    config.log_to_stderr = 0;
+
+    BEAST2_TEST_ASSERT(
+        beast2_fs_join_path(log_path, sizeof(log_path), workspace_root, "db/performance_logs/video-executor.log") == 0
+    );
+    BEAST2_TEST_ASSERT(
+        beast2_logger_init(&logger, log_path, 0, error_message, sizeof(error_message)) == 0
+    );
+    BEAST2_TEST_ASSERT(
+        beast2_media_library_init(&media_library, workspace_root, error_message, sizeof(error_message)) == 0
+    );
+
+    BEAST2_TEST_ASSERT(
+        beast2_execute_generator(
+            &config,
+            &logger,
+            &media_library,
+            &scheduler,
+            &runtime_context,
+            generator_path,
+            &summary,
+            error_message,
+            sizeof(error_message)
+        ) == 0
+    );
+
+    beast2_logger_close(&logger);
+    beast2_media_library_shutdown(&media_library);
+    beast2_gpu_scheduler_shutdown(&scheduler);
+    beast2_model_runtime_shutdown(&runtime_context);
+
+    BEAST2_TEST_ASSERT_STRING_EQ(summary.generator_name, "phase7_video_demo");
+    BEAST2_TEST_ASSERT_STRING_EQ(summary.engine, "wan22");
+    BEAST2_TEST_ASSERT_STRING_EQ(summary.checkpoint, "wan22#video123");
+    BEAST2_TEST_ASSERT_STRING_EQ(summary.model_category, "video");
+    BEAST2_TEST_ASSERT_STRING_EQ(summary.output_kind, "video");
+    BEAST2_TEST_ASSERT(summary.completed_jobs == 2);
+    BEAST2_TEST_ASSERT(summary.failed_jobs == 0);
+    BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_output_path) == 1);
+    BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_thumbnail_path) == 1);
+    BEAST2_TEST_ASSERT(stat(summary.first_output_path, &output_stat) == 0);
+    BEAST2_TEST_ASSERT(stat(summary.first_thumbnail_path, &preview_stat) == 0);
+    BEAST2_TEST_ASSERT(output_stat.st_size > 0);
+    BEAST2_TEST_ASSERT(preview_stat.st_size > 0);
+
+    BEAST2_TEST_ASSERT(
+        beast2_test_read_text_file(summary.first_generator_artifact_path, artifact_contents, sizeof(artifact_contents)) == 0
+    );
+    BEAST2_TEST_ASSERT(strstr(artifact_contents, "b2_model_type video") != NULL);
+    BEAST2_TEST_ASSERT(strstr(artifact_contents, "b2_output_kind video") != NULL);
+
+    BEAST2_TEST_ASSERT(sqlite3_open(summary.database_path, &db) == SQLITE_OK);
+    BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM media WHERE type = 'video';", 2) == 0);
+    BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM generator_history;", 2) == 0);
+    sqlite3_close(db);
+
+    BEAST2_TEST_ASSERT(beast2_test_remove_tree(workspace_root) == 0);
+
+    return 0;
+}
+
 int main(void) {
-    return test_execute_generator_creates_outputs();
+    if (test_execute_generator_creates_outputs() != 0) {
+        return 1;
+    }
+
+    if (test_execute_video_generator_creates_webm_outputs() != 0) {
+        return 1;
+    }
+
+    return 0;
 }

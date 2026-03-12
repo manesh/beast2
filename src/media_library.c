@@ -211,13 +211,25 @@ static int beast2_media_generate_thumbnail(
             beast2_media_set_error(error_message, error_message_size, "thumbnail path exceeds supported length");
             return -1;
         }
+    } else if (strcmp(record->output_kind, "video") == 0) {
+        if (
+            snprintf(
+                result->thumbnail_relative_path,
+                sizeof(result->thumbnail_relative_path),
+                "thumbs/videos/%s/%s.webm",
+                shard,
+                stem
+            ) >= (int) sizeof(result->thumbnail_relative_path)
+        ) {
+            beast2_media_set_error(error_message, error_message_size, "thumbnail path exceeds supported length");
+            return -1;
+        }
     } else {
         if (
             snprintf(
                 result->thumbnail_relative_path,
                 sizeof(result->thumbnail_relative_path),
-                "thumbs/%s/%s/%s.txt",
-                strcmp(record->output_kind, "video_manifest") == 0 ? "videos" : "text",
+                "thumbs/text/%s/%s.txt",
                 shard,
                 stem
             ) >= (int) sizeof(result->thumbnail_relative_path)
@@ -273,6 +285,42 @@ static int beast2_media_generate_thumbnail(
             beast2_media_set_error(error_message, error_message_size, "thumbnail contents exceeded supported length");
             return -1;
         }
+    } else if (strcmp(record->output_kind, "video") == 0) {
+        char command[8192];
+
+        {
+            char parent_path[BEAST2_MAX_PATH_LENGTH];
+
+            if (beast2_fs_parent_directory(result->thumbnail_path, parent_path, sizeof(parent_path)) != 0) {
+                beast2_media_set_error(error_message, error_message_size, "failed to derive thumbnail directory");
+                return -1;
+            }
+
+            if (beast2_fs_mkdirs(parent_path, error_message, error_message_size) != 0) {
+                return -1;
+            }
+        }
+
+        if (
+            snprintf(
+                command,
+                sizeof(command),
+                "ffmpeg -hide_banner -loglevel error -y -i \"%s\" -t 2 -vf \"scale=64:64:force_original_aspect_ratio=decrease,pad=64:64:(ow-iw)/2:(oh-ih)/2\" "
+                "-an -c:v libvpx-vp9 -crf 40 -b:v 0 \"%s\"",
+                record->output_path,
+                result->thumbnail_path
+            ) >= (int) sizeof(command)
+        ) {
+            beast2_media_set_error(error_message, error_message_size, "video preview command exceeded supported length");
+            return -1;
+        }
+
+        if (system(command) != 0) {
+            snprintf(error_message, error_message_size, "failed to generate video preview: %s", result->thumbnail_path);
+            return -1;
+        }
+
+        return 0;
     } else {
         if (
             snprintf(

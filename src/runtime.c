@@ -518,14 +518,31 @@ static int beast2_runtime_format_video_manifest(
 ) {
     beast2_tensor_buffer latent_tensor;
     beast2_tensor_buffer frame_tensor;
+    size_t width = 64;
+    size_t height = 64;
     size_t steps = beast2_runtime_parse_size_value(request->steps, 1);
+    size_t frames_per_second = beast2_runtime_parse_size_value(request->frames_per_second, 6);
+    size_t duration_seconds = beast2_runtime_parse_size_value(request->duration_seconds, 5);
     size_t frame_index = 0;
-    size_t frame_count = 4;
+    size_t frame_count = frames_per_second * duration_seconds;
     size_t length = 0;
     char hash_buffer[17];
+    unsigned int base_red = 0;
+    unsigned int base_green = 0;
+    unsigned int base_blue = 0;
+    unsigned int overlay_red = 0;
+    unsigned int overlay_green = 0;
+    unsigned int overlay_blue = 0;
+    const char *hash_values[6];
+    uint64_t color_state = 0;
 
     memset(&latent_tensor, 0, sizeof(latent_tensor));
     memset(&frame_tensor, 0, sizeof(frame_tensor));
+    beast2_runtime_parse_resolution(request->resolution, &width, &height);
+
+    if (frame_count == 0) {
+        frame_count = 1;
+    }
 
     if (
         beast2_tensor_memory_acquire(
@@ -534,8 +551,8 @@ static int beast2_runtime_format_video_manifest(
                 BEAST2_TENSOR_DEVICE_GPU,
                 handle->precision == BEAST2_PRECISION_FP16 ? BEAST2_TENSOR_DTYPE_FP16 : BEAST2_TENSOR_DTYPE_FP32,
                 BEAST2_TENSOR_KIND_VIDEO,
-                8,
-                8,
+                width > 7 ? width / 8 : 1,
+                height > 7 ? height / 8 : 1,
                 frame_count,
                 4,
                 0
@@ -566,17 +583,46 @@ static int beast2_runtime_format_video_manifest(
         return -1;
     }
 
+    hash_values[0] = handle->engine;
+    hash_values[1] = handle->checkpoint;
+    hash_values[2] = request->prompt != NULL ? request->prompt : "";
+    hash_values[3] = request->seed != NULL ? request->seed : "0";
+    hash_values[4] = request->resolution != NULL ? request->resolution : "64x64";
+    hash_values[5] = NULL;
+    color_state = beast2_runtime_hash_values(hash_values);
+    base_red = (unsigned int) ((color_state >> 8) & 0xff);
+    base_green = (unsigned int) ((color_state >> 16) & 0xff);
+    base_blue = (unsigned int) ((color_state >> 24) & 0xff);
+    overlay_red = (unsigned int) ((color_state >> 20) & 0xff);
+    overlay_green = (unsigned int) ((color_state >> 28) & 0xff);
+    overlay_blue = (unsigned int) ((color_state >> 36) & 0xff);
+
+    snprintf(result->video_base_color, sizeof(result->video_base_color), "%02x%02x%02x", base_red, base_green, base_blue);
+    snprintf(
+        result->video_overlay_color,
+        sizeof(result->video_overlay_color),
+        "%02x%02x%02x",
+        overlay_red,
+        overlay_green,
+        overlay_blue
+    );
+
     length += (size_t) snprintf(
         result->content + length,
         sizeof(result->content) - length,
-        "BEAST2_PHASE3_VIDEO\n"
+        "BEAST2_PHASE7_VIDEO\n"
         "engine: %s\n"
         "checkpoint: %s\n"
         "backend: %s\n"
         "precision: %s\n"
         "seed: %s\n"
         "steps: %zu\n"
-        "resolution: %s\n"
+        "resolution: %zux%zu\n"
+        "duration_seconds: %zu\n"
+        "frames_per_second: %zu\n"
+        "frame_count: %zu\n"
+        "base_color: %s\n"
+        "overlay_color: %s\n"
         "prompt: %s\n",
         handle->engine,
         handle->checkpoint,
@@ -584,7 +630,13 @@ static int beast2_runtime_format_video_manifest(
         beast2_precision_mode_name(handle->precision),
         request->seed != NULL ? request->seed : "0",
         steps,
-        request->resolution != NULL ? request->resolution : "unknown",
+        width,
+        height,
+        duration_seconds,
+        frames_per_second,
+        frame_count,
+        result->video_base_color,
+        result->video_overlay_color,
         request->prompt != NULL ? request->prompt : ""
     );
 
@@ -622,11 +674,15 @@ static int beast2_runtime_format_video_manifest(
         }
     }
 
-    result->output_kind = BEAST2_OUTPUT_KIND_VIDEO_MANIFEST;
-    snprintf(result->file_extension, sizeof(result->file_extension), "%s", "txt");
-    snprintf(result->mime_type, sizeof(result->mime_type), "%s", "text/plain");
+    result->output_kind = BEAST2_OUTPUT_KIND_VIDEO;
+    snprintf(result->file_extension, sizeof(result->file_extension), "%s", "webm");
+    snprintf(result->mime_type, sizeof(result->mime_type), "%s", "video/webm");
     result->content_length = length;
     result->inference_steps = steps;
+    result->width = width;
+    result->height = height;
+    result->frames_per_second = frames_per_second;
+    result->duration_seconds = duration_seconds;
     beast2_tensor_memory_release(&context->tensor_memory, &frame_tensor);
     beast2_tensor_memory_release(&context->tensor_memory, &latent_tensor);
     beast2_runtime_apply_tensor_telemetry(context, result);
@@ -978,8 +1034,8 @@ const char *beast2_output_kind_name(beast2_output_kind kind) {
     switch (kind) {
         case BEAST2_OUTPUT_KIND_IMAGE:
             return "image";
-        case BEAST2_OUTPUT_KIND_VIDEO_MANIFEST:
-            return "video_manifest";
+        case BEAST2_OUTPUT_KIND_VIDEO:
+            return "video";
         case BEAST2_OUTPUT_KIND_TEXT:
             return "text";
         case BEAST2_OUTPUT_KIND_UNKNOWN:

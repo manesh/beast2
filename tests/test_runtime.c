@@ -106,12 +106,64 @@ static int test_llm_runtime_output(void) {
     return 0;
 }
 
+static int test_video_runtime_output(void) {
+    beast2_model_runtime_context context;
+    beast2_model_request request;
+    beast2_model_handle handle;
+    beast2_model_result result;
+    char error_message[512];
+
+    memset(&request, 0, sizeof(request));
+    memset(&result, 0, sizeof(result));
+    beast2_model_runtime_init(&context);
+
+    request.engine = "wan22";
+    request.checkpoint = "wan22#demo777";
+    request.prompt = "Generate a short test clip";
+    request.seed = "55";
+    request.steps = "8";
+    request.resolution = "64x64";
+    request.duration_seconds = "1";
+    request.frames_per_second = "4";
+    request.backend = "onnx";
+    request.precision = "fp16";
+
+    BEAST2_TEST_ASSERT(
+        beast2_model_load(&context, &request, &handle, error_message, sizeof(error_message)) == 0
+    );
+    BEAST2_TEST_ASSERT(handle.category == BEAST2_MODEL_CATEGORY_VIDEO);
+    BEAST2_TEST_ASSERT(handle.backend == BEAST2_RUNTIME_BACKEND_ONNX);
+    BEAST2_TEST_ASSERT(handle.precision == BEAST2_PRECISION_FP16);
+
+    BEAST2_TEST_ASSERT(
+        beast2_model_infer(&context, &handle, &request, &result, error_message, sizeof(error_message)) == 0
+    );
+    BEAST2_TEST_ASSERT(result.output_kind == BEAST2_OUTPUT_KIND_VIDEO);
+    BEAST2_TEST_ASSERT_STRING_EQ(result.file_extension, "webm");
+    BEAST2_TEST_ASSERT_STRING_EQ(result.mime_type, "video/webm");
+    BEAST2_TEST_ASSERT(result.width == 64);
+    BEAST2_TEST_ASSERT(result.height == 64);
+    BEAST2_TEST_ASSERT(result.frames_per_second == 4);
+    BEAST2_TEST_ASSERT(result.duration_seconds == 1);
+    BEAST2_TEST_ASSERT(strstr(result.content, "BEAST2_PHASE7_VIDEO") != NULL);
+    BEAST2_TEST_ASSERT(strlen(result.video_base_color) == 6);
+    BEAST2_TEST_ASSERT(strlen(result.video_overlay_color) == 6);
+
+    beast2_model_unload(&context, &handle);
+    beast2_model_runtime_shutdown(&context);
+    return 0;
+}
+
 int main(void) {
     if (test_diffusion_runtime_and_cache() != 0) {
         return 1;
     }
 
     if (test_llm_runtime_output() != 0) {
+        return 1;
+    }
+
+    if (test_video_runtime_output() != 0) {
         return 1;
     }
 

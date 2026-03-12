@@ -67,3 +67,12 @@ add_test(
         --run-generator "${PROJECT_SOURCE_DIR}/tests/fixtures/valid/executable_generator.b2"
 )
 set_tests_properties(beast2_cli_execute_generator PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+
+add_test(
+    NAME beast2_cli_execute_video_generator
+    COMMAND
+        beast2
+        --config "${PROJECT_SOURCE_DIR}/tests/fixtures/config/execution-test.conf"
+        --run-generator "${PROJECT_SOURCE_DIR}/tests/fixtures/valid/video_generator.b2"
+)
+set_tests_properties(beast2_cli_execute_video_generator PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")

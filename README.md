@@ -160,7 +160,7 @@ If you want the original design rationale, start with these:
   - unified `model_load()` / `model_infer()` / `model_unload()` API
   - runtime selection across diffusion, video, and LLM model categories
   - backend selection for ONNX, TensorRT, llama.cpp, and Python fallback modes
-  - deterministic local runtime implementations for image, video-manifest, and text outputs
+  - deterministic local runtime implementations for image, video, and text outputs
   - loaded-model cache with stable cache-hit tracking across variant jobs
 - [x] **Phase 4 - Media Library**
   - SQLite metadata database at `db/beast2.sqlite`
@@ -181,14 +181,19 @@ If you want the original design rationale, start with these:
   - buffer reuse telemetry for hits, misses, and reused bytes
   - runtime adapters now allocate pooled intermediate tensors instead of relying
     only on fresh transient buffers
+- [x] **Phase 7 - Video Generation**
+  - deterministic short `.webm` clip generation for video-model workflows
+  - Phase 7 example generator targeting Wan-style video output
+  - ffmpeg-backed clip assembly from runtime-produced video metadata
+  - low-resolution video preview sidecars under `thumbs/videos/`
 
 Today the repository contains a working native baseline, a DSL parser, an
 execution engine, a model runtime layer, a media library, a GPU scheduler, and
 a tensor memory system. The runtime can
 boot and inspect its local workspace, the parser can load and expand generator
 prompts, the execution engine can schedule per-variant jobs, the runtime layer
-can produce deterministic local image, video-manifest, and text outputs through
-a unified model API, and the media library persists generated outputs plus
+can produce deterministic local image, short webm video, and text outputs
+through a unified model API, and the media library persists generated outputs plus
 metadata into a local SQLite database with thumbnail sidecars while the
 scheduler arbitrates queue order and VRAM reservations and the tensor memory
 system reuses pooled CPU/GPU buffers across inference work.
@@ -210,6 +215,8 @@ system reuses pooled CPU/GPU buffers across inference work.
 - scheduler-side model residency eviction
 - shared tensor descriptors and memory-pool telemetry
 - CPU/GPU tensor pool reuse inside the runtime layer
+- deterministic short webm generation for video-model workflows
+- ffmpeg-backed video previews stored in the media library
 - reproducibility sidecars written next to generated outputs
 - SQLite-backed media metadata indexing
 - generated thumbnails and preview sidecars
@@ -229,6 +236,8 @@ system reuses pooled CPU/GPU buffers across inference work.
   even though it tracks multi-job queues and VRAM partitions
 - the Phase 6 tensor memory system currently pools deterministic runtime buffers
   rather than external ONNX/TensorRT/llama.cpp backend tensor objects
+- the Phase 7 video path creates deterministic native clips, not real learned
+  video-model inference yet
 - the automated harness is still early and does not yet include sanitizers,
   fuzzing, or golden-output comparison tests
 
@@ -277,6 +286,7 @@ possible:
   media library
 - **Phase 5** adds queue-based GPU scheduling and VRAM arbitration
 - **Phase 6** adds pooled tensor/buffer reuse to reduce repeated allocations
+- **Phase 7** adds short local video clip generation
 
 Short version:
 
@@ -286,6 +296,7 @@ Short version:
 - then persist outputs and metadata in a local indexed library
 - then add queue-based GPU scheduling around the runtime
 - then add pooled tensor memory reuse inside the runtime layer
+- then emit real short video clips for video-model workflows
 
 The first major usable milestone is the vertical slice described in the docs:
 
@@ -300,7 +311,7 @@ workflow building.
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0 through Phase 6 runtime implementation
+- `src/` - Phase 0 through Phase 7 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
@@ -334,7 +345,7 @@ Current automated coverage includes:
 - scheduler unit tests
 - tensor-memory unit tests
 - CLI integration tests for help, parser mode, parser all-prompts mode, runtime
-  boot, execution mode, and invalid input
+  boot, image execution mode, video execution mode, and invalid input
 
 ## Run
 
@@ -362,10 +373,16 @@ Print every generated prompt variant explicitly:
 ./build/beast2 --generator examples/wan22_walk_cycle.b2 --all-prompts
 ```
 
-Execute a generator through the Phase 6 scheduler + runtime + media library pipeline:
+Execute an image generator through the Phase 7 pipeline:
 
 ```sh
 ./build/beast2 --run-generator examples/sdxl_character_concept.b2
+```
+
+Execute a video generator through the Phase 7 pipeline:
+
+```sh
+./build/beast2 --run-generator examples/wan22-short-video-demo.b2
 ```
 
 ## Default workspace layout

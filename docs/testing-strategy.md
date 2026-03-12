@@ -31,7 +31,8 @@ Current automated coverage:
 - `test_config` for config defaults and config-file validation
 - `test_filesystem` for path helpers, layout creation, and directory scanning
 - `test_execution` for deterministic execution, output-side reproducibility
-  artifacts, SQLite media persistence, tag indexing, and thumbnail generation
+  artifacts, SQLite media persistence, tag indexing, image thumbnails, and video
+  preview generation
 - `test_runtime` for the unified model runtime API, category/backend selection,
   cache hits, and deterministic runtime outputs
 - `test_scheduler` for priority ordering, model-residency cache hits, and LRU
@@ -39,7 +40,7 @@ Current automated coverage:
 - `test_tensor_memory` for CPU/GPU tensor pool reuse, telemetry, and reused-byte
   accounting
 - CLI integration tests for help output, parser mode, parser all-prompts mode,
-  runtime boot, execution mode, and invalid generator input
+  runtime boot, image execution mode, video execution mode, and invalid generator input
 
 ## Testing principles
 
@@ -95,7 +96,7 @@ tested.
 ### Layer 1: unit tests
 
 Initial unit tests should target the code that is already implemented, and that
-is now the case for the first six core areas:
+is now the case for the first seven core areas:
 
 - parser logic
 - config parsing
@@ -103,6 +104,7 @@ is now the case for the first six core areas:
 - execution engine behavior
 - model runtime behavior
 - tensor memory behavior
+- scheduler behavior
 
 Implemented files:
 
@@ -232,6 +234,7 @@ The highest-value immediate tests are:
 - generator metadata is persisted
 - tags are inserted and linked through `media_tags`
 - thumbnail sidecars are generated and recorded
+- video previews are generated under `thumbs/videos/`
 - generator history rows are written for reproducibility
 
 ### Model runtime behavior
@@ -240,6 +243,7 @@ The highest-value immediate tests are:
 - backend defaults resolve consistently
 - runtime cache hits occur on repeated model loads
 - diffusion workflows emit deterministic local image files
+- video workflows emit deterministic local `.webm` clips
 - LLM workflows emit deterministic text outputs
 
 ### Tensor memory behavior

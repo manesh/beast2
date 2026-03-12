@@ -1,0 +1,22 @@
+$b2_generator
+b2_name phase7_video_demo
+
+$b2_positive_prompt
+b2_section subject
+b2_snippet Subject: test video alpha
+b2_snippet Subject: test video beta
+
+$b2_tags
+b2_tag demo
+b2_tag video
+
+$b2_workflow
+b2_engine wan22
+b2_checkpoint wan22#video123
+b2_backend onnx
+b2_precision fp16
+b2_seed 8080
+b2_steps 12
+b2_resolution 64x64
+b2_duration_seconds 1
+b2_fps 4

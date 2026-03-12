@@ -32,7 +32,7 @@ and unified model API described in this document, including:
 	•	backend selection metadata  
 	•	loaded-model caching  
 	•	shared tensor memory pooling  
-	•	deterministic local runtime outputs  
+	•	deterministic local image, short webm video, and text outputs  
   
 At the moment, the concrete backends are implemented as **deterministic native
 adapters** rather than direct integrations with external inference libraries.

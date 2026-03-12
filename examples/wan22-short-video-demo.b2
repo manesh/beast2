@@ -1,0 +1,31 @@
+# Phase 7 video runtime example
+
+$b2_generator
+b2_name wan22_short_video_demo
+
+$b2_positive_prompt
+b2_section subject
+b2_snippet Subject: a neon cyberpunk walk cycle
+b2_snippet Subject: a fantasy ranger scouting scene
+
+b2_concat_comma
+
+b2_section style
+b2_snippet Style: cinematic motion
+b2_snippet Style: moody dusk lighting
+
+$b2_tags
+b2_tag example
+b2_tag wan22
+b2_tag video
+
+$b2_workflow
+b2_engine wan22
+b2_checkpoint wan22#demo777
+b2_backend onnx
+b2_precision fp16
+b2_seed 2024
+b2_steps 18
+b2_resolution 96x96
+b2_duration_seconds 2
+b2_fps 6

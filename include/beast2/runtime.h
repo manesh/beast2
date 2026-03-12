@@ -33,7 +33,7 @@ typedef enum beast2_precision_mode {
 typedef enum beast2_output_kind {
     BEAST2_OUTPUT_KIND_UNKNOWN = 0,
     BEAST2_OUTPUT_KIND_IMAGE = 1,
-    BEAST2_OUTPUT_KIND_VIDEO_MANIFEST = 2,
+    BEAST2_OUTPUT_KIND_VIDEO = 2,
     BEAST2_OUTPUT_KIND_TEXT = 3
 } beast2_output_kind;
 
@@ -44,6 +44,8 @@ typedef struct beast2_model_request {
     const char *seed;
     const char *steps;
     const char *resolution;
+    const char *duration_seconds;
+    const char *frames_per_second;
     const char *backend;
     const char *precision;
     const char *runtime;
@@ -72,6 +74,12 @@ typedef struct beast2_model_result {
     size_t load_count;
     size_t infer_count;
     size_t cache_hits;
+    size_t width;
+    size_t height;
+    size_t frames_per_second;
+    size_t duration_seconds;
+    char video_base_color[16];
+    char video_overlay_color[16];
     size_t tensor_pool_hits;
     size_t tensor_pool_misses;
     size_t tensor_bytes_reused_cpu;
