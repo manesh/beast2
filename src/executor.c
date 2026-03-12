@@ -1057,7 +1057,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase five execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
+        "phase six execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
         context.generator_name,
         context.engine,
         variant_count,
@@ -1407,6 +1407,12 @@ int beast2_execute_generator(
         summary->scheduler_peak_queue_length = scheduler_telemetry.peak_queue_length;
         summary->scheduler_model_evictions = scheduler_telemetry.model_evictions;
         summary->scheduler_peak_reserved_vram_mb = scheduler_telemetry.peak_reserved_vram_mb;
+        summary->tensor_pool_hits = result.tensor_pool_hits;
+        summary->tensor_pool_misses = result.tensor_pool_misses;
+        summary->tensor_peak_reserved_cpu = result.tensor_peak_reserved_cpu;
+        summary->tensor_peak_reserved_gpu = result.tensor_peak_reserved_gpu;
+        summary->tensor_bytes_reused_cpu = result.tensor_bytes_reused_cpu;
+        summary->tensor_bytes_reused_gpu = result.tensor_bytes_reused_gpu;
 
         if (summary->first_output_path[0] == '\0') {
             snprintf(summary->first_output_path, sizeof(summary->first_output_path), "%s", scheduled_job->job.output_path);
@@ -1440,7 +1446,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase five execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
+        "phase six execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
         context.generator_name,
         summary->completed_jobs,
         summary->failed_jobs,

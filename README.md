@@ -174,15 +174,24 @@ If you want the original design rationale, start with these:
   - scheduler-side model residency cache and LRU eviction
   - queue telemetry including peak queue length and peak reserved VRAM
   - execution now routes jobs through the scheduler before runtime inference
+- [x] **Phase 6 - Tensor Memory System**
+  - shared tensor descriptor and buffer abstraction
+  - CPU tensor pools
+  - GPU tensor pools
+  - buffer reuse telemetry for hits, misses, and reused bytes
+  - runtime adapters now allocate pooled intermediate tensors instead of relying
+    only on fresh transient buffers
 
 Today the repository contains a working native baseline, a DSL parser, an
-execution engine, a model runtime layer, a media library, and a GPU scheduler. The runtime can
+execution engine, a model runtime layer, a media library, a GPU scheduler, and
+a tensor memory system. The runtime can
 boot and inspect its local workspace, the parser can load and expand generator
 prompts, the execution engine can schedule per-variant jobs, the runtime layer
 can produce deterministic local image, video-manifest, and text outputs through
 a unified model API, and the media library persists generated outputs plus
 metadata into a local SQLite database with thumbnail sidecars while the
-scheduler arbitrates queue order and VRAM reservations.
+scheduler arbitrates queue order and VRAM reservations and the tensor memory
+system reuses pooled CPU/GPU buffers across inference work.
 
 ### Implemented now
 
@@ -199,6 +208,8 @@ scheduler arbitrates queue order and VRAM reservations.
 - priority-based GPU queue scheduling
 - VRAM partitioning and scheduler telemetry
 - scheduler-side model residency eviction
+- shared tensor descriptors and memory-pool telemetry
+- CPU/GPU tensor pool reuse inside the runtime layer
 - reproducibility sidecars written next to generated outputs
 - SQLite-backed media metadata indexing
 - generated thumbnails and preview sidecars
@@ -216,6 +227,8 @@ scheduler arbitrates queue order and VRAM reservations.
   UI or advanced query layer on top of it
 - the Phase 5 scheduler is intentionally simple and single-active-job for now,
   even though it tracks multi-job queues and VRAM partitions
+- the Phase 6 tensor memory system currently pools deterministic runtime buffers
+  rather than external ONNX/TensorRT/llama.cpp backend tensor objects
 - the automated harness is still early and does not yet include sanitizers,
   fuzzing, or golden-output comparison tests
 
@@ -263,6 +276,7 @@ possible:
 - **Phase 4** stores outputs, thumbnails, tags, and metadata in a reusable
   media library
 - **Phase 5** adds queue-based GPU scheduling and VRAM arbitration
+- **Phase 6** adds pooled tensor/buffer reuse to reduce repeated allocations
 
 Short version:
 
@@ -271,6 +285,7 @@ Short version:
 - then give execution a real model runtime interface and cache
 - then persist outputs and metadata in a local indexed library
 - then add queue-based GPU scheduling around the runtime
+- then add pooled tensor memory reuse inside the runtime layer
 
 The first major usable milestone is the vertical slice described in the docs:
 
@@ -285,7 +300,7 @@ workflow building.
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0 through Phase 5 runtime implementation
+- `src/` - Phase 0 through Phase 6 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
@@ -317,6 +332,7 @@ Current automated coverage includes:
 - execution-engine and media-persistence unit tests
 - model-runtime unit tests
 - scheduler unit tests
+- tensor-memory unit tests
 - CLI integration tests for help, parser mode, parser all-prompts mode, runtime
   boot, execution mode, and invalid input
 
@@ -346,7 +362,7 @@ Print every generated prompt variant explicitly:
 ./build/beast2 --generator examples/wan22_walk_cycle.b2 --all-prompts
 ```
 
-Execute a generator through the Phase 5 scheduler + runtime + media library pipeline:
+Execute a generator through the Phase 6 scheduler + runtime + media library pipeline:
 
 ```sh
 ./build/beast2 --run-generator examples/sdxl_character_concept.b2

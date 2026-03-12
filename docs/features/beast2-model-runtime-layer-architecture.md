@@ -31,6 +31,7 @@ and unified model API described in this document, including:
 	•	model category selection  
 	•	backend selection metadata  
 	•	loaded-model caching  
+	•	shared tensor memory pooling  
 	•	deterministic local runtime outputs  
   
 At the moment, the concrete backends are implemented as **deterministic native

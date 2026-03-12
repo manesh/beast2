@@ -36,6 +36,8 @@ Current automated coverage:
   cache hits, and deterministic runtime outputs
 - `test_scheduler` for priority ordering, model-residency cache hits, and LRU
   eviction under VRAM budget pressure
+- `test_tensor_memory` for CPU/GPU tensor pool reuse, telemetry, and reused-byte
+  accounting
 - CLI integration tests for help output, parser mode, parser all-prompts mode,
   runtime boot, execution mode, and invalid generator input
 
@@ -93,13 +95,14 @@ tested.
 ### Layer 1: unit tests
 
 Initial unit tests should target the code that is already implemented, and that
-is now the case for the first five core areas:
+is now the case for the first six core areas:
 
 - parser logic
 - config parsing
 - filesystem utilities
 - execution engine behavior
 - model runtime behavior
+- tensor memory behavior
 
 Implemented files:
 
@@ -108,6 +111,7 @@ Implemented files:
 - `tests/test_filesystem.c`
 - `tests/test_execution.c`
 - `tests/test_runtime.c`
+- `tests/test_tensor_memory.c`
 
 Current harness:
 
@@ -238,6 +242,14 @@ The highest-value immediate tests are:
 - diffusion workflows emit deterministic local image files
 - LLM workflows emit deterministic text outputs
 
+### Tensor memory behavior
+
+- pooled CPU buffers are reused across repeated requests
+- pooled GPU buffers are reused across repeated requests
+- tensor telemetry records pool hits, misses, reused bytes, and peak reserved
+  memory
+- execution summaries expose tensor pool reuse metrics
+
 ### Scheduler behavior
 
 - higher-priority jobs run before lower-priority queued jobs
@@ -255,6 +267,7 @@ The automated harness now exists, but there is still important coverage missing:
 - no external ONNX Runtime, TensorRT, or llama.cpp integration tests yet
 - no gallery/query-layer tests yet
 - no concurrent or preemptive scheduler integration tests yet
+- no real external-backend tensor pooling tests yet
 
 ## Suggested next rollout order
 
@@ -264,4 +277,5 @@ The automated harness now exists, but there is still important coverage missing:
 4. add reproducibility-oriented fixture metadata such as checkpoint hashes
 5. expand runtime tests toward external backend adapters as real inference dependencies land
 6. add concurrent/preemptive scheduler integration tests
-7. add gallery/query-layer and advanced media-library query tests
+7. add real external-backend tensor pooling and fragmentation tests
+8. add gallery/query-layer and advanced media-library query tests

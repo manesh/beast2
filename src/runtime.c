@@ -299,13 +299,36 @@ static beast2_loaded_model *beast2_runtime_choose_slot(beast2_model_runtime_cont
     return best;
 }
 
+static void beast2_runtime_apply_tensor_telemetry(
+    const beast2_model_runtime_context *context,
+    beast2_model_result *result
+) {
+    beast2_tensor_memory_telemetry telemetry;
+
+    memset(&telemetry, 0, sizeof(telemetry));
+    beast2_tensor_memory_get_telemetry(&context->tensor_memory, &telemetry);
+
+    result->tensor_pool_hits = telemetry.pool_hits;
+    result->tensor_pool_misses = telemetry.pool_misses;
+    result->tensor_bytes_reused_cpu = telemetry.bytes_reused_cpu;
+    result->tensor_bytes_reused_gpu = telemetry.bytes_reused_gpu;
+    result->tensor_peak_reserved_cpu = telemetry.peak_reserved_cpu;
+    result->tensor_peak_reserved_gpu = telemetry.peak_reserved_gpu;
+    result->tensor_peak_in_use_cpu = telemetry.peak_in_use_cpu;
+    result->tensor_peak_in_use_gpu = telemetry.peak_in_use_gpu;
+}
+
 static int beast2_runtime_format_image(
+    beast2_model_runtime_context *context,
     const beast2_model_handle *handle,
     const beast2_model_request *request,
     beast2_model_result *result,
     char *error_message,
     size_t error_message_size
 ) {
+    beast2_tensor_buffer latent_tensor;
+    beast2_tensor_buffer embedding_tensor;
+    beast2_tensor_buffer image_tensor;
     char steps_buffer[64];
     char resolution_buffer[64];
     const char *hash_values[10];
@@ -318,6 +341,10 @@ static int beast2_runtime_format_image(
     size_t y = 0;
     size_t length = 0;
     size_t steps = beast2_runtime_parse_size_value(request->steps, 1);
+
+    memset(&latent_tensor, 0, sizeof(latent_tensor));
+    memset(&embedding_tensor, 0, sizeof(embedding_tensor));
+    memset(&image_tensor, 0, sizeof(image_tensor));
 
     beast2_runtime_parse_resolution(request->resolution, &requested_width, &requested_height);
     width = requested_width;
@@ -341,6 +368,62 @@ static int beast2_runtime_format_image(
     hash_values[7] = beast2_precision_mode_name(handle->precision);
     hash_values[8] = beast2_model_category_name(handle->category);
     hash_values[9] = NULL;
+
+    if (
+        beast2_tensor_memory_acquire(
+            &context->tensor_memory,
+            &(beast2_tensor_desc) {
+                BEAST2_TENSOR_DEVICE_GPU,
+                handle->precision == BEAST2_PRECISION_FP16 ? BEAST2_TENSOR_DTYPE_FP16 : BEAST2_TENSOR_DTYPE_FP32,
+                BEAST2_TENSOR_KIND_LATENT,
+                requested_width > 7 ? requested_width / 8 : 1,
+                requested_height > 7 ? requested_height / 8 : 1,
+                1,
+                4,
+                0
+            },
+            &latent_tensor,
+            error_message,
+            error_message_size
+        ) != 0 ||
+        beast2_tensor_memory_acquire(
+            &context->tensor_memory,
+            &(beast2_tensor_desc) {
+                BEAST2_TENSOR_DEVICE_CPU,
+                BEAST2_TENSOR_DTYPE_FP32,
+                BEAST2_TENSOR_KIND_EMBEDDING,
+                77,
+                1,
+                1,
+                768,
+                0
+            },
+            &embedding_tensor,
+            error_message,
+            error_message_size
+        ) != 0 ||
+        beast2_tensor_memory_acquire(
+            &context->tensor_memory,
+            &(beast2_tensor_desc) {
+                BEAST2_TENSOR_DEVICE_CPU,
+                BEAST2_TENSOR_DTYPE_UINT8,
+                BEAST2_TENSOR_KIND_IMAGE,
+                width,
+                height,
+                1,
+                3,
+                0
+            },
+            &image_tensor,
+            error_message,
+            error_message_size
+        ) != 0
+    ) {
+        beast2_tensor_memory_release(&context->tensor_memory, &image_tensor);
+        beast2_tensor_memory_release(&context->tensor_memory, &embedding_tensor);
+        beast2_tensor_memory_release(&context->tensor_memory, &latent_tensor);
+        return -1;
+    }
 
     pixel_state = beast2_runtime_hash_values(hash_values);
 
@@ -381,11 +464,16 @@ static int beast2_runtime_format_image(
             unsigned int green = 0;
             unsigned int blue = 0;
             int written = 0;
+            unsigned char *pixel_bytes = NULL;
 
             pixel_state = pixel_state * 6364136223846793005ULL + 1ULL;
             red = (unsigned int) ((pixel_state >> 16) & 0xff);
             green = (unsigned int) ((pixel_state >> 24) & 0xff);
             blue = (unsigned int) ((pixel_state >> 32) & 0xff);
+            pixel_bytes = (unsigned char *) image_tensor.data;
+            pixel_bytes[(y * width + x) * 3 + 0] = (unsigned char) red;
+            pixel_bytes[(y * width + x) * 3 + 1] = (unsigned char) green;
+            pixel_bytes[(y * width + x) * 3 + 2] = (unsigned char) blue;
 
             written = snprintf(
                 result->content + length,
@@ -397,6 +485,9 @@ static int beast2_runtime_format_image(
             );
 
             if (written < 0 || length + (size_t) written >= sizeof(result->content)) {
+                beast2_tensor_memory_release(&context->tensor_memory, &image_tensor);
+                beast2_tensor_memory_release(&context->tensor_memory, &embedding_tensor);
+                beast2_tensor_memory_release(&context->tensor_memory, &latent_tensor);
                 beast2_runtime_set_error(error_message, error_message_size, "image output exceeded supported size");
                 return -1;
             }
@@ -410,21 +501,70 @@ static int beast2_runtime_format_image(
     snprintf(result->mime_type, sizeof(result->mime_type), "%s", "image/x-portable-pixmap");
     result->content_length = length;
     result->inference_steps = steps;
+    beast2_tensor_memory_release(&context->tensor_memory, &image_tensor);
+    beast2_tensor_memory_release(&context->tensor_memory, &embedding_tensor);
+    beast2_tensor_memory_release(&context->tensor_memory, &latent_tensor);
+    beast2_runtime_apply_tensor_telemetry(context, result);
     return 0;
 }
 
 static int beast2_runtime_format_video_manifest(
+    beast2_model_runtime_context *context,
     const beast2_model_handle *handle,
     const beast2_model_request *request,
     beast2_model_result *result,
     char *error_message,
     size_t error_message_size
 ) {
+    beast2_tensor_buffer latent_tensor;
+    beast2_tensor_buffer frame_tensor;
     size_t steps = beast2_runtime_parse_size_value(request->steps, 1);
     size_t frame_index = 0;
     size_t frame_count = 4;
     size_t length = 0;
     char hash_buffer[17];
+
+    memset(&latent_tensor, 0, sizeof(latent_tensor));
+    memset(&frame_tensor, 0, sizeof(frame_tensor));
+
+    if (
+        beast2_tensor_memory_acquire(
+            &context->tensor_memory,
+            &(beast2_tensor_desc) {
+                BEAST2_TENSOR_DEVICE_GPU,
+                handle->precision == BEAST2_PRECISION_FP16 ? BEAST2_TENSOR_DTYPE_FP16 : BEAST2_TENSOR_DTYPE_FP32,
+                BEAST2_TENSOR_KIND_VIDEO,
+                8,
+                8,
+                frame_count,
+                4,
+                0
+            },
+            &latent_tensor,
+            error_message,
+            error_message_size
+        ) != 0 ||
+        beast2_tensor_memory_acquire(
+            &context->tensor_memory,
+            &(beast2_tensor_desc) {
+                BEAST2_TENSOR_DEVICE_CPU,
+                BEAST2_TENSOR_DTYPE_UINT8,
+                BEAST2_TENSOR_KIND_VIDEO,
+                64,
+                1,
+                frame_count,
+                1,
+                0
+            },
+            &frame_tensor,
+            error_message,
+            error_message_size
+        ) != 0
+    ) {
+        beast2_tensor_memory_release(&context->tensor_memory, &frame_tensor);
+        beast2_tensor_memory_release(&context->tensor_memory, &latent_tensor);
+        return -1;
+    }
 
     length += (size_t) snprintf(
         result->content + length,
@@ -449,6 +589,8 @@ static int beast2_runtime_format_video_manifest(
     );
 
     if (length >= sizeof(result->content)) {
+        beast2_tensor_memory_release(&context->tensor_memory, &frame_tensor);
+        beast2_tensor_memory_release(&context->tensor_memory, &latent_tensor);
         beast2_runtime_set_error(error_message, error_message_size, "video manifest exceeded supported size");
         return -1;
     }
@@ -473,6 +615,8 @@ static int beast2_runtime_format_video_manifest(
         );
 
         if (length >= sizeof(result->content)) {
+            beast2_tensor_memory_release(&context->tensor_memory, &frame_tensor);
+            beast2_tensor_memory_release(&context->tensor_memory, &latent_tensor);
             beast2_runtime_set_error(error_message, error_message_size, "video manifest exceeded supported size");
             return -1;
         }
@@ -483,19 +627,67 @@ static int beast2_runtime_format_video_manifest(
     snprintf(result->mime_type, sizeof(result->mime_type), "%s", "text/plain");
     result->content_length = length;
     result->inference_steps = steps;
+    beast2_tensor_memory_release(&context->tensor_memory, &frame_tensor);
+    beast2_tensor_memory_release(&context->tensor_memory, &latent_tensor);
+    beast2_runtime_apply_tensor_telemetry(context, result);
     return 0;
 }
 
 static int beast2_runtime_format_text_output(
+    beast2_model_runtime_context *context,
     const beast2_model_handle *handle,
     const beast2_model_request *request,
     beast2_model_result *result,
     char *error_message,
     size_t error_message_size
 ) {
+    beast2_tensor_buffer embedding_tensor;
+    beast2_tensor_buffer text_tensor;
     char hash_buffer[17];
     const char *hash_values[5];
     int written = 0;
+
+    memset(&embedding_tensor, 0, sizeof(embedding_tensor));
+    memset(&text_tensor, 0, sizeof(text_tensor));
+
+    if (
+        beast2_tensor_memory_acquire(
+            &context->tensor_memory,
+            &(beast2_tensor_desc) {
+                BEAST2_TENSOR_DEVICE_GPU,
+                handle->precision == BEAST2_PRECISION_INT8 ? BEAST2_TENSOR_DTYPE_INT8 : BEAST2_TENSOR_DTYPE_FP16,
+                BEAST2_TENSOR_KIND_EMBEDDING,
+                32,
+                1,
+                1,
+                4096,
+                0
+            },
+            &embedding_tensor,
+            error_message,
+            error_message_size
+        ) != 0 ||
+        beast2_tensor_memory_acquire(
+            &context->tensor_memory,
+            &(beast2_tensor_desc) {
+                BEAST2_TENSOR_DEVICE_CPU,
+                BEAST2_TENSOR_DTYPE_UINT8,
+                BEAST2_TENSOR_KIND_TEXT,
+                BEAST2_MAX_RUNTIME_OUTPUT_SIZE,
+                1,
+                1,
+                1,
+                0
+            },
+            &text_tensor,
+            error_message,
+            error_message_size
+        ) != 0
+    ) {
+        beast2_tensor_memory_release(&context->tensor_memory, &text_tensor);
+        beast2_tensor_memory_release(&context->tensor_memory, &embedding_tensor);
+        return -1;
+    }
 
     hash_values[0] = handle->engine;
     hash_values[1] = handle->checkpoint;
@@ -526,6 +718,8 @@ static int beast2_runtime_format_text_output(
     );
 
     if (written < 0 || (size_t) written >= sizeof(result->content)) {
+        beast2_tensor_memory_release(&context->tensor_memory, &text_tensor);
+        beast2_tensor_memory_release(&context->tensor_memory, &embedding_tensor);
         beast2_runtime_set_error(error_message, error_message_size, "text output exceeded supported size");
         return -1;
     }
@@ -535,14 +729,19 @@ static int beast2_runtime_format_text_output(
     snprintf(result->mime_type, sizeof(result->mime_type), "%s", "text/plain");
     result->content_length = (size_t) written;
     result->inference_steps = beast2_runtime_parse_size_value(request->steps, 1);
+    beast2_tensor_memory_release(&context->tensor_memory, &text_tensor);
+    beast2_tensor_memory_release(&context->tensor_memory, &embedding_tensor);
+    beast2_runtime_apply_tensor_telemetry(context, result);
     return 0;
 }
 
 void beast2_model_runtime_init(beast2_model_runtime_context *context) {
     memset(context, 0, sizeof(*context));
+    beast2_tensor_memory_init(&context->tensor_memory);
 }
 
 void beast2_model_runtime_shutdown(beast2_model_runtime_context *context) {
+    beast2_tensor_memory_shutdown(&context->tensor_memory);
     memset(context, 0, sizeof(*context));
 }
 
@@ -682,11 +881,11 @@ int beast2_model_infer(
 
     switch (handle->category) {
         case BEAST2_MODEL_CATEGORY_DIFFUSION:
-            return beast2_runtime_format_image(handle, request, result, error_message, error_message_size);
+            return beast2_runtime_format_image(context, handle, request, result, error_message, error_message_size);
         case BEAST2_MODEL_CATEGORY_VIDEO:
-            return beast2_runtime_format_video_manifest(handle, request, result, error_message, error_message_size);
+            return beast2_runtime_format_video_manifest(context, handle, request, result, error_message, error_message_size);
         case BEAST2_MODEL_CATEGORY_LLM:
-            return beast2_runtime_format_text_output(handle, request, result, error_message, error_message_size);
+            return beast2_runtime_format_text_output(context, handle, request, result, error_message, error_message_size);
         case BEAST2_MODEL_CATEGORY_UNKNOWN:
         default:
             beast2_runtime_set_error(error_message, error_message_size, "runtime does not support the requested model category");
@@ -722,6 +921,13 @@ beast2_runtime_backend beast2_model_request_backend(const beast2_model_request *
 
 beast2_precision_mode beast2_model_request_precision(const beast2_model_request *request) {
     return beast2_runtime_parse_precision(request);
+}
+
+void beast2_model_runtime_get_tensor_telemetry(
+    const beast2_model_runtime_context *context,
+    beast2_tensor_memory_telemetry *telemetry
+) {
+    beast2_tensor_memory_get_telemetry(&context->tensor_memory, telemetry);
 }
 
 const char *beast2_model_category_name(beast2_model_category category) {

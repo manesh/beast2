@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+#include "beast2/tensor_memory.h"
+
 #define BEAST2_MAX_RUNTIME_OUTPUT_SIZE 65536
 #define BEAST2_MAX_RUNTIME_MODELS 16
 
@@ -70,6 +72,14 @@ typedef struct beast2_model_result {
     size_t load_count;
     size_t infer_count;
     size_t cache_hits;
+    size_t tensor_pool_hits;
+    size_t tensor_pool_misses;
+    size_t tensor_bytes_reused_cpu;
+    size_t tensor_bytes_reused_gpu;
+    size_t tensor_peak_reserved_cpu;
+    size_t tensor_peak_reserved_gpu;
+    size_t tensor_peak_in_use_cpu;
+    size_t tensor_peak_in_use_gpu;
 } beast2_model_result;
 
 typedef struct beast2_loaded_model {
@@ -88,6 +98,7 @@ typedef struct beast2_loaded_model {
 
 typedef struct beast2_model_runtime_context {
     beast2_loaded_model loaded_models[BEAST2_MAX_RUNTIME_MODELS];
+    beast2_tensor_memory_context tensor_memory;
     size_t tick;
     size_t cache_hits;
     size_t cache_misses;
@@ -121,6 +132,10 @@ void beast2_model_unload(
 beast2_model_category beast2_model_request_category(const beast2_model_request *request);
 beast2_runtime_backend beast2_model_request_backend(const beast2_model_request *request);
 beast2_precision_mode beast2_model_request_precision(const beast2_model_request *request);
+void beast2_model_runtime_get_tensor_telemetry(
+    const beast2_model_runtime_context *context,
+    beast2_tensor_memory_telemetry *telemetry
+);
 
 const char *beast2_model_category_name(beast2_model_category category);
 const char *beast2_runtime_backend_name(beast2_runtime_backend backend);

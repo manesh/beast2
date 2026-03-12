@@ -108,6 +108,12 @@ static int test_execute_generator_creates_outputs(void) {
     BEAST2_TEST_ASSERT(summary.scheduler_peak_queue_length == 2);
     BEAST2_TEST_ASSERT(summary.scheduler_model_evictions == 0);
     BEAST2_TEST_ASSERT(summary.scheduler_peak_reserved_vram_mb > 0);
+    BEAST2_TEST_ASSERT(summary.tensor_pool_hits > 0);
+    BEAST2_TEST_ASSERT(summary.tensor_pool_misses > 0);
+    BEAST2_TEST_ASSERT(summary.tensor_peak_reserved_cpu > 0);
+    BEAST2_TEST_ASSERT(summary.tensor_peak_reserved_gpu > 0);
+    BEAST2_TEST_ASSERT(summary.tensor_bytes_reused_cpu > 0);
+    BEAST2_TEST_ASSERT(summary.tensor_bytes_reused_gpu > 0);
     BEAST2_TEST_ASSERT(strstr(summary.database_path, "db/beast2.sqlite") != NULL);
     BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_output_path) == 1);
     BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_thumbnail_path) == 1);

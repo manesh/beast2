@@ -45,6 +45,7 @@ Current harness coverage includes:
 - media-library persistence checks
 - model-runtime unit tests
 - scheduler unit tests
+- tensor-memory unit tests
 - CLI integration tests
 
 ## Run
@@ -61,7 +62,7 @@ Phase 1 parser example:
 ./build/beast2 --generator examples/wan22_walk_cycle.b2
 ```
 
-Phase 5 scheduler + runtime + media library execution example:
+Phase 6 scheduler + runtime + media library execution example:
 
 ```sh
 ./build/beast2 --run-generator examples/sdxl_character_concept.b2

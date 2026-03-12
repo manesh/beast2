@@ -9,9 +9,13 @@ static int test_diffusion_runtime_and_cache(void) {
     beast2_model_handle first_handle;
     beast2_model_handle second_handle;
     beast2_model_result result;
+    beast2_model_result second_result;
+    beast2_tensor_memory_telemetry telemetry;
     char error_message[512];
 
     memset(&request, 0, sizeof(request));
+    memset(&second_result, 0, sizeof(second_result));
+    memset(&telemetry, 0, sizeof(telemetry));
     beast2_model_runtime_init(&context);
 
     request.engine = "sdxl";
@@ -46,6 +50,20 @@ static int test_diffusion_runtime_and_cache(void) {
     BEAST2_TEST_ASSERT(strstr(result.content, "P3\n") == result.content);
     BEAST2_TEST_ASSERT(strstr(result.content, "# engine sdxl") != NULL);
     BEAST2_TEST_ASSERT(strstr(result.content, "4 4\n255\n") != NULL);
+    BEAST2_TEST_ASSERT(result.tensor_pool_misses > 0);
+
+    BEAST2_TEST_ASSERT(
+        beast2_model_infer(&context, &second_handle, &request, &second_result, error_message, sizeof(error_message)) == 0
+    );
+    BEAST2_TEST_ASSERT(second_result.tensor_pool_hits > 0);
+    BEAST2_TEST_ASSERT(second_result.tensor_bytes_reused_cpu > 0);
+    BEAST2_TEST_ASSERT(second_result.tensor_bytes_reused_gpu > 0);
+
+    beast2_model_runtime_get_tensor_telemetry(&context, &telemetry);
+    BEAST2_TEST_ASSERT(telemetry.pool_hits > 0);
+    BEAST2_TEST_ASSERT(telemetry.pool_misses > 0);
+    BEAST2_TEST_ASSERT(telemetry.peak_reserved_cpu > 0);
+    BEAST2_TEST_ASSERT(telemetry.peak_reserved_gpu > 0);
 
     beast2_model_unload(&context, &second_handle);
     beast2_model_unload(&context, &first_handle);

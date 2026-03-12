@@ -26,6 +26,12 @@ typedef struct beast2_execution_summary {
     size_t scheduler_peak_queue_length;
     size_t scheduler_model_evictions;
     size_t scheduler_peak_reserved_vram_mb;
+    size_t tensor_pool_hits;
+    size_t tensor_pool_misses;
+    size_t tensor_peak_reserved_cpu;
+    size_t tensor_peak_reserved_gpu;
+    size_t tensor_bytes_reused_cpu;
+    size_t tensor_bytes_reused_gpu;
     char database_path[BEAST2_MAX_PATH_LENGTH];
     char first_output_path[BEAST2_MAX_PATH_LENGTH];
     char first_thumbnail_path[BEAST2_MAX_PATH_LENGTH];
