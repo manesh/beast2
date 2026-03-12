@@ -847,6 +847,7 @@ static int beast2_write_state_report(
 int beast2_execute_generator(
     const beast2_config *config,
     beast2_logger *logger,
+    beast2_media_library_context *media_library,
     beast2_model_runtime_context *runtime_context,
     const char *generator_path,
     beast2_execution_summary *summary,
@@ -858,8 +859,14 @@ int beast2_execute_generator(
     size_t variant_count = 0;
     size_t variant_index = 0;
 
+    if (media_library == NULL) {
+        beast2_execution_set_error(error_message, error_message_size, "media library context is required");
+        return -1;
+    }
+
     memset(summary, 0, sizeof(*summary));
     beast2_generator_document_init(&document);
+    snprintf(summary->database_path, sizeof(summary->database_path), "%s", media_library->db_path);
 
     if (
         beast2_generator_parse_file(
@@ -898,7 +905,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase three execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s",
+        "phase four execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s",
         context.generator_name,
         context.engine,
         variant_count,
@@ -912,12 +919,16 @@ int beast2_execute_generator(
 
     for (variant_index = 0; variant_index < variant_count; variant_index++) {
         beast2_execution_job job;
+        beast2_media_record media_record;
+        beast2_media_record_result media_result;
         beast2_model_request request;
         beast2_model_handle handle;
         beast2_model_result result;
         const char *output_ext = NULL;
 
         memset(&job, 0, sizeof(job));
+        memset(&media_record, 0, sizeof(media_record));
+        memset(&media_result, 0, sizeof(media_result));
         memset(&request, 0, sizeof(request));
         memset(&handle, 0, sizeof(handle));
         memset(&result, 0, sizeof(result));
@@ -1064,6 +1075,39 @@ int beast2_execute_generator(
             return -1;
         }
 
+        media_record.generator_name = context.generator_name;
+        media_record.generator_source_path = context.document->source_path;
+        media_record.generator_artifact_relative_path = job.generator_artifact_relative_path;
+        media_record.generator_artifact_path = job.generator_artifact_path;
+        media_record.output_relative_path = job.output_relative_path;
+        media_record.output_path = job.output_path;
+        media_record.output_kind = beast2_output_kind_name(result.output_kind);
+        media_record.engine = context.engine;
+        media_record.checkpoint = context.checkpoint;
+        media_record.backend = beast2_runtime_backend_name(handle.backend);
+        media_record.precision = beast2_precision_mode_name(handle.precision);
+        media_record.seed = context.seed;
+        media_record.resolution = context.resolution;
+        media_record.prompt = job.prompt;
+        media_record.prompt_hash = job.prompt_hash;
+        media_record.tags_csv = context.tags_joined;
+
+        if (
+            beast2_media_library_record_output(
+                media_library,
+                &media_record,
+                &media_result,
+                error_message,
+                error_message_size
+            ) != 0
+        ) {
+            job.status = BEAST2_JOB_STATUS_FAILED;
+            beast2_model_unload(runtime_context, &handle);
+            summary->failed_jobs++;
+            beast2_generator_document_free(&document);
+            return -1;
+        }
+
         beast2_model_unload(runtime_context, &handle);
         job.status = BEAST2_JOB_STATUS_COMPLETED;
         summary->completed_jobs++;
@@ -1077,6 +1121,7 @@ int beast2_execute_generator(
 
         if (summary->first_output_path[0] == '\0') {
             snprintf(summary->first_output_path, sizeof(summary->first_output_path), "%s", job.output_path);
+            snprintf(summary->first_thumbnail_path, sizeof(summary->first_thumbnail_path), "%s", media_result.thumbnail_path);
             snprintf(
                 summary->first_generator_artifact_path,
                 sizeof(summary->first_generator_artifact_path),
@@ -1099,7 +1144,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase three execution complete: generator=%s completed=%zu failed=%zu cache_hits=%zu cache_misses=%zu",
+        "phase four execution complete: generator=%s completed=%zu failed=%zu cache_hits=%zu cache_misses=%zu",
         context.generator_name,
         summary->completed_jobs,
         summary->failed_jobs,

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(beast2 VERSION 0.4.0 LANGUAGES C)
+project(beast2 VERSION 0.5.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -20,11 +20,13 @@ add_library(beast2_core STATIC
     src/executor.c
     src/filesystem.c
     src/logger.c
+    src/media_library.c
     src/parser.c
     src/runtime.c
 )
 
 target_include_directories(beast2_core PUBLIC include)
+target_link_libraries(beast2_core PUBLIC sqlite3)
 beast2_apply_warnings(beast2_core)
 
 add_executable(beast2 src/main.c)

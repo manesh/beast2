@@ -162,14 +162,20 @@ If you want the original design rationale, start with these:
   - backend selection for ONNX, TensorRT, llama.cpp, and Python fallback modes
   - deterministic local runtime implementations for image, video-manifest, and text outputs
   - loaded-model cache with stable cache-hit tracking across variant jobs
-- [ ] **Phase 4 - Media Library**
+- [x] **Phase 4 - Media Library**
+  - SQLite metadata database at `db/beast2.sqlite`
+  - persisted generator, media, tag, and generator-history records
+  - thumbnail sidecars stored under `thumbs/`
+  - media/tag indexing for generated outputs
+  - execution summaries now report first thumbnail and database path
 
 Today the repository contains a working native baseline, a DSL parser, an
-execution engine, and a model runtime layer. The runtime can boot and inspect
-its local workspace, the parser can load and expand generator prompts, the
-execution engine can schedule per-variant jobs, and the runtime layer can
-produce deterministic local image, video-manifest, and text outputs through a
-unified model API.
+execution engine, a model runtime layer, and a media library. The runtime can
+boot and inspect its local workspace, the parser can load and expand generator
+prompts, the execution engine can schedule per-variant jobs, the runtime layer
+can produce deterministic local image, video-manifest, and text outputs through
+a unified model API, and the media library persists generated outputs plus
+metadata into a local SQLite database with thumbnail sidecars.
 
 ### Implemented now
 
@@ -184,6 +190,9 @@ unified model API.
 - diffusion, video, and LLM runtime selection
 - loaded-model cache with cache-hit reporting
 - reproducibility sidecars written next to generated outputs
+- SQLite-backed media metadata indexing
+- generated thumbnails and preview sidecars
+- persisted tags and generator history
 - deterministic local image generation for diffusion-model workflows
 - initial CTest harness with unit and CLI integration tests, including runtime tests
 
@@ -193,8 +202,8 @@ unified model API.
   ONNX Runtime, TensorRT, or llama.cpp dependencies
 - workflow metadata is only minimally interpreted at execution time
 - prompt blocks are currently identified by section names containing `prompt`
-- reproducibility conventions are enforced in output artifacts and runtime
-  selection, but not yet by a full media database
+- media persistence is local and SQLite-backed, but there is not yet a browsing
+  UI or advanced query layer on top of it
 - the automated harness is still early and does not yet include sanitizers,
   fuzzing, or golden-output comparison tests
 
@@ -239,14 +248,15 @@ possible:
 - **Phase 1** makes generator files real by parsing the Beast2 DSL
 - **Phase 2** turns parsed generators into executable workflows
 - **Phase 3** connects those workflows to a unified local model runtime layer
-- **Phase 4** stores outputs and metadata in a reusable media library
+- **Phase 4** stores outputs, thumbnails, tags, and metadata in a reusable
+  media library
 
 Short version:
 
 - first make generators parseable
 - then make them executable
 - then give execution a real model runtime interface and cache
-- then make outputs searchable, reusable, and scalable
+- then persist outputs and metadata in a local indexed library
 
 The first major usable milestone is the vertical slice described in the docs:
 
@@ -261,7 +271,7 @@ workflow building.
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0, Phase 1, Phase 2, and Phase 3 runtime implementation
+- `src/` - Phase 0 through Phase 4 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
@@ -290,7 +300,7 @@ Current automated coverage includes:
 - parser unit tests
 - config unit tests
 - filesystem unit tests
-- execution-engine unit tests
+- execution-engine and media-persistence unit tests
 - model-runtime unit tests
 - CLI integration tests for help, parser mode, parser all-prompts mode, runtime
   boot, execution mode, and invalid input
@@ -321,7 +331,7 @@ Print every generated prompt variant explicitly:
 ./build/beast2 --generator examples/wan22_walk_cycle.b2 --all-prompts
 ```
 
-Execute a generator through the Phase 3 runtime-backed workflow engine:
+Execute a generator through the Phase 4 runtime + media library pipeline:
 
 ```sh
 ./build/beast2 --run-generator examples/sdxl_character_concept.b2

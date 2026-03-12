@@ -30,8 +30,8 @@ Current automated coverage:
 - `test_parser` for parser behavior and prompt rendering
 - `test_config` for config defaults and config-file validation
 - `test_filesystem` for path helpers, layout creation, and directory scanning
-- `test_execution` for deterministic execution and output-side
-  reproducibility artifacts
+- `test_execution` for deterministic execution, output-side reproducibility
+  artifacts, SQLite media persistence, tag indexing, and thumbnail generation
 - `test_runtime` for the unified model runtime API, category/backend selection,
   cache hits, and deterministic runtime outputs
 - CLI integration tests for help output, parser mode, parser all-prompts mode,
@@ -220,6 +220,14 @@ The highest-value immediate tests are:
 - output-side generator artifacts record checkpoint and seed provenance
 - job summaries report completed and failed counts
 
+### Media library behavior
+
+- generated outputs are recorded in SQLite
+- generator metadata is persisted
+- tags are inserted and linked through `media_tags`
+- thumbnail sidecars are generated and recorded
+- generator history rows are written for reproducibility
+
 ### Model runtime behavior
 
 - runtime category selection is stable for diffusion, video, and LLM engines
@@ -236,7 +244,7 @@ The automated harness now exists, but there is still important coverage missing:
 - no fuzz testing yet
 - no golden-output file comparisons yet
 - no external ONNX Runtime, TensorRT, or llama.cpp integration tests yet
-- no media-library persistence tests yet
+- no gallery/query-layer tests yet
 
 ## Suggested next rollout order
 
@@ -245,4 +253,4 @@ The automated harness now exists, but there is still important coverage missing:
 3. expand parser fixtures for edge cases and large inputs
 4. add reproducibility-oriented fixture metadata such as checkpoint hashes
 5. expand runtime tests toward external backend adapters as real inference dependencies land
-6. add media-library persistence and indexing tests as Phase 4 lands
+6. add gallery/query-layer and advanced media-library query tests

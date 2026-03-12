@@ -7,12 +7,14 @@
 #include "beast2/executor.h"
 #include "beast2/filesystem.h"
 #include "beast2/logger.h"
+#include "beast2/media_library.h"
 #include "beast2/parser.h"
 #include "beast2/runtime.h"
 
 typedef struct beast2_runtime_context {
     beast2_config config;
     beast2_logger logger;
+    beast2_media_library_context media_library;
     beast2_model_runtime_context model_runtime;
     char log_path[BEAST2_MAX_PATH_LENGTH];
 } beast2_runtime_context;
@@ -99,12 +101,25 @@ static int beast2_prepare_runtime(
         return -1;
     }
 
+    if (
+        beast2_media_library_init(
+            &context->media_library,
+            context->config.workspace_root,
+            error_message,
+            error_message_size
+        ) != 0
+    ) {
+        beast2_logger_close(&context->logger);
+        return -1;
+    }
+
     beast2_model_runtime_init(&context->model_runtime);
     return 0;
 }
 
 static void beast2_cleanup_runtime(beast2_runtime_context *context) {
     beast2_model_runtime_shutdown(&context->model_runtime);
+    beast2_media_library_shutdown(&context->media_library);
     beast2_logger_close(&context->logger);
 }
 
@@ -352,6 +367,7 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
         beast2_execute_generator(
             &runtime.config,
             &runtime.logger,
+            &runtime.media_library,
             &runtime.model_runtime,
             generator_path,
             &summary,
@@ -359,13 +375,13 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
             sizeof(error_message)
         ) != 0
     ) {
-        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase three execution failed: %s", error_message);
+        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase four execution failed: %s", error_message);
         beast2_cleanup_runtime(&runtime);
         fprintf(stderr, "beast2: failed to execute generator: %s\n", error_message);
         return 1;
     }
 
-    printf("Beast2 phase three execution complete.\n");
+    printf("Beast2 phase four execution complete.\n");
     printf("Generator: %s\n", summary.generator_name);
     printf("Engine: %s\n", summary.engine);
     printf("Checkpoint: %s\n", summary.checkpoint);
@@ -382,7 +398,9 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
         summary.cache_hits,
         summary.cache_misses
     );
+    printf("Database: %s\n", summary.database_path);
     printf("First output: %s\n", summary.first_output_path);
+    printf("First thumbnail: %s\n", summary.first_thumbnail_path);
     printf("First generator artifact: %s\n", summary.first_generator_artifact_path);
 
     beast2_cleanup_runtime(&runtime);

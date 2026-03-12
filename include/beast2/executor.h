@@ -5,6 +5,7 @@
 
 #include "beast2/config.h"
 #include "beast2/logger.h"
+#include "beast2/media_library.h"
 #include "beast2/runtime.h"
 
 typedef struct beast2_execution_summary {
@@ -21,13 +22,16 @@ typedef struct beast2_execution_summary {
     size_t failed_jobs;
     size_t cache_hits;
     size_t cache_misses;
+    char database_path[BEAST2_MAX_PATH_LENGTH];
     char first_output_path[BEAST2_MAX_PATH_LENGTH];
+    char first_thumbnail_path[BEAST2_MAX_PATH_LENGTH];
     char first_generator_artifact_path[BEAST2_MAX_PATH_LENGTH];
 } beast2_execution_summary;
 
 int beast2_execute_generator(
     const beast2_config *config,
     beast2_logger *logger,
+    beast2_media_library_context *media_library,
     beast2_model_runtime_context *runtime_context,
     const char *generator_path,
     beast2_execution_summary *summary,
