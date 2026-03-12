@@ -31,8 +31,8 @@ Current automated coverage:
 - `test_config` for config defaults and config-file validation
 - `test_filesystem` for path helpers, layout creation, and directory scanning
 - `test_execution` for deterministic execution, output-side reproducibility
-  artifacts, SQLite media persistence, tag indexing, image thumbnails, and video
-  preview generation
+  artifacts, SQLite media persistence, latent indexing, tag indexing, image
+  thumbnails, and video preview generation
 - `test_runtime` for the unified model runtime API, category/backend selection,
   cache hits, and deterministic runtime outputs
 - `test_scheduler` for priority ordering, model-residency cache hits, and LRU
@@ -237,6 +237,14 @@ The highest-value immediate tests are:
 - video previews are generated under `thumbs/videos/`
 - generator history rows are written for reproducibility
 
+### Latent library behavior
+
+- image generations create reusable latent files
+- video generations create reusable video latent files
+- video generations create motion vector files
+- latent rows are inserted into the `latents` table
+- latent files are linked back to source media through `media_id`
+
 ### Model runtime behavior
 
 - runtime category selection is stable for diffusion, video, and LLM engines
@@ -272,6 +280,7 @@ The automated harness now exists, but there is still important coverage missing:
 - no gallery/query-layer tests yet
 - no concurrent or preemptive scheduler integration tests yet
 - no real external-backend tensor pooling tests yet
+- no direct external-backend latent export tests yet
 
 ## Suggested next rollout order
 
@@ -282,4 +291,5 @@ The automated harness now exists, but there is still important coverage missing:
 5. expand runtime tests toward external backend adapters as real inference dependencies land
 6. add concurrent/preemptive scheduler integration tests
 7. add real external-backend tensor pooling and fragmentation tests
-8. add gallery/query-layer and advanced media-library query tests
+8. add direct external-backend latent export and validation tests
+9. add gallery/query-layer and advanced media-library query tests

@@ -186,6 +186,12 @@ If you want the original design rationale, start with these:
   - Phase 7 example generator targeting Wan-style video output
   - ffmpeg-backed clip assembly from runtime-produced video metadata
   - low-resolution video preview sidecars under `thumbs/videos/`
+- [x] **Phase 8 - Latent Library**
+  - deterministic image latent files
+  - deterministic video latent files
+  - deterministic motion vector files for video outputs
+  - SQLite latent metadata rows linked back to source media
+  - execution summaries now report first latent and first motion latent paths
 
 Today the repository contains a working native baseline, a DSL parser, an
 execution engine, a model runtime layer, a media library, a GPU scheduler, and
@@ -196,7 +202,8 @@ can produce deterministic local image, short webm video, and text outputs
 through a unified model API, and the media library persists generated outputs plus
 metadata into a local SQLite database with thumbnail sidecars while the
 scheduler arbitrates queue order and VRAM reservations and the tensor memory
-system reuses pooled CPU/GPU buffers across inference work.
+system reuses pooled CPU/GPU buffers across inference work. Phase 8 now also
+stores deterministic latent library artifacts for image and video generations.
 
 ### Implemented now
 
@@ -217,6 +224,9 @@ system reuses pooled CPU/GPU buffers across inference work.
 - CPU/GPU tensor pool reuse inside the runtime layer
 - deterministic short webm generation for video-model workflows
 - ffmpeg-backed video previews stored in the media library
+- latent file generation for image and video outputs
+- motion-vector latent generation for video outputs
+- SQLite latent metadata indexing
 - reproducibility sidecars written next to generated outputs
 - SQLite-backed media metadata indexing
 - generated thumbnails and preview sidecars
@@ -238,6 +248,8 @@ system reuses pooled CPU/GPU buffers across inference work.
   rather than external ONNX/TensorRT/llama.cpp backend tensor objects
 - the Phase 7 video path creates deterministic native clips, not real learned
   video-model inference yet
+- the Phase 8 latent library stores deterministic reusable latent artifacts, but
+  not direct backend-native tensor dumps from external inference engines yet
 - the automated harness is still early and does not yet include sanitizers,
   fuzzing, or golden-output comparison tests
 
@@ -287,6 +299,7 @@ possible:
 - **Phase 5** adds queue-based GPU scheduling and VRAM arbitration
 - **Phase 6** adds pooled tensor/buffer reuse to reduce repeated allocations
 - **Phase 7** adds short local video clip generation
+- **Phase 8** stores reusable latent vectors and motion data
 
 Short version:
 
@@ -297,6 +310,7 @@ Short version:
 - then add queue-based GPU scheduling around the runtime
 - then add pooled tensor memory reuse inside the runtime layer
 - then emit real short video clips for video-model workflows
+- then persist reusable latent and motion artifacts for future workflows
 
 The first major usable milestone is the vertical slice described in the docs:
 
@@ -311,7 +325,7 @@ workflow building.
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0 through Phase 7 runtime implementation
+- `src/` - Phase 0 through Phase 8 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
@@ -344,6 +358,7 @@ Current automated coverage includes:
 - model-runtime unit tests
 - scheduler unit tests
 - tensor-memory unit tests
+- latent persistence checks within execution tests
 - CLI integration tests for help, parser mode, parser all-prompts mode, runtime
   boot, image execution mode, video execution mode, and invalid input
 
@@ -373,13 +388,13 @@ Print every generated prompt variant explicitly:
 ./build/beast2 --generator examples/wan22_walk_cycle.b2 --all-prompts
 ```
 
-Execute an image generator through the Phase 7 pipeline:
+Execute an image generator through the Phase 8 pipeline:
 
 ```sh
 ./build/beast2 --run-generator examples/sdxl_character_concept.b2
 ```
 
-Execute a video generator through the Phase 7 pipeline:
+Execute a video generator through the Phase 8 pipeline:
 
 ```sh
 ./build/beast2 --run-generator examples/wan22-short-video-demo.b2

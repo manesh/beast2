@@ -501,6 +501,10 @@ static int beast2_runtime_format_image(
     snprintf(result->mime_type, sizeof(result->mime_type), "%s", "image/x-portable-pixmap");
     result->content_length = length;
     result->inference_steps = steps;
+    result->width = requested_width;
+    result->height = requested_height;
+    result->frames_per_second = 0;
+    result->duration_seconds = 0;
     beast2_tensor_memory_release(&context->tensor_memory, &image_tensor);
     beast2_tensor_memory_release(&context->tensor_memory, &embedding_tensor);
     beast2_tensor_memory_release(&context->tensor_memory, &latent_tensor);

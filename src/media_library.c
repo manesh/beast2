@@ -634,6 +634,19 @@ int beast2_media_library_init(
         "  FOREIGN KEY(media_id) REFERENCES media(media_id),"
         "  FOREIGN KEY(tag_id) REFERENCES tags(tag_id)"
         ");"
+        "CREATE TABLE IF NOT EXISTS latents ("
+        "  latent_id INTEGER PRIMARY KEY,"
+        "  media_id INTEGER NOT NULL,"
+        "  latent_type TEXT NOT NULL,"
+        "  model TEXT NOT NULL,"
+        "  shape TEXT NOT NULL,"
+        "  file_path TEXT NOT NULL UNIQUE,"
+        "  seed TEXT,"
+        "  width INTEGER,"
+        "  height INTEGER,"
+        "  steps INTEGER,"
+        "  FOREIGN KEY(media_id) REFERENCES media(media_id)"
+        ");"
         "CREATE TABLE IF NOT EXISTS generator_history ("
         "  history_id INTEGER PRIMARY KEY,"
         "  generator_id INTEGER NOT NULL,"
@@ -647,7 +660,9 @@ int beast2_media_library_init(
         "CREATE INDEX IF NOT EXISTS idx_media_type ON media(type);"
         "CREATE INDEX IF NOT EXISTS idx_media_creation_time ON media(creation_time);"
         "CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(tag_name);"
-        "CREATE INDEX IF NOT EXISTS idx_media_tags_tag_id ON media_tags(tag_id);";
+        "CREATE INDEX IF NOT EXISTS idx_media_tags_tag_id ON media_tags(tag_id);"
+        "CREATE INDEX IF NOT EXISTS idx_latents_media_id ON latents(media_id);"
+        "CREATE INDEX IF NOT EXISTS idx_latents_type ON latents(latent_type);";
 
     memset(context, 0, sizeof(*context));
     snprintf(context->workspace_root, sizeof(context->workspace_root), "%s", workspace_root);

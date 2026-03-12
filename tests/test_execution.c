@@ -42,6 +42,7 @@ static int test_execute_generator_creates_outputs(void) {
     char output_contents[8192];
     char artifact_contents[8192];
     char thumbnail_contents[4096];
+    struct stat latent_stat;
     sqlite3 *db = NULL;
 
     memset(&logger, 0, sizeof(logger));
@@ -115,10 +116,14 @@ static int test_execute_generator_creates_outputs(void) {
     BEAST2_TEST_ASSERT(summary.tensor_peak_reserved_gpu > 0);
     BEAST2_TEST_ASSERT(summary.tensor_bytes_reused_cpu > 0);
     BEAST2_TEST_ASSERT(summary.tensor_bytes_reused_gpu > 0);
+    BEAST2_TEST_ASSERT(summary.latent_records_created == 2);
     BEAST2_TEST_ASSERT(strstr(summary.database_path, "db/beast2.sqlite") != NULL);
     BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_output_path) == 1);
     BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_thumbnail_path) == 1);
     BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_generator_artifact_path) == 1);
+    BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_latent_path) == 1);
+    BEAST2_TEST_ASSERT(stat(summary.first_latent_path, &latent_stat) == 0);
+    BEAST2_TEST_ASSERT(latent_stat.st_size > 0);
 
     BEAST2_TEST_ASSERT(
         beast2_test_read_text_file(summary.first_output_path, output_contents, sizeof(output_contents)) == 0
@@ -152,6 +157,8 @@ static int test_execute_generator_creates_outputs(void) {
     BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM media;", 2) == 0);
     BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM tags;", 2) == 0);
     BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM media_tags;", 4) == 0);
+    BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM latents;", 2) == 0);
+    BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM latents WHERE latent_type = 'image_latent';", 2) == 0);
     BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM generator_history;", 2) == 0);
     sqlite3_close(db);
 
@@ -175,6 +182,8 @@ static int test_execute_video_generator_creates_webm_outputs(void) {
     char artifact_contents[8192];
     struct stat output_stat;
     struct stat preview_stat;
+    struct stat latent_stat;
+    struct stat motion_stat;
     sqlite3 *db = NULL;
 
     memset(&logger, 0, sizeof(logger));
@@ -233,12 +242,19 @@ static int test_execute_video_generator_creates_webm_outputs(void) {
     BEAST2_TEST_ASSERT_STRING_EQ(summary.output_kind, "video");
     BEAST2_TEST_ASSERT(summary.completed_jobs == 2);
     BEAST2_TEST_ASSERT(summary.failed_jobs == 0);
+    BEAST2_TEST_ASSERT(summary.latent_records_created == 4);
     BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_output_path) == 1);
     BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_thumbnail_path) == 1);
+    BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_latent_path) == 1);
+    BEAST2_TEST_ASSERT(beast2_test_path_exists(summary.first_motion_latent_path) == 1);
     BEAST2_TEST_ASSERT(stat(summary.first_output_path, &output_stat) == 0);
     BEAST2_TEST_ASSERT(stat(summary.first_thumbnail_path, &preview_stat) == 0);
+    BEAST2_TEST_ASSERT(stat(summary.first_latent_path, &latent_stat) == 0);
+    BEAST2_TEST_ASSERT(stat(summary.first_motion_latent_path, &motion_stat) == 0);
     BEAST2_TEST_ASSERT(output_stat.st_size > 0);
     BEAST2_TEST_ASSERT(preview_stat.st_size > 0);
+    BEAST2_TEST_ASSERT(latent_stat.st_size > 0);
+    BEAST2_TEST_ASSERT(motion_stat.st_size > 0);
 
     BEAST2_TEST_ASSERT(
         beast2_test_read_text_file(summary.first_generator_artifact_path, artifact_contents, sizeof(artifact_contents)) == 0
@@ -248,6 +264,9 @@ static int test_execute_video_generator_creates_webm_outputs(void) {
 
     BEAST2_TEST_ASSERT(sqlite3_open(summary.database_path, &db) == SQLITE_OK);
     BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM media WHERE type = 'video';", 2) == 0);
+    BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM latents;", 4) == 0);
+    BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM latents WHERE latent_type = 'video_latent';", 2) == 0);
+    BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM latents WHERE latent_type = 'motion_vector';", 2) == 0);
     BEAST2_TEST_ASSERT(beast2_test_query_count(db, "SELECT COUNT(*) FROM generator_history;", 2) == 0);
     sqlite3_close(db);
 

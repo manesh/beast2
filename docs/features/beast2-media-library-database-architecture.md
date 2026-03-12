@@ -36,6 +36,7 @@ media library described in this document, including:
 	•	tag and generator metadata tables  
 	•	generator history records  
 	•	thumbnail sidecars stored under `thumbs/`  
+	•	latent records stored in the `latents` table  
   
 At the moment, this is a **native local media layer** intended to support the
 current execution pipeline. Advanced browsing queries, richer preview formats,

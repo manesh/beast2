@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "beast2/filesystem.h"
+#include "beast2/latent_library.h"
 #include "beast2/parser.h"
 #include "beast2/runtime.h"
 
@@ -1140,7 +1141,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase seven execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
+        "phase eight execution starting: generator=%s engine=%s variants=%zu checkpoint=%s seed=%s priority=%s",
         context.generator_name,
         context.engine,
         variant_count,
@@ -1269,6 +1270,8 @@ int beast2_execute_generator(
         beast2_scheduled_job *scheduled_job = NULL;
         beast2_media_record media_record;
         beast2_media_record_result media_result;
+        beast2_latent_capture_request latent_request;
+        beast2_latent_capture_result latent_result;
         beast2_model_handle handle;
         beast2_model_result result;
         beast2_gpu_job_ticket active_ticket;
@@ -1276,6 +1279,8 @@ int beast2_execute_generator(
 
         memset(&media_record, 0, sizeof(media_record));
         memset(&media_result, 0, sizeof(media_result));
+        memset(&latent_request, 0, sizeof(latent_request));
+        memset(&latent_result, 0, sizeof(latent_result));
         memset(&handle, 0, sizeof(handle));
         memset(&result, 0, sizeof(result));
         memset(&active_ticket, 0, sizeof(active_ticket));
@@ -1463,6 +1468,42 @@ int beast2_execute_generator(
             return -1;
         }
 
+        latent_request.media_id = media_result.media_id;
+        latent_request.output_kind = beast2_output_kind_name(result.output_kind);
+        latent_request.output_relative_path = scheduled_job->job.output_relative_path;
+        latent_request.engine = context.engine;
+        latent_request.checkpoint = context.checkpoint;
+        latent_request.seed = context.seed;
+        latent_request.steps = context.steps;
+        latent_request.width = result.width > 0 ? result.width : 0;
+        latent_request.height = result.height > 0 ? result.height : 0;
+        latent_request.frame_count = result.frames_per_second * result.duration_seconds;
+        latent_request.prompt_hash = scheduled_job->job.prompt_hash;
+
+        if (
+            beast2_latent_library_capture(
+                media_library,
+                &runtime_context->tensor_memory,
+                &latent_request,
+                &latent_result,
+                error_message,
+                error_message_size
+            ) != 0
+        ) {
+            scheduled_job->job.status = BEAST2_JOB_STATUS_FAILED;
+            beast2_model_unload(runtime_context, &handle);
+            beast2_gpu_scheduler_fail(
+                scheduler,
+                &active_ticket,
+                error_message,
+                error_message_size
+            );
+            summary->failed_jobs++;
+            free(scheduled_jobs);
+            beast2_generator_document_free(&document);
+            return -1;
+        }
+
         beast2_model_unload(runtime_context, &handle);
         if (
             beast2_gpu_scheduler_complete(
@@ -1498,6 +1539,7 @@ int beast2_execute_generator(
         summary->tensor_peak_reserved_gpu = result.tensor_peak_reserved_gpu;
         summary->tensor_bytes_reused_cpu = result.tensor_bytes_reused_cpu;
         summary->tensor_bytes_reused_gpu = result.tensor_bytes_reused_gpu;
+        summary->latent_records_created += latent_result.latent_count;
 
         if (summary->first_output_path[0] == '\0') {
             snprintf(summary->first_output_path, sizeof(summary->first_output_path), "%s", scheduled_job->job.output_path);
@@ -1507,6 +1549,13 @@ int beast2_execute_generator(
                 sizeof(summary->first_generator_artifact_path),
                 "%s",
                 scheduled_job->job.generator_artifact_path
+            );
+            snprintf(summary->first_latent_path, sizeof(summary->first_latent_path), "%s", latent_result.first_latent_path);
+            snprintf(
+                summary->first_motion_latent_path,
+                sizeof(summary->first_motion_latent_path),
+                "%s",
+                latent_result.first_motion_path
             );
         }
 
@@ -1531,7 +1580,7 @@ int beast2_execute_generator(
     beast2_logger_log(
         logger,
         BEAST2_LOG_LEVEL_INFO,
-        "phase seven execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
+        "phase eight execution complete: generator=%s completed=%zu failed=%zu queue_peak=%zu cache_hits=%zu cache_misses=%zu model_evictions=%zu peak_reserved_vram_mb=%zu",
         context.generator_name,
         summary->completed_jobs,
         summary->failed_jobs,

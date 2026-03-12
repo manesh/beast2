@@ -43,6 +43,7 @@ Current harness coverage includes:
 - filesystem unit tests
 - execution-engine unit tests
 - media-library persistence checks
+- latent-library persistence checks
 - model-runtime unit tests
 - scheduler unit tests
 - tensor-memory unit tests
@@ -62,13 +63,13 @@ Phase 1 parser example:
 ./build/beast2 --generator examples/wan22_walk_cycle.b2
 ```
 
-Phase 7 image execution example:
+Phase 8 image execution example:
 
 ```sh
 ./build/beast2 --run-generator examples/sdxl_character_concept.b2
 ```
 
-Phase 7 video execution example:
+Phase 8 video execution example:
 
 ```sh
 ./build/beast2 --run-generator examples/wan22-short-video-demo.b2

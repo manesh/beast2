@@ -32,10 +32,13 @@ typedef struct beast2_execution_summary {
     size_t tensor_peak_reserved_gpu;
     size_t tensor_bytes_reused_cpu;
     size_t tensor_bytes_reused_gpu;
+    size_t latent_records_created;
     char database_path[BEAST2_MAX_PATH_LENGTH];
     char first_output_path[BEAST2_MAX_PATH_LENGTH];
     char first_thumbnail_path[BEAST2_MAX_PATH_LENGTH];
     char first_generator_artifact_path[BEAST2_MAX_PATH_LENGTH];
+    char first_latent_path[BEAST2_MAX_PATH_LENGTH];
+    char first_motion_latent_path[BEAST2_MAX_PATH_LENGTH];
 } beast2_execution_summary;
 
 int beast2_execute_generator(

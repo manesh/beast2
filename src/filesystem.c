@@ -280,6 +280,8 @@ int beast2_fs_ensure_layout(
         "generators/video",
         "generators/llm",
         "latents",
+        "latents/image",
+        "latents/video",
         "latents/motion",
         "latents/styles",
         "latents/seeds",

@@ -391,13 +391,13 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
             sizeof(error_message)
         ) != 0
     ) {
-        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase seven execution failed: %s", error_message);
+        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase eight execution failed: %s", error_message);
         beast2_cleanup_runtime(&runtime);
         fprintf(stderr, "beast2: failed to execute generator: %s\n", error_message);
         return 1;
     }
 
-    printf("Beast2 phase seven execution complete.\n");
+    printf("Beast2 phase eight execution complete.\n");
     printf("Generator: %s\n", summary.generator_name);
     printf("Engine: %s\n", summary.engine);
     printf("Checkpoint: %s\n", summary.checkpoint);
@@ -408,7 +408,7 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
     printf("Seed: %s\n", summary.seed);
     printf(
         "Job summary: total=%zu completed=%zu failed=%zu cache_hits=%zu cache_misses=%zu "
-        "queue_peak=%zu model_evictions=%zu peak_reserved_vram_mb=%zu "
+        "queue_peak=%zu model_evictions=%zu peak_reserved_vram_mb=%zu latent_records=%zu "
         "tensor_pool_hits=%zu tensor_pool_misses=%zu tensor_peak_reserved_cpu=%zu tensor_peak_reserved_gpu=%zu\n",
         summary.total_jobs,
         summary.completed_jobs,
@@ -418,6 +418,7 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
         summary.scheduler_peak_queue_length,
         summary.scheduler_model_evictions,
         summary.scheduler_peak_reserved_vram_mb,
+        summary.latent_records_created,
         summary.tensor_pool_hits,
         summary.tensor_pool_misses,
         summary.tensor_peak_reserved_cpu,
@@ -427,6 +428,10 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
     printf("First output: %s\n", summary.first_output_path);
     printf("First thumbnail: %s\n", summary.first_thumbnail_path);
     printf("First generator artifact: %s\n", summary.first_generator_artifact_path);
+    printf("First latent: %s\n", summary.first_latent_path);
+    if (summary.first_motion_latent_path[0] != '\0') {
+        printf("First motion latent: %s\n", summary.first_motion_latent_path);
+    }
 
     beast2_cleanup_runtime(&runtime);
     return 0;

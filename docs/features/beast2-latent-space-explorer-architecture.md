@@ -24,6 +24,21 @@ Example models supported include:
   
 ⸻  
   
+**Current implementation note**  
+  
+The current repository implementation now provides the first reusable latent
+library slice needed by this explorer:
+	•	image latent files  
+	•	video latent files  
+	•	motion vector files  
+	•	SQLite latent metadata linked to source media  
+  
+The interactive explorer UI and interpolation workflows described in this
+document are still future phases, but the underlying latent artifacts now exist
+on disk and in the database.  
+  
+⸻  
+  
 **Design Goals**  
   
 **Real-time exploration**  
