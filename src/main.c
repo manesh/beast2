@@ -4,12 +4,17 @@
 #include "beast2/app.h"
 
 static void beast2_print_usage(const char *program_name) {
-    printf("Usage: %s [--config <path>] [--generator <path>] [--all-prompts] [--help] [--version]\n", program_name);
+    printf(
+        "Usage: %s [--config <path>] [--generator <path>] [--run-generator <path>] "
+        "[--all-prompts] [--help] [--version]\n",
+        program_name
+    );
 }
 
 int main(int argc, char **argv) {
     const char *config_path = "config/beast2.conf";
     const char *generator_path = NULL;
+    const char *run_generator_path = NULL;
     int print_all_prompts = 0;
     int argument_index = 0;
 
@@ -20,7 +25,7 @@ int main(int argc, char **argv) {
         }
 
         if (strcmp(argv[argument_index], "--version") == 0) {
-            printf("beast2 0.2.0\n");
+            printf("beast2 0.3.0\n");
             return 0;
         }
 
@@ -48,6 +53,18 @@ int main(int argc, char **argv) {
             continue;
         }
 
+        if (strcmp(argv[argument_index], "--run-generator") == 0) {
+            argument_index++;
+
+            if (argument_index >= argc) {
+                fprintf(stderr, "--run-generator requires a path\n");
+                return 1;
+            }
+
+            run_generator_path = argv[argument_index];
+            continue;
+        }
+
         if (strcmp(argv[argument_index], "--all-prompts") == 0) {
             print_all_prompts = 1;
             continue;
@@ -58,8 +75,22 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    if (generator_path != NULL && run_generator_path != NULL) {
+        fprintf(stderr, "--generator and --run-generator are mutually exclusive\n");
+        return 1;
+    }
+
     if (generator_path != NULL) {
         return beast2_run_generator(generator_path, print_all_prompts);
+    }
+
+    if (run_generator_path != NULL) {
+        if (print_all_prompts) {
+            fprintf(stderr, "--all-prompts only applies to --generator\n");
+            return 1;
+        }
+
+        return beast2_run_generator_execution(config_path, run_generator_path);
     }
 
     if (print_all_prompts) {

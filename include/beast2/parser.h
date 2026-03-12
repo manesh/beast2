@@ -66,6 +66,16 @@ const beast2_prompt_block *beast2_generator_primary_prompt_block(
     const beast2_generator_document *document
 );
 
+const beast2_metadata_section *beast2_generator_find_metadata_section(
+    const beast2_generator_document *document,
+    const char *section_name
+);
+
+const char *beast2_metadata_first_value(
+    const beast2_metadata_section *section,
+    const char *instruction_name
+);
+
 size_t beast2_prompt_block_variant_count(const beast2_prompt_block *block);
 
 int beast2_prompt_block_render_variant(

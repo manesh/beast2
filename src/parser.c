@@ -729,6 +729,44 @@ const beast2_prompt_block *beast2_generator_primary_prompt_block(
     return &document->prompt_blocks[0];
 }
 
+const beast2_metadata_section *beast2_generator_find_metadata_section(
+    const beast2_generator_document *document,
+    const char *section_name
+) {
+    size_t index = 0;
+
+    if (document == NULL || section_name == NULL) {
+        return NULL;
+    }
+
+    for (index = 0; index < document->metadata_section_count; index++) {
+        if (strcmp(document->metadata_sections[index].name, section_name) == 0) {
+            return &document->metadata_sections[index];
+        }
+    }
+
+    return NULL;
+}
+
+const char *beast2_metadata_first_value(
+    const beast2_metadata_section *section,
+    const char *instruction_name
+) {
+    size_t index = 0;
+
+    if (section == NULL || instruction_name == NULL) {
+        return NULL;
+    }
+
+    for (index = 0; index < section->instruction_count; index++) {
+        if (strcmp(section->instructions[index].name, instruction_name) == 0) {
+            return section->instructions[index].value;
+        }
+    }
+
+    return NULL;
+}
+
 size_t beast2_prompt_block_variant_count(const beast2_prompt_block *block) {
     size_t index = 0;
     size_t count = 1;

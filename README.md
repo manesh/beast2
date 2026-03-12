@@ -147,14 +147,23 @@ If you want the original design rationale, start with these:
   - support for `b2_concat_comma`, `b2_concat_space`, and `b2_concat_newline`
   - metadata capture for sections such as `$b2_generator`, `$b2_tags`, and `$b2_workflow`
   - prompt variant expansion and printing from parsed generators
-- [ ] **Phase 2 - Generator Execution Engine**
+- [x] **Phase 2 - Generator Execution Engine**
+  - workflow execution over parsed generator structures
+  - per-variant job creation and job-state tracking
+  - minimal three-step pipeline:
+    - `b2_prompt_build`
+    - `b2_model_run`
+    - `b2_save_media`
+  - deterministic simulated model outputs written to the filesystem
+  - output-side generator artifacts with reproducibility metadata
 - [ ] **Phase 3 - Model Runtime Layer**
 - [ ] **Phase 4 - Media Library**
 
-Today the repository contains a working native baseline plus the first DSL
-parser milestone. The runtime can boot and inspect its local workspace, and the
-parser can load a generator file, resolve prompt combinations, and print final
-prompts without attempting model execution yet.
+Today the repository contains a working native baseline, a DSL parser, and a
+minimal execution engine. The runtime can boot and inspect its local workspace,
+the parser can load and expand generator prompts, and the execution engine can
+run prompt variants through a deterministic Phase 2 pipeline that produces
+filesystem outputs and reproducibility sidecars.
 
 ### Implemented now
 
@@ -164,14 +173,17 @@ prompts without attempting model execution yet.
 - prompt composition through sections, snippets, and explicit concatenation
 - metadata capture for generator, tag, and workflow sections
 - CLI inspection of rendered prompt variants
+- workflow execution with deterministic per-variant jobs
+- reproducibility sidecars written next to generated outputs
 - initial CTest harness with unit and CLI integration tests
 
 ### Current limitations
 
-- Phase 1 parses generators but does not execute them
-- workflow metadata is captured but not semantically validated
+- Phase 2 uses a deterministic simulated model runner, not a real inference backend
+- workflow metadata is only minimally interpreted at execution time
 - prompt blocks are currently identified by section names containing `prompt`
-- reproducibility conventions are documented, but not fully enforced in code yet
+- reproducibility conventions are now partially enforced in output artifacts, but
+  not yet by a full model runtime or media database
 - the automated harness is still early and does not yet include sanitizers,
   fuzzing, or golden-output comparison tests
 
@@ -238,7 +250,7 @@ workflow building.
 ## Repository layout
 
 - `CMakeLists.txt` - build definition
-- `src/` - Phase 0 and Phase 1 runtime implementation
+- `src/` - Phase 0, Phase 1, and Phase 2 runtime implementation
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
@@ -267,7 +279,9 @@ Current automated coverage includes:
 - parser unit tests
 - config unit tests
 - filesystem unit tests
-- CLI integration tests for help, parser mode, runtime boot, and invalid input
+- execution-engine unit tests
+- CLI integration tests for help, parser mode, parser all-prompts mode, runtime
+  boot, execution mode, and invalid input
 
 ## Run
 
@@ -293,6 +307,12 @@ Print every generated prompt variant explicitly:
 
 ```sh
 ./build/beast2 --generator examples/wan22_walk_cycle.b2 --all-prompts
+```
+
+Execute a generator through the Phase 2 workflow engine:
+
+```sh
+./build/beast2 --run-generator examples/wan22_walk_cycle.b2
 ```
 
 ## Default workspace layout

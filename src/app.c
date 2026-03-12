@@ -4,9 +4,105 @@
 #include <string.h>
 
 #include "beast2/config.h"
+#include "beast2/executor.h"
 #include "beast2/filesystem.h"
 #include "beast2/logger.h"
 #include "beast2/parser.h"
+
+typedef struct beast2_runtime_context {
+    beast2_config config;
+    beast2_logger logger;
+    char log_path[BEAST2_MAX_PATH_LENGTH];
+} beast2_runtime_context;
+
+static int beast2_prepare_runtime(
+    const char *config_path,
+    beast2_runtime_context *context,
+    char *error_message,
+    size_t error_message_size
+) {
+    char log_directory[BEAST2_MAX_PATH_LENGTH];
+
+    memset(context, 0, sizeof(*context));
+
+    if (
+        beast2_config_load(
+            &context->config,
+            config_path,
+            error_message,
+            error_message_size
+        ) != 0
+    ) {
+        return -1;
+    }
+
+    if (context->config.create_missing_directories) {
+        if (
+            beast2_fs_ensure_layout(
+                context->config.workspace_root,
+                error_message,
+                error_message_size
+            ) != 0
+        ) {
+            return -1;
+        }
+    }
+
+    if (beast2_fs_is_absolute(context->config.log_file)) {
+        snprintf(context->log_path, sizeof(context->log_path), "%s", context->config.log_file);
+    } else if (
+        beast2_fs_join_path(
+            context->log_path,
+            sizeof(context->log_path),
+            context->config.workspace_root,
+            context->config.log_file
+        ) != 0
+    ) {
+        snprintf(error_message, error_message_size, "%s", "failed to build log path");
+        return -1;
+    }
+
+    if (
+        beast2_fs_parent_directory(
+            context->log_path,
+            log_directory,
+            sizeof(log_directory)
+        ) != 0
+    ) {
+        snprintf(error_message, error_message_size, "%s", "failed to derive log directory");
+        return -1;
+    }
+
+    if (context->config.create_missing_directories) {
+        if (
+            beast2_fs_mkdirs(
+                log_directory,
+                error_message,
+                error_message_size
+            ) != 0
+        ) {
+            return -1;
+        }
+    }
+
+    if (
+        beast2_logger_init(
+            &context->logger,
+            context->log_path,
+            context->config.log_to_stderr,
+            error_message,
+            error_message_size
+        ) != 0
+    ) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static void beast2_cleanup_runtime(beast2_runtime_context *context) {
+    beast2_logger_close(&context->logger);
+}
 
 static void beast2_print_metadata_summary(const beast2_generator_document *document) {
     size_t section_index = 0;
@@ -117,107 +213,45 @@ static int beast2_print_prompt_variants(
 }
 
 int beast2_run(const char *config_path) {
-    beast2_config config;
-    beast2_logger logger;
+    beast2_runtime_context runtime;
     beast2_scan_result scan_result;
     char error_message[512];
-    char log_path[BEAST2_MAX_PATH_LENGTH];
-    char log_directory[BEAST2_MAX_PATH_LENGTH];
 
-    memset(&logger, 0, sizeof(logger));
     memset(error_message, 0, sizeof(error_message));
 
-    if (beast2_config_load(&config, config_path, error_message, sizeof(error_message)) != 0) {
-        fprintf(stderr, "beast2: failed to load configuration: %s\n", error_message);
+    if (beast2_prepare_runtime(config_path, &runtime, error_message, sizeof(error_message)) != 0) {
+        fprintf(stderr, "beast2: failed to prepare runtime: %s\n", error_message);
         return 1;
     }
 
-    if (config.create_missing_directories) {
-        if (
-            beast2_fs_ensure_layout(
-                config.workspace_root,
-                error_message,
-                sizeof(error_message)
-            ) != 0
-        ) {
-            fprintf(stderr, "beast2: failed to prepare workspace: %s\n", error_message);
-            return 1;
-        }
-    }
-
-    if (beast2_fs_is_absolute(config.log_file)) {
-        snprintf(log_path, sizeof(log_path), "%s", config.log_file);
-    } else if (
-        beast2_fs_join_path(
-            log_path,
-            sizeof(log_path),
-            config.workspace_root,
-            config.log_file
-        ) != 0
-    ) {
-        fprintf(stderr, "beast2: failed to build log path\n");
-        return 1;
-    }
-
-    if (beast2_fs_parent_directory(log_path, log_directory, sizeof(log_directory)) != 0) {
-        fprintf(stderr, "beast2: failed to derive log directory\n");
-        return 1;
-    }
-
-    if (config.create_missing_directories) {
-        if (
-            beast2_fs_mkdirs(
-                log_directory,
-                error_message,
-                sizeof(error_message)
-            ) != 0
-        ) {
-            fprintf(stderr, "beast2: failed to prepare log directory: %s\n", error_message);
-            return 1;
-        }
-    }
-
-    if (
-        beast2_logger_init(
-            &logger,
-            log_path,
-            config.log_to_stderr,
-            error_message,
-            sizeof(error_message)
-        ) != 0
-    ) {
-        fprintf(stderr, "beast2: %s\n", error_message);
-        return 1;
-    }
-
-    beast2_logger_log(&logger, BEAST2_LOG_LEVEL_INFO, "Beast2 phase zero startup");
-    beast2_logger_log(&logger, BEAST2_LOG_LEVEL_INFO, "loaded config from %s", config_path);
-    beast2_logger_log(&logger, BEAST2_LOG_LEVEL_INFO, "workspace root: %s", config.workspace_root);
-    beast2_logger_log(&logger, BEAST2_LOG_LEVEL_INFO, "log file: %s", log_path);
+    beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_INFO, "Beast2 phase zero startup");
+    beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_INFO, "loaded config from %s", config_path);
+    beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_INFO, "workspace root: %s", runtime.config.workspace_root);
+    beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_INFO, "log file: %s", runtime.log_path);
     beast2_logger_log(
-        &logger,
+        &runtime.logger,
         BEAST2_LOG_LEVEL_INFO,
         "create missing directories: %s",
-        config.create_missing_directories ? "true" : "false"
+        runtime.config.create_missing_directories ? "true" : "false"
     );
 
     if (
         beast2_fs_scan_directories(
-            config.workspace_root,
-            &config,
-            &logger,
+            runtime.config.workspace_root,
+            &runtime.config,
+            &runtime.logger,
             &scan_result,
             error_message,
             sizeof(error_message)
         ) != 0
     ) {
-        beast2_logger_log(&logger, BEAST2_LOG_LEVEL_ERROR, "directory scan failed: %s", error_message);
-        beast2_logger_close(&logger);
+        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "directory scan failed: %s", error_message);
+        beast2_cleanup_runtime(&runtime);
         return 1;
     }
 
     beast2_logger_log(
-        &logger,
+        &runtime.logger,
         BEAST2_LOG_LEVEL_INFO,
         "scan complete: roots=%zu directories=%zu files=%zu missing_roots=%zu",
         scan_result.roots_scanned,
@@ -228,8 +262,8 @@ int beast2_run(const char *config_path) {
 
     printf("Beast2 phase zero boot complete.\n");
     printf("Config: %s\n", config_path);
-    printf("Workspace: %s\n", config.workspace_root);
-    printf("Log file: %s\n", log_path);
+    printf("Workspace: %s\n", runtime.config.workspace_root);
+    printf("Log file: %s\n", runtime.log_path);
     printf(
         "Scan summary: roots=%zu directories=%zu files=%zu missing_roots=%zu\n",
         scan_result.roots_scanned,
@@ -238,7 +272,7 @@ int beast2_run(const char *config_path) {
         scan_result.missing_roots
     );
 
-    beast2_logger_close(&logger);
+    beast2_cleanup_runtime(&runtime);
     return 0;
 }
 
@@ -294,5 +328,52 @@ int beast2_run_generator(const char *generator_path, int print_all_prompts) {
     }
 
     beast2_generator_document_free(&document);
+    return 0;
+}
+
+int beast2_run_generator_execution(const char *config_path, const char *generator_path) {
+    beast2_runtime_context runtime;
+    beast2_execution_summary summary;
+    char error_message[512];
+
+    memset(error_message, 0, sizeof(error_message));
+    memset(&summary, 0, sizeof(summary));
+
+    if (beast2_prepare_runtime(config_path, &runtime, error_message, sizeof(error_message)) != 0) {
+        fprintf(stderr, "beast2: failed to prepare runtime: %s\n", error_message);
+        return 1;
+    }
+
+    if (
+        beast2_execute_generator(
+            &runtime.config,
+            &runtime.logger,
+            generator_path,
+            &summary,
+            error_message,
+            sizeof(error_message)
+        ) != 0
+    ) {
+        beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase two execution failed: %s", error_message);
+        beast2_cleanup_runtime(&runtime);
+        fprintf(stderr, "beast2: failed to execute generator: %s\n", error_message);
+        return 1;
+    }
+
+    printf("Beast2 phase two execution complete.\n");
+    printf("Generator: %s\n", summary.generator_name);
+    printf("Engine: %s\n", summary.engine);
+    printf("Checkpoint: %s\n", summary.checkpoint);
+    printf("Seed: %s\n", summary.seed);
+    printf(
+        "Job summary: total=%zu completed=%zu failed=%zu\n",
+        summary.total_jobs,
+        summary.completed_jobs,
+        summary.failed_jobs
+    );
+    printf("First output: %s\n", summary.first_output_path);
+    printf("First generator artifact: %s\n", summary.first_generator_artifact_path);
+
+    beast2_cleanup_runtime(&runtime);
     return 0;
 }

@@ -115,3 +115,29 @@ int beast2_test_write_text_file(const char *path, const char *contents) {
 
     return 0;
 }
+
+int beast2_test_read_text_file(const char *path, char *buffer, size_t buffer_size) {
+    FILE *file = NULL;
+    size_t bytes_read = 0;
+
+    if (buffer == NULL || buffer_size == 0) {
+        return -1;
+    }
+
+    file = fopen(path, "r");
+
+    if (file == NULL) {
+        return -1;
+    }
+
+    bytes_read = fread(buffer, 1, buffer_size - 1, file);
+    buffer[bytes_read] = '\0';
+
+    if (ferror(file)) {
+        fclose(file);
+        return -1;
+    }
+
+    fclose(file);
+    return 0;
+}

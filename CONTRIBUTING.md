@@ -41,6 +41,7 @@ Current harness coverage includes:
 - parser unit tests
 - config unit tests
 - filesystem unit tests
+- execution-engine unit tests
 - CLI integration tests
 
 ## Run
@@ -55,6 +56,12 @@ Phase 1 parser example:
 
 ```sh
 ./build/beast2 --generator examples/wan22_walk_cycle.b2
+```
+
+Phase 2 execution example:
+
+```sh
+./build/beast2 --run-generator examples/wan22_walk_cycle.b2
 ```
 
 Print all prompt variants:
@@ -120,6 +127,7 @@ Current expectation for meaningful changes:
 - run the relevant CLI path manually when behavior is user-visible
 - capture any new fixtures or examples in the repository when useful
 - keep behavior deterministic where possible
+- preserve exact checkpoint and seed provenance in execution-side artifacts
 
 Testing direction and next steps are documented in `docs/Testing Strategy.md`.
 

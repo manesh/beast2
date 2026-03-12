@@ -27,5 +27,7 @@ b2_tag motion
 
 $b2_workflow
 b2_engine wan22
+b2_checkpoint wan22#demo123
+b2_seed 4242
 b2_steps 30
 b2_resolution 512x512

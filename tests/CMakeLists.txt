@@ -22,6 +22,7 @@ endfunction()
 beast2_add_unit_test(test_parser test_parser.c)
 beast2_add_unit_test(test_config test_config.c)
 beast2_add_unit_test(test_filesystem test_filesystem.c)
+beast2_add_unit_test(test_execution test_execution.c)
 
 add_test(NAME beast2_cli_help COMMAND beast2 --help)
 set_tests_properties(beast2_cli_help PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
@@ -31,6 +32,12 @@ add_test(
     COMMAND beast2 --generator "${PROJECT_SOURCE_DIR}/examples/wan22_walk_cycle.b2"
 )
 set_tests_properties(beast2_cli_parse_example PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+
+add_test(
+    NAME beast2_cli_parse_all_prompts
+    COMMAND beast2 --generator "${PROJECT_SOURCE_DIR}/examples/wan22_walk_cycle.b2" --all-prompts
+)
+set_tests_properties(beast2_cli_parse_all_prompts PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
 
 add_test(
     NAME beast2_cli_runtime_boot
@@ -48,3 +55,12 @@ set_tests_properties(
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
         WILL_FAIL TRUE
 )
+
+add_test(
+    NAME beast2_cli_execute_generator
+    COMMAND
+        beast2
+        --config "${PROJECT_SOURCE_DIR}/tests/fixtures/config/execution-test.conf"
+        --run-generator "${PROJECT_SOURCE_DIR}/tests/fixtures/valid/executable_generator.b2"
+)
+set_tests_properties(beast2_cli_execute_generator PROPERTIES WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")

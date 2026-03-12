@@ -31,5 +31,6 @@ int beast2_test_path_exists(const char *path);
 int beast2_test_remove_tree(const char *path);
 int beast2_test_prepare_clean_directory(const char *path);
 int beast2_test_write_text_file(const char *path, const char *contents);
+int beast2_test_read_text_file(const char *path, char *buffer, size_t buffer_size);
 
 #endif

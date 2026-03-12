@@ -30,8 +30,10 @@ Current automated coverage:
 - `test_parser` for parser behavior and prompt rendering
 - `test_config` for config defaults and config-file validation
 - `test_filesystem` for path helpers, layout creation, and directory scanning
-- CLI integration tests for help output, parser mode, runtime boot, and invalid
-  generator input
+- `test_execution` for deterministic Phase 2 execution and output-side
+  reproducibility artifacts
+- CLI integration tests for help output, parser mode, parser all-prompts mode,
+  runtime boot, execution mode, and invalid generator input
 
 ## Testing principles
 
@@ -87,17 +89,19 @@ tested.
 ### Layer 1: unit tests
 
 Initial unit tests should target the code that is already implemented, and that
-is now the case for the first three core areas:
+is now the case for the first four core areas:
 
 - parser logic
 - config parsing
 - filesystem utilities
+- execution engine behavior
 
 Implemented files:
 
 - `tests/test_parser.c`
 - `tests/test_config.c`
 - `tests/test_filesystem.c`
+- `tests/test_execution.c`
 
 Current harness:
 
@@ -144,6 +148,7 @@ Current CLI integration cases:
 - `./build/beast2`
 - `./build/beast2 --generator examples/wan22_walk_cycle.b2`
 - `./build/beast2 --generator examples/wan22_walk_cycle.b2 --all-prompts`
+- `./build/beast2 --run-generator tests/fixtures/valid/executable_generator.b2`
 
 These tests should compare stdout and exit codes against expected results.
 
@@ -201,7 +206,15 @@ The highest-value immediate tests are:
 
 - help text prints successfully
 - parser mode returns success for a valid example
+- execution mode returns success for a valid example
 - invalid generator files return non-zero status
+
+### Execution and reproducibility behavior
+
+- execution engine creates deterministic per-variant jobs
+- output files are written to the filesystem
+- output-side generator artifacts record checkpoint and seed provenance
+- job summaries report completed and failed counts
 
 ## Current gaps
 
@@ -210,8 +223,8 @@ The automated harness now exists, but there is still important coverage missing:
 - no sanitizer build targets yet
 - no fuzz testing yet
 - no golden-output file comparisons yet
-- no output-side reproducibility tests yet
-- no execution-engine or model-runtime tests yet
+- no real model-runtime determinism tests yet
+- no media-library persistence tests yet
 
 ## Suggested next rollout order
 
@@ -219,5 +232,5 @@ The automated harness now exists, but there is still important coverage missing:
 2. add golden-output CLI comparison tests
 3. expand parser fixtures for edge cases and large inputs
 4. add reproducibility-oriented fixture metadata such as checkpoint hashes
-5. add execution-engine tests as Phase 2 lands
+5. expand execution-engine tests beyond the current deterministic placeholder runner
 6. add model-runtime determinism and provenance tests as Phase 3 lands

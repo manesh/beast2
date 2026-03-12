@@ -1,0 +1,30 @@
+#ifndef BEAST2_EXECUTOR_H
+#define BEAST2_EXECUTOR_H
+
+#include <stddef.h>
+
+#include "beast2/config.h"
+#include "beast2/logger.h"
+
+typedef struct beast2_execution_summary {
+    char generator_name[256];
+    char engine[128];
+    char checkpoint[256];
+    char seed[64];
+    size_t total_jobs;
+    size_t completed_jobs;
+    size_t failed_jobs;
+    char first_output_path[BEAST2_MAX_PATH_LENGTH];
+    char first_generator_artifact_path[BEAST2_MAX_PATH_LENGTH];
+} beast2_execution_summary;
+
+int beast2_execute_generator(
+    const beast2_config *config,
+    beast2_logger *logger,
+    const char *generator_path,
+    beast2_execution_summary *summary,
+    char *error_message,
+    size_t error_message_size
+);
+
+#endif

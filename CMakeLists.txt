@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(beast2 VERSION 0.1.0 LANGUAGES C)
+project(beast2 VERSION 0.3.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -17,6 +17,7 @@ endfunction()
 add_library(beast2_core STATIC
     src/app.c
     src/config.c
+    src/executor.c
     src/filesystem.c
     src/logger.c
     src/parser.c
