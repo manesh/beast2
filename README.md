@@ -49,7 +49,7 @@ Beast2 is meant to fill that gap with a local-first system that:
 
 ## Core design principles
 
-Summarized from `docs/Beast2 Design Principles.md`:
+Summarized from `docs/beast2-design-principles.md`:
 
 - **Generators over functions**: the main unit is a reusable generator, not a
   single button click.
@@ -75,7 +75,7 @@ Summarized from `docs/Beast2 Design Principles.md`:
 ## How a solo indie can compete
 
 Summarized from
-`docs/How a Solo Indie Can Rival a Studio With 500 Generators on a Thumb….md`:
+`docs/how-a-solo-indie-can-rival-a-studio-with-500-generators-on-a-thumb-drive.md`:
 
 The project does not try to scale by adding more people or bigger cloud
 infrastructure first. It tries to scale solved workflows.
@@ -106,30 +106,30 @@ library of workflows can behave like a huge multiplier for a single person.
 
 If you want the original design rationale, start with these:
 
-- `docs/Why Beast2 Exists.md`  
+- `docs/why-beast2-exists.md`  
   Why Beast2 is framed as a generative AI powertool and what gap it fills.
-- `docs/Beast2 Design Principles.md`  
+- `docs/beast2-design-principles.md`  
   The project philosophy: generators, exploration, local-first execution,
   explicit systems, and reusable knowledge capture.
-- `docs/How a Solo Indie Can Rival a Studio With 500 Generators on a Thumb….md`  
+- `docs/how-a-solo-indie-can-rival-a-studio-with-500-generators-on-a-thumb-drive.md`  
   The leverage argument for generator libraries, shareable workflows, and
   workstation-scale production.
-- `docs/Beast2 Development Roadmap & Implementation Order.md`  
+- `docs/beast2-development-roadmap-implementation-order.md`  
   The implementation sequence from Phase 0 through the larger system.
-- `docs/Beast2 Architecture Documentation Overview.md`  
+- `docs/beast2-architecture-documentation-overview.md`  
   The map of the major subsystem docs and how the architecture is divided.
-- `docs/Beast2 Backend Architecture.md`  
+- `docs/features/beast2-backend-architecture.md`  
   The high-level native runtime structure.
-- `docs/Beast2 Backend Architecture (Expanded).md`  
+- `docs/features/beast2-backend-architecture-expanded.md`  
   The more implementation-oriented backend and storage guidance.
 
 ## Contributor and implementation docs
 
 - `CONTRIBUTING.md`  
   Build steps, contribution workflow, and reproducibility expectations.
-- `docs/Testing Strategy.md`  
+- `docs/testing-strategy.md`  
   Recommended unit, fixture, integration, and reproducibility testing approach.
-- `docs/Phase 1 Parser Reference.md`  
+- `docs/generators/phase-1-parser-reference.md`  
   What the current parser supports today, what it warns on, and what is still
   intentionally out of scope.
 

@@ -1,7 +1,7 @@
 **The Beast2 Creative Workflow**  
   
 ```
-docs/creative_workflow.md
+docs/the-beast2-creative-workflow.md
 
 ```
   

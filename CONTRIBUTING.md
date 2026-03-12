@@ -12,7 +12,7 @@ correctness, determinism, and future compatibility rather than feature sprawl.
 ## Core contribution rules
 
 - keep changes aligned with the roadmap in
-  `docs/Beast2 Development Roadmap & Implementation Order.md`
+  `docs/beast2-development-roadmap-implementation-order.md`
 - prefer small, reviewable commits tied to a single logical change
 - preserve the native-first, minimal-dependency direction unless there is a
   strong reason not to
@@ -115,8 +115,8 @@ When making meaningful changes, update the docs that define or explain the
 behavior:
 
 - `README.md` for user-facing status and top-level usage
-- `docs/Phase 1 Parser Reference.md` for parser behavior and DSL expectations
-- `docs/Testing Strategy.md` for test scope and verification plans
+- `docs/generators/phase-1-parser-reference.md` for parser behavior and DSL expectations
+- `docs/testing-strategy.md` for test scope and verification plans
 - architecture docs when the implementation changes the intended system design
 
 ## Testing expectations
@@ -132,7 +132,7 @@ Current expectation for meaningful changes:
 - keep behavior deterministic where possible
 - preserve exact checkpoint and seed provenance in execution-side artifacts
 
-Testing direction and next steps are documented in `docs/Testing Strategy.md`.
+Testing direction and next steps are documented in `docs/testing-strategy.md`.
 
 ## Parser and DSL changes
 

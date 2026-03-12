@@ -1,7 +1,7 @@
 **Beast2 Design Principles**  
   
 ```
-docs/design_principles.md
+docs/beast2-design-principles.md
 
 ```
   
