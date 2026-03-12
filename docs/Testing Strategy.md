@@ -13,6 +13,26 @@ requires testing at multiple layers:
 
 This document describes the testing approach the repository should grow into.
 
+## Current harness
+
+The repository now includes an initial automated harness built with CTest.
+
+Current commands:
+
+```sh
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+Current automated coverage:
+
+- `test_parser` for parser behavior and prompt rendering
+- `test_config` for config defaults and config-file validation
+- `test_filesystem` for path helpers, layout creation, and directory scanning
+- CLI integration tests for help output, parser mode, runtime boot, and invalid
+  generator input
+
 ## Testing principles
 
 ### 1. Determinism first
@@ -66,19 +86,20 @@ tested.
 
 ### Layer 1: unit tests
 
-Initial unit tests should target the code that is already implemented:
+Initial unit tests should target the code that is already implemented, and that
+is now the case for the first three core areas:
 
 - parser logic
 - config parsing
 - filesystem utilities
 
-Suggested files:
+Implemented files:
 
 - `tests/test_parser.c`
 - `tests/test_config.c`
 - `tests/test_filesystem.c`
 
-Recommended harness:
+Current harness:
 
 - plain C test executables
 - assertions in small focused functions
@@ -88,7 +109,7 @@ Recommended harness:
 
 Parser behavior should be validated with repository fixtures.
 
-Suggested layout:
+Current layout:
 
 ```text
 tests/
@@ -118,7 +139,7 @@ Each invalid fixture should check expected failure behavior, such as:
 
 The real `beast2` binary should be tested directly.
 
-Near-term CLI integration cases:
+Current CLI integration cases:
 
 - `./build/beast2`
 - `./build/beast2 --generator examples/wan22_walk_cycle.b2`
@@ -182,20 +203,21 @@ The highest-value immediate tests are:
 - parser mode returns success for a valid example
 - invalid generator files return non-zero status
 
-## Current gap
+## Current gaps
 
-At the moment, the repository does not yet include an automated test harness.
-Verification is manual.
+The automated harness now exists, but there is still important coverage missing:
 
-That is acceptable for the earliest bootstrap phases, but it should change
-soon. The parser is already complex enough to justify fixtures and unit tests.
+- no sanitizer build targets yet
+- no fuzz testing yet
+- no golden-output file comparisons yet
+- no output-side reproducibility tests yet
+- no execution-engine or model-runtime tests yet
 
-## Suggested rollout order
+## Suggested next rollout order
 
-1. add `tests/` with parser fixtures
-2. add one parser unit test binary
-3. add one config/filesystem unit test binary
-4. wire everything into CTest
-5. add sanitizer build instructions
-6. add golden-output CLI tests
-7. extend reproducibility tests as Phase 2 and Phase 3 land
+1. add sanitizer build instructions and CI-friendly debug profiles
+2. add golden-output CLI comparison tests
+3. expand parser fixtures for edge cases and large inputs
+4. add reproducibility-oriented fixture metadata such as checkpoint hashes
+5. add execution-engine tests as Phase 2 lands
+6. add model-runtime determinism and provenance tests as Phase 3 lands

@@ -6,19 +6,31 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-add_executable(beast2
+function(beast2_apply_warnings target_name)
+    if(MSVC)
+        target_compile_options(${target_name} PRIVATE /W4)
+    else()
+        target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endfunction()
+
+add_library(beast2_core STATIC
     src/app.c
     src/config.c
     src/filesystem.c
     src/logger.c
     src/parser.c
-    src/main.c
 )
 
-target_include_directories(beast2 PRIVATE include)
+target_include_directories(beast2_core PUBLIC include)
+beast2_apply_warnings(beast2_core)
 
-if(MSVC)
-    target_compile_options(beast2 PRIVATE /W4)
-else()
-    target_compile_options(beast2 PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(beast2 src/main.c)
+target_link_libraries(beast2 PRIVATE beast2_core)
+beast2_apply_warnings(beast2)
+
+include(CTest)
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
 endif()

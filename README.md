@@ -164,6 +164,7 @@ prompts without attempting model execution yet.
 - prompt composition through sections, snippets, and explicit concatenation
 - metadata capture for generator, tag, and workflow sections
 - CLI inspection of rendered prompt variants
+- initial CTest harness with unit and CLI integration tests
 
 ### Current limitations
 
@@ -171,7 +172,8 @@ prompts without attempting model execution yet.
 - workflow metadata is captured but not semantically validated
 - prompt blocks are currently identified by section names containing `prompt`
 - reproducibility conventions are documented, but not fully enforced in code yet
-- automated unit and integration tests are planned but not implemented yet
+- the automated harness is still early and does not yet include sanitizers,
+  fuzzing, or golden-output comparison tests
 
 ### Reproducibility priorities
 
@@ -240,6 +242,7 @@ workflow building.
 - `include/` - public headers for the runtime modules
 - `config/beast2.conf` - default runtime configuration
 - `examples/` - sample Beast2 DSL generator files
+- `tests/` - CTest harness, unit tests, and parser/config fixtures
 - `docs/` - architecture and roadmap documents
 
 ## Build
@@ -250,6 +253,21 @@ From the repository root:
 cmake -S . -B build
 cmake --build build
 ```
+
+## Test
+
+Run the current automated test suite with:
+
+```sh
+ctest --test-dir build --output-on-failure
+```
+
+Current automated coverage includes:
+
+- parser unit tests
+- config unit tests
+- filesystem unit tests
+- CLI integration tests for help, parser mode, runtime boot, and invalid input
 
 ## Run
 

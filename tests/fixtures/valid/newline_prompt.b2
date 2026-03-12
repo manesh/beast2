@@ -1,0 +1,8 @@
+$b2_positive_prompt
+b2_section subject
+b2_snippet line one
+
+b2_concat_newline
+
+b2_section detail
+b2_snippet line two

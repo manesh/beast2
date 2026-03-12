@@ -28,6 +28,21 @@ cmake -S . -B build
 cmake --build build
 ```
 
+## Test
+
+Run the automated test suite with:
+
+```sh
+ctest --test-dir build --output-on-failure
+```
+
+Current harness coverage includes:
+
+- parser unit tests
+- config unit tests
+- filesystem unit tests
+- CLI integration tests
+
 ## Run
 
 Phase 0 runtime:
@@ -96,17 +111,17 @@ behavior:
 
 ## Testing expectations
 
-Automated tests are not yet implemented, but new work should be written with
-testability in mind.
+An automated harness now exists and should be part of normal verification.
 
 Current expectation for meaningful changes:
 
 - build cleanly with CMake
-- run the relevant CLI path manually
+- run `ctest --test-dir build --output-on-failure`
+- run the relevant CLI path manually when behavior is user-visible
 - capture any new fixtures or examples in the repository when useful
 - keep behavior deterministic where possible
 
-Planned testing direction is documented in `docs/Testing Strategy.md`.
+Testing direction and next steps are documented in `docs/Testing Strategy.md`.
 
 ## Parser and DSL changes
 
@@ -124,6 +139,7 @@ If you change the DSL or parser:
 Before shipping a change:
 
 - verify the binary still builds
+- run the automated tests
 - run the CLI flow affected by your change
 - update docs if user-visible behavior changed
 - keep commit messages descriptive and specific
