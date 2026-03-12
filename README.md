@@ -123,6 +123,16 @@ If you want the original design rationale, start with these:
 - `docs/Beast2 Backend Architecture (Expanded).md`  
   The more implementation-oriented backend and storage guidance.
 
+## Contributor and implementation docs
+
+- `CONTRIBUTING.md`  
+  Build steps, contribution workflow, and reproducibility expectations.
+- `docs/Testing Strategy.md`  
+  Recommended unit, fixture, integration, and reproducibility testing approach.
+- `docs/Phase 1 Parser Reference.md`  
+  What the current parser supports today, what it warns on, and what is still
+  intentionally out of scope.
+
 ## Current implementation status
 
 - [x] **Phase 0 - Core Infrastructure**
@@ -146,6 +156,55 @@ parser milestone. The runtime can boot and inspect its local workspace, and the
 parser can load a generator file, resolve prompt combinations, and print final
 prompts without attempting model execution yet.
 
+### Implemented now
+
+- native executable built with CMake
+- runtime bootstrapping for workspace layout, logging, and config loading
+- generator parsing from line-oriented `.b2` files
+- prompt composition through sections, snippets, and explicit concatenation
+- metadata capture for generator, tag, and workflow sections
+- CLI inspection of rendered prompt variants
+
+### Current limitations
+
+- Phase 1 parses generators but does not execute them
+- workflow metadata is captured but not semantically validated
+- prompt blocks are currently identified by section names containing `prompt`
+- reproducibility conventions are documented, but not fully enforced in code yet
+- automated unit and integration tests are planned but not implemented yet
+
+### Reproducibility priorities
+
+Beast2 should prefer exact reconstruction of a successful generation over
+generic but lossy abstractions.
+
+Current project guidance:
+
+- use deterministic floating point operations by default when available
+- favor exact checkpoint identity over loose version labels
+- record checkpoint hashes in generator metadata and output-side generator files
+- treat hashes as more authoritative than filenames or version numbers
+- preserve generator-specific settings when they are required for exact
+  reproduction
+
+Recommended metadata pattern:
+
+```text
+b2_checkpoint wan22#abc123
+```
+
+The goal is:
+
+```text
+generate once, reproduce anywhere
+```
+
+This matters because a generator `v2` may be worse than `v1`, and two
+checkpoints may share the same visible filename while containing different
+actual weights. In Beast2, exact reproducibility for a proven-good generator is
+more important than prematurely collapsing everything into
+lowest-common-denominator controls.
+
 ## Roadmap highlights
 
 The roadmap is intentionally staged so Beast2 becomes useful as early as
@@ -156,6 +215,13 @@ possible:
 - **Phase 2** turns parsed generators into executable workflows
 - **Phase 3** connects those workflows to local model inference
 - **Phase 4** stores outputs and metadata in a reusable media library
+
+Short version:
+
+- first make generators parseable
+- then make them executable
+- then make them reproducible against exact local model artifacts
+- then make outputs searchable, reusable, and scalable
 
 The first major usable milestone is the vertical slice described in the docs:
 
