@@ -1,0 +1,351 @@
+**Latent Interpolation Pipeline Implementation Notes**  
+  
+**Purpose**  
+  
+In Beast2, generators are not designed to produce a single artifact.  
+  
+They are designed to produce **explorable creative spaces**.  
+  
+When a generator produces multiple artifacts, each artifact contains a latent representation.  
+Those latents can be treated as **anchors in a continuous space of possible outputs**.  
+  
+Latent interpolation allows Beast2 to transform these anchors into an **interactive exploration surface**.  
+  
+Instead of repeatedly pressing generate and hoping for a good result, users can **navigate between results**, discovering new artifacts along the way.  
+  
+This aligns with a central Beast2 philosophy:  
+  
+Generators should create spaces worth exploring.  
+  
+⸻  
+  
+**Anchor Latents**  
+  
+Anchor latents are generated artifacts that share the same generation configuration.  
+  
+To belong to the same interpolation space, the following parameters must match:  
+	•	model  
+	•	resolution  
+	•	sampler  
+	•	scheduler  
+	•	step count  
+	•	CFG scale  
+	•	VAE  
+	•	seed or shared noise template  
+  
+The **prompt conditioning may vary**.  
+  
+Prompt variation defines the semantic axes of the latent space.  
+  
+Example anchor prompts:  
+  
+```
+red goblin
+blue goblin
+green goblin
+gold goblin
+
+```
+  
+Each prompt produces one anchor latent.  
+  
+⸻  
+  
+**Generator Example (Beast2 DSL)**  
+  
+A latent explorer generator typically produces multiple prompt variants.  
+  
+Example:  
+  
+```
+$b2_positive_prompt
+
+$b2_section monster
+b2_snippet goblin
+b2_snippet orc
+b2_snippet troll
+
+$b2_section color
+b2_snippet red
+b2_snippet blue
+b2_snippet green
+b2_snippet gold
+
+$b2_concat_space color
+b2_concat_space monster
+
+```
+  
+Example outputs:  
+  
+```
+red goblin
+blue goblin
+green troll
+gold orc
+
+```
+  
+The generator can produce a fixed number of anchors (for example 12), which are then loaded into the latent explorer.  
+  
+⸻  
+  
+**Latent Normalization**  
+  
+Before interpolation, anchor latents should be normalized.  
+  
+```
+L_normalized = L / ||L||
+
+```
+  
+Normalization prevents magnitude differences from distorting interpolation.  
+  
+Normalization should be applied:  
+	•	when anchors are loaded  
+	•	after interpolation  
+  
+⸻  
+  
+**Interpolation Methods**  
+  
+Beast2 supports two interpolation methods.  
+  
+**SLERP (Default)**  
+  
+Spherical linear interpolation treats latent vectors as points on a hypersphere and interpolates along the surface.  
+  
+Conceptually:  
+  
+```
+A ---curve--- B
+
+```
+  
+Advantages:  
+	•	preserves semantic structure  
+	•	produces coherent hybrids  
+	•	avoids muddy intermediate artifacts  
+  
+SLERP is the **default interpolation method**.  
+  
+⸻  
+  
+**LERP (Optional)**  
+  
+Linear interpolation blends latents directly.  
+  
+L = (1 - t) * A + t * B  
+  
+Advantages:  
+	•	simpler  
+	•	slightly faster  
+  
+Disadvantages:  
+	•	may pass through low-density latent regions  
+	•	can produce visually incoherent blends  
+  
+LERP is provided as an optional generator configuration.  
+  
+⸻  
+  
+**Multi-Anchor Interpolation**  
+  
+Exploration often involves more than two anchors.  
+  
+In this case, a weighted blend is computed:  
+  
+```
+L = w1 * L1 +
+    w2 * L2 +
+    w3 * L3 +
+    ...
+
+```
+  
+After blending:  
+  
+```
+L = normalize(L)
+
+```
+  
+Weights are provided by the latent explorer UI.  
+  
+⸻  
+  
+**Weight Sharpening (User Option)**  
+  
+Weight sharpening helps preserve distinct features from dominant anchors.  
+  
+Users may enable weight sharpening in the explorer UI.  
+  
+Formula:  
+  
+```
+w_i = w_i ^ γ
+normalize(w)
+
+```
+  
+Typical values:  
+  
+γ = 1.5 – 2.0  
+  
+Effects:  
+	•	prevents excessive blending  
+	•	preserves recognizable hybrids  
+	•	improves exploration clarity  
+  
+Because this changes the character of the interpolation space, **weight sharpening is a user-facing option rather than an automatic system behavior**.  
+  
+⸻  
+  
+**Preview Decode Pipeline**  
+  
+Interactive exploration requires fast preview decoding.  
+  
+Standard pipeline:  
+  
+```
+interpolated latent
+↓
+VAE decode
+↓
+preview image
+
+```
+  
+To reduce decode cost, Beast2 allows **optional latent downsampling before decode**.  
+  
+```
+interpolated latent
+↓
+optional latent downsample
+↓
+VAE decode
+↓
+preview image
+
+```
+  
+This reduces decode time significantly at the cost of preview fidelity.  
+  
+Because preview quality preferences vary by user and hardware, **VAE decode downsampling is exposed as a user-facing option**.  
+  
+⸻  
+  
+**Anchor Icon Generation**  
+  
+Each anchor latent should be decoded once to produce an icon for the explorer UI.  
+  
+Pipeline:  
+  
+```
+anchor latent
+↓
+preview decode
+↓
+downscale
+↓
+icon
+↓
+cache
+
+```
+  
+Icons allow the explorer to render anchors instantly without repeated decode operations.  
+  
+⸻  
+  
+**Artifact Discovery**  
+  
+Interpolation allows users to discover artifacts that were **never directly generated by the original diffusion process**.  
+  
+When an interesting artifact appears, the user can save it to the gallery.  
+  
+Artifacts may be classified as:  
+  
+```
+Diamond
+OK
+Trash
+
+```
+  
+This classification feeds into the Beast2 **Diamond Mining system**, allowing users to identify regions of the generator space that consistently produce high-quality results.  
+  
+⸻  
+  
+**Artifact Lineage**  
+  
+Artifacts discovered through interpolation must record their lineage.  
+  
+Example:  
+  
+```
+interpolated_from
+
+anchors
+  red_goblin
+  blue_goblin
+  gold_goblin
+
+weights
+  red_goblin 0.52
+  blue_goblin 0.31
+  gold_goblin 0.17
+
+method slerp
+
+```
+  
+Recording lineage ensures that interpolated artifacts remain **fully reproducible**.  
+  
+⸻  
+  
+**Integration with the Artifact Graph**  
+  
+Saved interpolated artifacts become nodes in the Beast2 Artifact Graph.  
+  
+Over time, clusters of **Diamond artifacts** may appear near particular anchors or weight combinations.  
+  
+This allows users to:  
+	•	identify productive regions of the space  
+	•	refine generators  
+	•	create new anchor sets for deeper exploration  
+  
+⸻  
+  
+**Design Philosophy**  
+  
+Latent interpolation supports a core Beast2 goal:  
+  
+Generators should not be slot machines.  
+  
+They should be **creative instruments**.  
+  
+By turning generated artifacts into navigable spaces, Beast2 allows users to **play generators the way musicians play instruments**.  
+  
+The system encourages exploration, discovery, and refinement.  
+  
+Each generator becomes not just a tool, but a **space to explore and master**.  
+  
+⸻  
+  
+**Summary**  
+  
+The Beast2 latent interpolation system transforms generated artifacts into an interactive exploration surface.  
+  
+Key elements:  
+	•	anchor latents  
+	•	normalization  
+	•	SLERP interpolation (default)  
+	•	optional LERP  
+	•	optional weight sharpening  
+	•	optional preview decode downsampling  
+	•	artifact lineage recording  
+  
+Together these features allow Beast2 generators to create **continuous creative spaces** rather than isolated outputs.  
+  
+This approach helps realize the Beast2 vision of an **Infinite Creation Tool**.  
