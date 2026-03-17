@@ -1,0 +1,393 @@
+beast language v1
+
+author
+Michael Asad Manesh (beast1)
+
+type
+language spec draft
+
+purpose
+a minimal language for humans and machine intelligence to communicate clearly, quickly, and with low drift
+
+principle
+
+less ceremony
+more signal
+
+⸻
+
+core goals
+	•	fast typing
+	•	low ambiguity
+	•	low drift
+	•	human readability
+	•	machine parse stability
+	•	easy compression into artifacts
+
+⸻
+
+core rules
+
+#rule lowercase default
+
+normal text is lowercase by default
+
+reason
+	•	fewer shift presses
+	•	faster typing
+	•	easier flow
+
+proper names may still use capitals
+
+example
+
+Michael
+Starfleet
+Blue
+
+⸻
+
+#rule newlines separate ideas
+
+newline is the primary separator
+
+reason
+	•	clearer than dense punctuation
+	•	easier to scan
+	•	easier to parse
+
+example
+
+problem
+input ambiguous
+
+solution
+ask captain
+
+⸻
+
+#rule no indentation
+
+no tabs
+no nested indent trees
+
+structure stays flat
+
+⸻
+
+#rule list format
+
+lists use dash prefix
+
+example
+	•	item
+	•	object
+	•	thing
+
+if list title matters, put it above the list
+
+example
+
+favorite drinks
+	•	lemonade
+	•	coffee
+	•	water
+
+⸻
+
+#rule hashtags define intent
+
+lines starting with # declare semantic meaning
+
+pattern
+
+#tag content
+
+examples
+
+#definition drift = losing correctness over time due to bad updates
+
+#axiom small error = full error
+
+#goal build blue2 core
+
+#note noisy input may still contain signal
+
+⸻
+
+#rule arrows show flow
+
+arrow means directed relationship or ordered change
+
+pattern
+
+a -> b
+
+examples
+
+input -> process -> output
+
+captain -> blue -> artifact
+
+move 2 in one direction -> 1 to the side
+
+⸻
+
+#rule exact artifacts stay exact
+
+if wording matters, preserve exact wording
+
+example
+
+move 2 in one direction, then 1 to the side
+
+reason
+small wording loss can cause drift
+
+⸻
+
+#rule ambiguity must be preserved
+
+if two interpretations are possible, do not collapse early
+
+store both as possibilities
+
+example
+
+interpretation a
+interpretation b
+state = 0
+
+⸻
+
+#rule state uses -1 0 1
+
+truth state is ternary
+	•	-1 rejected
+	•	0 unknown / maybe
+	•	1 verified
+
+reason
+prevents false certainty
+
+⸻
+
+#rule story then rule
+
+best teaching format is:
+	•	short story
+	•	clear lesson
+	•	compressed rule
+
+reason
+story helps humans remember
+rule helps systems execute
+
+⸻
+
+#rule names matter
+
+names influence tone and identity
+
+avoid names that lock system into negative bias unless intentional
+
+⸻
+
+semantic tags v1
+
+#definition
+defines a term
+
+#axiom
+guiding principle
+
+#goal
+desired outcome
+
+#note
+context or nuance
+
+#rule
+language or system rule
+
+#artifact
+stored unit of meaning
+
+#meme
+compressed cultural or symbolic mapping
+
+#story
+narrative teaching unit
+
+#maybe
+statement with unknown truth value
+
+#log
+correction or event record
+
+#db
+storage target or namespace
+
+⸻
+
+primitives
+
+the smallest structural primitives are
+	•	semantic declaration
+	•		•	list item
+	•	-> direction or transformation
+	•	newline idea separation
+
+compressed version
+
+
+	•	
+
+->
+newline
+
+⸻
+
+truth handling
+
+#axiom do not confuse poetry with truth
+
+poetry may contain signal
+but must be extracted before storage as core knowledge
+
+pipeline
+
+raw input
+-> extract signal
+-> normalize
+-> assign state
+-> store
+
+⸻
+
+noise handling
+
+#axiom noise can carry signal
+
+typos, compressed phrasing, and emotional language may still contain valuable meaning
+
+rule
+
+do not trust noisy input directly
+do extract stable concepts from it
+
+⸻
+
+captain model
+
+human remains captain
+
+captain
+-> defines intent
+-> reviews ambiguity
+-> verifies truth
+
+system
+-> extracts
+-> organizes
+-> compares
+-> stores
+
+compressed
+
+captain decides
+system assists
+
+⸻
+
+drift definition
+
+#definition drift
+
+a gradual loss of precision, correctness, or consistency caused by bad updates, incomplete replacements, or unverified changes
+
+prevention
+	•	compare before replace
+	•	preserve better version
+	•	do not overwrite verified truth casually
+
+⸻
+
+language philosophy
+
+beast language assumes
+	•	humans think in stories and compressed signals
+	•	machines need stable tags and structure
+	•	small primitives scale better than large grammars
+	•	exact wording sometimes matters a lot
+
+⸻
+
+example
+
+raw
+
+#goal build blue2
+too lazy
+need strongest stable concept bits
+store in diary not scratch
+
+normalized
+
+#goal build blue2
+
+#definition tooLazy = compressed noisy input with high signal
+
+#rule diary.db stores durable meaning
+#rule scratchpad stores temporary reasoning
+
+⸻
+
+compatibility
+
+beast language is a subset and restructuring of normal english
+
+normal english can still be used
+beast language just makes structure visible
+
+⸻
+
+core axiom cluster
+
+#axiom small error = full error
+#axiom good intent matters but action decides outcome
+#axiom map, do not replace
+#axiom lock the core, let the edges explore
+#axiom go wild, but only keep what survives
+
+⸻
+
+closing
+
+beast language v1 is not meant to be perfect
+
+it is meant to be:
+	•	usable
+	•	stable
+	•	compressible
+	•	expandable
+
+goal
+
+turn chaos into clean artifacts without destroying meaning
+
+
+
+###
+
+
+beast1 comment: zero bits error spotted on first pass. id read the thing again but im too lazy
+
+
+
+
+
+
+
+
+
