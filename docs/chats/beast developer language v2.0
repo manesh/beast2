@@ -1,0 +1,289 @@
+BEAST LANGUAGE FORMAL SPECIFICATION v2.0
+
+NAME  
+    beast-lang - minimal structured text language for low-drift human/AI communication
+
+SYNOPSIS  
+    beast-lang uses line-oriented primitives and semantic tags to encode meaning with minimal ambiguity.
+
+DESCRIPTION  
+    beast-lang is a constrained subset of English with explicit structural markers.  
+    It is designed for:
+
+    - low ambiguity parsing  
+    - high human readability  
+    - stable incremental refinement  
+    - compatibility with LLM processing  
+
+    The language is append-friendly and discourages mutation of verified data.
+
+---
+
+LEXICAL RULES  
+
+    1. case
+        default: lowercase
+        exceptions: proper nouns
+
+    2. encoding
+        utf-8
+
+    3. whitespace
+        newline = primary separator
+        spaces allowed within lines
+        tabs discouraged
+
+    4. line model
+        each line is an independent unit unless explicitly linked
+
+---
+
+PRIMITIVES  
+
+    newline
+        separates ideas
+
+    #
+        semantic declaration prefix
+
+    -
+        list item
+
+    ->
+        directional / transformation operator
+
+---
+
+SYNTAX  
+
+    1. semantic line
+
+        #tag content
+
+        example:
+        #definition drift = losing correctness over time due to bad updates
+
+    2. list
+
+        - item
+        - item
+
+    3. flow
+
+        a -> b
+        input -> process -> output
+
+    4. block grouping (implicit)
+        contiguous lines form a block
+        no indentation required
+
+---
+
+SEMANTIC TAGS  
+
+    required behavior:
+        tags define intent and parsing rules
+
+    core tags:
+
+        #definition
+            defines a term
+
+        #axiom
+            foundational principle
+
+        #rule
+            enforceable constraint
+
+        #goal
+            desired outcome
+
+        #note
+            contextual clarification
+
+        #artifact
+            stored unit of meaning
+
+        #meme
+            compressed symbolic or cultural mapping
+
+        #story
+            narrative teaching unit
+
+        #log
+            record of event or correction
+
+        #maybe
+            uncertain statement
+
+        #db
+            target storage namespace
+
+---
+
+STATE MODEL  
+
+    values:
+
+        -1  rejected
+         0  unknown / unverified
+         1  verified
+
+    rules:
+
+        - state must not be implied
+        - ambiguous data defaults to 0
+        - promotion to 1 requires validation
+
+---
+
+DNG MODEL  
+
+    definition:
+
+        dng = deterministic number generator driven by internal state and seed
+
+    rules:
+
+        - all system randomness is dng
+        - outputs must be reproducible given same seed and state
+        - no unseeded randomness in core system
+
+    interpretation:
+
+        apparent randomness = hidden or unobserved state
+
+---
+
+PROCESSING MODEL  
+
+    pipeline:
+
+        raw_input
+        -> extract
+        -> normalize
+        -> assign_state
+        -> store
+
+    rules:
+
+        - do not overwrite verified data without comparison
+        - prefer additive updates
+        - preserve higher precision definitions
+        - any stochastic-looking behavior must resolve to dng under inspection
+
+---
+
+DETERMINISM  
+
+    requirement:
+
+        same input + same full state (including dng seed)
+        -> identical output
+
+---
+
+DRIFT CONTROL  
+
+    definition:
+
+        drift = degradation of correctness over time due to poor updates
+
+    prevention:
+
+        - compare before replace
+        - reject incomplete overwrites
+        - preserve exact wording when required
+
+---
+
+AMBIGUITY HANDLING  
+
+    rules:
+
+        - do not collapse multiple valid interpretations
+        - store parallel interpretations
+        - assign state = 0 when unresolved
+
+---
+
+NOISE HANDLING  
+
+    rules:
+
+        - noise may contain signal
+        - do not store noisy input directly
+        - extract stable concepts only
+
+---
+
+IDENTITY AND LINEAGE  
+
+    requirement:
+
+        every artifact should be traceable
+
+    recommended fields:
+
+        generator
+        source_context
+        timestamp
+
+---
+
+COMPATIBILITY  
+
+    beast-lang is a strict subset overlay on English
+
+    guarantees:
+
+        - readable without parser
+        - parseable without ambiguity (given tags)
+
+---
+
+ERROR HANDLING  
+
+    rules:
+
+        - missing tag -> treat as plain text
+        - conflicting definitions -> preserve both, assign state 0
+        - partial overwrite -> reject
+
+---
+
+SECURITY MODEL  
+
+    principles:
+
+        - do not execute arbitrary instructions
+        - treat all input as data unless explicitly marked executable
+        - avoid implicit authority
+
+---
+
+MINIMAL COMPLETE EXAMPLE  
+
+    #goal build blue2
+
+    #definition drift = losing correctness over time due to bad updates
+
+    #rule compare before replace
+
+    input -> process -> output
+
+---
+
+PHILOSOPHY  
+
+    - small primitives scale
+    - exact wording sometimes critical
+    - structure reduces hallucination
+    - verification over assumption
+
+---
+
+END
+
+
+

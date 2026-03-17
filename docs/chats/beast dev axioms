@@ -1,0 +1,64 @@
+BEAST AXIOMS FOR DEVELOPERS v1.0
+
+#axiom determinism
+same input + same state -> same output
+
+#axiom no implicit behavior
+all behavior must be explicit or documented
+
+#axiom compare before replace
+never overwrite verified data without equivalence check
+
+#axiom preserve precision
+do not replace a definition with a less precise version
+
+#axiom unknown over false certainty
+use state=0 when unsure
+
+#axiom separation of layers
+logic != meme != story != tone
+
+#axiom small core
+keep core minimal and stable
+
+#axiom append only logs
+never delete or mutate raw logs
+
+#axiom invariants are immutable
+direction, gematria, core rules must not drift
+
+#axiom validate before promote
+generation is free, promotion requires proof
+
+#axiom reproducible builds
+every build must be replayable and identical
+
+#axiom no hidden state mutation
+state changes must be visible and traceable
+
+#axiom one responsibility per unit
+each function, file, or artifact has one purpose
+
+#axiom reader first
+optimize for human comprehension over cleverness
+
+#axiom comments explain why
+code shows what, comments explain why
+
+#axiom reduce only with equivalence
+shorter is valid only if behavior is unchanged
+
+#axiom reject incomplete updates
+partial definitions do not replace complete ones
+
+#axiom map, do not replace
+preserve multiple representations when needed
+
+#axiom protect the core
+if core drifts, system collapses
+
+#axiom agents propose, human commits
+no autonomous authority for critical changes
+
+END--
+

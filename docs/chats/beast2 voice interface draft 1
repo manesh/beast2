@@ -1,0 +1,275 @@
+beast2 voice interface draft 1
+
+name  
+    beast2 voice interface
+
+purpose  
+    provide a fast, low-friction voice layer for interacting with blue2 and beast2 systems  
+    convert spoken intent into structured, traceable actions  
+    maintain stability, determinism, and user control
+
+---
+
+principles  
+
+    no automatic compute  
+    user intent starts all actions  
+
+    short input  
+    short output  
+
+    interruptible at all times  
+
+    append-only logs  
+    no hidden state mutation  
+
+    voice is convenience layer  
+    not source of truth  
+
+    all important outputs become artifacts  
+
+---
+
+interaction model  
+
+    tap  
+    → speak  
+    → parse  
+    → confirm (implicit or explicit)  
+    → execute  
+    → return result  
+
+    loop:
+
+        speak  
+        → act  
+        → observe  
+        → adjust  
+
+---
+
+core commands (v1 minimal)  
+
+    save this  
+    define this  
+    summarize this  
+    find this  
+    log this  
+
+    move up  
+    move down  
+    move left  
+    move right  
+
+    open  
+    close  
+
+    stop  
+
+---
+
+command grammar  
+
+    structure:
+
+        verb + object + modifier
+
+    examples:
+
+        save this as artifact  
+        define drift  
+        summarize last note  
+        move up small  
+        find taco definition  
+
+---
+
+parsing rules  
+
+    convert speech → structured command  
+
+    example:
+
+        "move up a little bit"
+        →
+        action: move  
+        axis: up  
+        amount: small  
+
+    rules:
+
+        tolerate noise  
+        normalize synonyms  
+        reject ambiguous commands or mark as #maybe  
+
+---
+
+execution model  
+
+    voice command  
+    → parsed command  
+    → safety check  
+    → execution  
+    → result artifact  
+
+    no command executes without passing:
+
+        validation  
+        bounds check (if physical)  
+        format check (if data)
+
+---
+
+feedback model  
+
+    output must be:
+
+        short  
+        clear  
+        stateful  
+
+    examples:
+
+        saved  
+        definition stored  
+        moving up  
+        target not found  
+
+    optional expansion on request:
+
+        explain  
+        show details  
+
+---
+
+camera / sensor integration  
+
+    sensors produce facts, not raw data  
+
+    example:
+
+        red object at center: no  
+        distance: medium  
+        grip: open  
+
+    blue2 operates on facts, not pixels  
+
+---
+
+state and logging  
+
+    all actions logged:
+
+        #log  
+        command  
+        result  
+        timestamp  
+
+    artifacts stored separately:
+
+        #artifact  
+        content  
+        source  
+
+    no silent actions  
+
+---
+
+error handling  
+
+    unclear input:
+
+        ask for clarification  
+        or mark as #maybe  
+
+    unsafe command:
+
+        reject  
+        explain briefly  
+
+    failed execution:
+
+        report  
+        allow retry  
+
+---
+
+safety  
+
+    physical systems:
+
+        enforce bounds  
+        limit speed  
+        step-based movement only  
+
+    data systems:
+
+        no overwrite without explicit intent  
+        preserve prior versions  
+
+---
+
+voice ux rules  
+
+    fast start (<300ms ideal)  
+    low latency response  
+
+    allow interruption mid-response  
+
+    avoid long speech output  
+
+    default to concise responses  
+
+---
+
+blue2 role  
+
+    interpret intent  
+    suggest actions  
+    store artifacts  
+    assist reasoning  
+
+    not autonomous  
+
+---
+
+boundaries  
+
+    voice layer:
+
+        input + output only  
+
+    core system:
+
+        logic  
+        storage  
+        execution  
+
+---
+
+future extensions  
+
+    multi-step commands  
+    context chaining  
+    personalization  
+
+    bee integration:
+
+        quick yes/no validation before execution  
+
+---
+
+philosophy  
+
+    voice is not magic  
+    voice is a handle  
+
+    system must remain:
+
+        inspectable  
+        predictable  
+        controllable  
+
+---
+
+end

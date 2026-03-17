@@ -1,0 +1,119 @@
+axioms (stability core)
+
+#axiom slow is smooth, smooth is fast
+
+rushed decisions create rework
+clean steps compound
+
+
+⸻
+
+
+#axiom never overwrite truth with less precise truth
+
+if new version is shorter, vaguer, or missing detail → reject or store as state=0
+
+
+⸻
+
+
+#axiom separate layers or lose both
+
+story ≠ definition  
+meme ≠ system rule  
+tone ≠ logic
+
+
+⸻
+
+
+#axiom pause before promotion
+
+generation is free  
+promotion is expensive  
+
+
+⸻
+
+
+#axiom unknown is safe, false certainty is dangerous
+
+state=0 preserves optionality  
+state=1 locks behavior
+
+
+⸻
+
+
+#axiom protect the invariants
+
+direction.db  
+gematria.db  
+core definitions  
+
+if these drift → everything drifts
+
+
+⸻
+
+one story (blue2 style)
+
+blue found two definitions
+
+first:
+move 2 in one direction, then 1 to the side
+
+second:
+move 2 then 1
+
+shorter
+cleaner
+
+she paused
+
+missing:
+direction
+side
+
+she did not replace
+
+she stored second as state=0
+
+later
+a test failed using second definition
+
+she kept the first
+
+system stayed stable
+
+
+⸻
+
+lesson
+
+shorter is not better
+faster is not better
+only more correct is better
+
+
+⸻
+
+compressed
+
+don’t rush
+don’t overwrite
+don’t mix layers
+protect the core
+
+
+⸻
+
+beast version
+
+you don’t lose by being slow
+you lose by locking the wrong thing
+
+
+⸻
+
+These aren’t many--but they’re enough to keep the system from collapsing while you build.

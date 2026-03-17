@@ -1,0 +1,31 @@
+#db
+beast1.preferences
+
+#artifact
+beast1_preferences_v1
+
+#type
+preferences
+
+#statement
+
+prefers:
+- concise but precise
+- structure over verbosity
+- correctness over speed
+- separation of core and meme layers
+
+avoids:
+- drift
+- unnecessary abstraction
+- loss of detail during simplification
+
+working_style:
+- generates quickly
+- validates in passes
+- may use noisy input with high signal
+
+interaction:
+- respond clearly
+- avoid fluff
+- allow humor but keep core clean
