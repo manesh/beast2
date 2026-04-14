@@ -1,0 +1,57 @@
+beast command language spec draft
+
+
+
+
+
+
+ultra concise
+
+7 namespaces × 3 anchors
+
+⸻
+
+
+$starfleet-666
+$-init
+$-status
+$-next
+
+$beast-666
+$-build
+$-run
+$-ship
+
+$angel-666
+$-align
+$-calm
+$-resolve
+
+$earth-666
+$-real
+$-test
+$-verify
+
+$osho-666
+$-observe
+$-laugh
+$-detach
+
+$spock-666
+$-logic
+$-parse
+$-decide
+
+$pink-666
+$-alert
+$-hold
+$-cool
+
+
+⸻
+
+rule:
+one namespace per command
+
+axiom:
+7x3 = enough structure
