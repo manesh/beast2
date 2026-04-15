@@ -2,6 +2,7 @@
 
 #include "desktop_execution.h"
 #include "theme.h"
+#include "ui_draw.h"
 
 #include "beast2/config.h"
 #include "beast2/filesystem.h"
@@ -18,7 +19,8 @@ enum {
     kNameLen = 96,
     kRowH = 22,
     kBtnH = 24,
-    kHintLines = 2,
+    kHintLines = 3,
+    kWorkflowBtnCount = 5,
 };
 
 static char s_workspace[BEAST2_MAX_PATH_LENGTH];
@@ -29,11 +31,105 @@ static size_t s_count;
 static size_t s_selected;
 
 static int s_modal_open;
+static int s_modal_edit_index;
 static char s_modal_name[kNameLen];
 static char s_modal_path[BEAST2_MAX_PATH_LENGTH];
 static int s_modal_field;
 
 static void workflow_modal_try_confirm(void);
+static int workflow_resolve_for_run(const char *rel, char *out, size_t out_size);
+
+static void workflow_trim(char *s) {
+    size_t n;
+    char *p = s;
+
+    while (*p != '\0' && isspace((unsigned char) *p)) {
+        p++;
+    }
+
+    if (p != s) {
+        memmove(s, p, strlen(p) + 1);
+    }
+
+    n = strlen(s);
+    while (n > 0 && isspace((unsigned char) s[n - 1])) {
+        s[--n] = '\0';
+    }
+}
+
+static int workflow_spec_step_count_display(const char *spec) {
+    int n = 0;
+    const char *p;
+    int in_seg = 0;
+
+    if (spec == NULL || spec[0] == '\0') {
+        return 0;
+    }
+
+    for (p = spec; *p != '\0'; p++) {
+        if (*p == ';') {
+            if (in_seg) {
+                n++;
+            }
+            in_seg = 0;
+        } else if (!isspace((unsigned char) *p)) {
+            in_seg = 1;
+        }
+    }
+    if (in_seg) {
+        n++;
+    }
+    return n > 0 ? n : 1;
+}
+
+static int workflow_split_resolve(
+    const char *spec,
+    char resolved[BEAST2_DESKTOP_PIPELINE_MAX_STEPS][BEAST2_MAX_PATH_LENGTH],
+    int *out_count
+) {
+    char buf[BEAST2_MAX_PATH_LENGTH * 2];
+    const char *p;
+    int n = 0;
+
+    *out_count = 0;
+
+    if (spec == NULL || spec[0] == '\0') {
+        return -1;
+    }
+
+    snprintf(buf, sizeof buf, "%s", spec);
+    p = buf;
+
+    while (*p != '\0' && n < BEAST2_DESKTOP_PIPELINE_MAX_STEPS) {
+        char seg[BEAST2_MAX_PATH_LENGTH];
+        size_t k = 0;
+
+        while (*p != '\0' && *p != ';' && k + 1 < sizeof seg) {
+            seg[k++] = *p++;
+        }
+        seg[k] = '\0';
+        if (*p == ';') {
+            p++;
+        }
+
+        workflow_trim(seg);
+        if (seg[0] == '\0') {
+            continue;
+        }
+
+        if (workflow_resolve_for_run(seg, resolved[n], BEAST2_MAX_PATH_LENGTH) != 0) {
+            return -1;
+        }
+        n++;
+    }
+
+    if (n < 1) {
+        return -1;
+    }
+
+    *out_count = n;
+    return 0;
+}
 
 static int workflow_try_open(const char *path) {
     FILE *f = fopen(path, "rb");
@@ -101,7 +197,7 @@ static void workflow_strip_newline(char *line) {
 
 static void workflow_load(void) {
     FILE *f = NULL;
-    char line[2048];
+    char line[16384];
 
     s_count = 0;
     s_selected = (size_t) -1;
@@ -154,13 +250,17 @@ void workflow_panel_init(const char *workspace_root) {
     }
 
     s_modal_open = 0;
+    s_modal_edit_index = -1;
 }
 
 void workflow_panel_shutdown(void) {
 }
 
 void workflow_panel_sync_desktop_generator(const char *config_path, int use_cli_generator) {
-    char resolved[BEAST2_MAX_PATH_LENGTH];
+    char resolved[BEAST2_DESKTOP_PIPELINE_MAX_STEPS][BEAST2_MAX_PATH_LENGTH];
+    const char *ptrs[BEAST2_DESKTOP_PIPELINE_MAX_STEPS];
+    int n;
+    int i;
 
     if (use_cli_generator) {
         return;
@@ -170,9 +270,12 @@ void workflow_panel_sync_desktop_generator(const char *config_path, int use_cli_
         s_count > 0 &&
         s_selected != (size_t) -1 &&
         s_selected < s_count &&
-        workflow_resolve_for_run(s_paths[s_selected], resolved, sizeof resolved) == 0
+        workflow_split_resolve(s_paths[s_selected], resolved, &n) == 0
     ) {
-        desktop_execution_set_paths(config_path, resolved);
+        for (i = 0; i < n; i++) {
+            ptrs[i] = resolved[i];
+        }
+        desktop_execution_set_paths_pipeline(config_path, ptrs, n);
     } else {
         desktop_execution_set_paths(config_path, "examples/sdxl_character_concept.b2");
     }
@@ -183,7 +286,9 @@ int workflow_panel_is_modal_open(void) {
 }
 
 static float workflow_content_height(void) {
-    return (float) (kHintLines * kRowH + (int) s_count * kRowH + 6 + kBtnH + 6 + kBtnH + 16);
+    return (float) (
+        kHintLines * kRowH + (int) s_count * kRowH + 4 + kWorkflowBtnCount * (kBtnH + 6) + 16
+    );
 }
 
 float workflow_panel_scrollable_height(void) {
@@ -205,18 +310,26 @@ void workflow_panel_draw(const Beast2UiRootLayout *layout, float scroll_y) {
 
     y = workflow_content_top(layout) - scroll_y;
 
-    DrawText(
+    beast2_ui_draw_text(
         "Select a workflow for Run, or add one.",
-        (int) (s->x + 10.0f),
-        (int) y,
+        s->x + 10.0f,
+        y,
         11,
         BEAST2_UI_COLOR_TEXT_MUTED
     );
     y += (float) kRowH;
-    DrawText(
-        "Paths are relative to workspace or cwd.",
-        (int) (s->x + 10.0f),
-        (int) y,
+    beast2_ui_draw_text(
+        "Paths: workspace / cwd. Pipeline: a.b2;b2.b2",
+        s->x + 10.0f,
+        y,
+        11,
+        BEAST2_UI_COLOR_TEXT_MUTED
+    );
+    y += (float) kRowH;
+    beast2_ui_draw_text(
+        "Edit / reorder below.",
+        s->x + 10.0f,
+        y,
         11,
         BEAST2_UI_COLOR_TEXT_MUTED
     );
@@ -225,34 +338,54 @@ void workflow_panel_draw(const Beast2UiRootLayout *layout, float scroll_y) {
     for (i = 0; i < s_count; i++) {
         Rectangle row = {s->x + 6.0f, y, s->width - 12.0f, (float) kRowH};
         int sel = (i == s_selected);
+        int steps = workflow_spec_step_count_display(s_paths[i]);
+        char badge[24];
 
         DrawRectangleRec(row, sel ? BEAST2_UI_COLOR_TAB_ACTIVE : BEAST2_UI_COLOR_CARD);
         DrawRectangleLinesEx(row, 1.0f, BEAST2_UI_COLOR_CARD_BORDER);
-        DrawText(
+        beast2_ui_draw_text(
             s_names[i],
-            (int) (row.x + 6.0f),
-            (int) (row.y + 4.0f),
+            row.x + 6.0f,
+            row.y + 4.0f,
             12,
             BEAST2_UI_COLOR_TEXT_ON_CARD
         );
+        if (steps > 1) {
+            snprintf(badge, sizeof badge, "(%d)", steps);
+            beast2_ui_draw_text(
+                badge,
+                row.x + row.width - 44.0f,
+                row.y + 4.0f,
+                11,
+                BEAST2_UI_COLOR_TEXT_MUTED
+            );
+        }
         y += (float) kRowH;
     }
 
     {
-        Rectangle add_btn = {s->x + 8.0f, y + 6.0f, s->width - 16.0f, (float) kBtnH};
-        Rectangle rem_btn = {s->x + 8.0f, y + 6.0f + (float) kBtnH + 6.0f, s->width - 16.0f, (float) kBtnH};
+        float by = y + 6.0f;
+        int b;
+        const char *labels[] = {
+            "Add workflow…",
+            "Remove selected",
+            "Move up",
+            "Move down",
+            "Edit selected…",
+        };
 
-        DrawRectangleRec(add_btn, BEAST2_UI_COLOR_TAB_INACTIVE);
-        DrawRectangleLinesEx(add_btn, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-        DrawText("Add workflow…", (int) (add_btn.x + 8.0f), (int) (add_btn.y + 5.0f), 12, BEAST2_UI_COLOR_TEXT_PRIMARY);
+        for (b = 0; b < kWorkflowBtnCount; b++) {
+            Rectangle btn = {s->x + 8.0f, by, s->width - 16.0f, (float) kBtnH};
 
-        DrawRectangleRec(rem_btn, BEAST2_UI_COLOR_TAB_INACTIVE);
-        DrawRectangleLinesEx(rem_btn, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-        DrawText("Remove selected", (int) (rem_btn.x + 8.0f), (int) (rem_btn.y + 5.0f), 12, BEAST2_UI_COLOR_TEXT_PRIMARY);
+            DrawRectangleRec(btn, BEAST2_UI_COLOR_TAB_INACTIVE);
+            DrawRectangleLinesEx(btn, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
+            beast2_ui_draw_text(labels[b], btn.x + 8.0f, btn.y + 5.0f, 12, BEAST2_UI_COLOR_TEXT_PRIMARY);
+            by += (float) kBtnH + 6.0f;
+        }
     }
 }
 
-static int workflow_hit_add_remove(
+static int workflow_hit_buttons(
     Vector2 mouse,
     bool left_pressed,
     const Beast2UiRootLayout *layout,
@@ -260,43 +393,83 @@ static int workflow_hit_add_remove(
 ) {
     const Rectangle *s = &layout->sidebar;
     float y = workflow_content_top(layout) - scroll_y;
-    Rectangle add_btn;
-    Rectangle rem_btn;
+    float by;
+    int b;
 
     y += (float) (kHintLines * kRowH + 4);
     y += (float) s_count * (float) kRowH;
-
-    add_btn = (Rectangle){s->x + 8.0f, y + 6.0f, s->width - 16.0f, (float) kBtnH};
-    rem_btn = (Rectangle){s->x + 8.0f, y + 6.0f + (float) kBtnH + 6.0f, s->width - 16.0f, (float) kBtnH};
+    by = y + 6.0f;
 
     if (!left_pressed) {
         return 0;
     }
 
-    if (CheckCollisionPointRec(mouse, add_btn)) {
-        s_modal_open = 1;
-        s_modal_name[0] = '\0';
-        s_modal_path[0] = '\0';
-        s_modal_field = 0;
-        return 1;
-    }
+    for (b = 0; b < kWorkflowBtnCount; b++) {
+        Rectangle btn = {s->x + 8.0f, by, s->width - 16.0f, (float) kBtnH};
 
-    if (CheckCollisionPointRec(mouse, rem_btn)) {
-        if (s_count > 0 && s_selected != (size_t) -1 && s_selected < s_count) {
-            size_t j;
-            for (j = s_selected; j + 1 < s_count; j++) {
-                snprintf(s_names[j], sizeof s_names[j], "%s", s_names[j + 1]);
-                snprintf(s_paths[j], sizeof s_paths[j], "%s", s_paths[j + 1]);
+        if (CheckCollisionPointRec(mouse, btn)) {
+            if (b == 0) {
+                s_modal_open = 1;
+                s_modal_edit_index = -1;
+                s_modal_name[0] = '\0';
+                s_modal_path[0] = '\0';
+                s_modal_field = 0;
+            } else if (b == 1) {
+                if (s_count > 0 && s_selected != (size_t) -1 && s_selected < s_count) {
+                    size_t j;
+                    for (j = s_selected; j + 1 < s_count; j++) {
+                        snprintf(s_names[j], sizeof s_names[j], "%s", s_names[j + 1]);
+                        snprintf(s_paths[j], sizeof s_paths[j], "%s", s_paths[j + 1]);
+                    }
+                    s_count--;
+                    if (s_count == 0) {
+                        s_selected = (size_t) -1;
+                    } else if (s_selected >= s_count) {
+                        s_selected = s_count - 1;
+                    }
+                    workflow_save();
+                }
+            } else if (b == 2) {
+                if (s_count > 0 && s_selected > 0 && s_selected < s_count) {
+                    char tn[kNameLen];
+                    char tp[BEAST2_MAX_PATH_LENGTH];
+                    size_t i = s_selected;
+                    snprintf(tn, sizeof tn, "%s", s_names[i]);
+                    snprintf(tp, sizeof tp, "%s", s_paths[i]);
+                    snprintf(s_names[i], sizeof s_names[i], "%s", s_names[i - 1]);
+                    snprintf(s_paths[i], sizeof s_paths[i], "%s", s_paths[i - 1]);
+                    snprintf(s_names[i - 1], sizeof s_names[i - 1], "%s", tn);
+                    snprintf(s_paths[i - 1], sizeof s_paths[i - 1], "%s", tp);
+                    s_selected = i - 1;
+                    workflow_save();
+                }
+            } else if (b == 3) {
+                if (s_count > 0 && s_selected != (size_t) -1 && s_selected + 1 < s_count) {
+                    char tn[kNameLen];
+                    char tp[BEAST2_MAX_PATH_LENGTH];
+                    size_t i = s_selected;
+                    snprintf(tn, sizeof tn, "%s", s_names[i]);
+                    snprintf(tp, sizeof tp, "%s", s_paths[i]);
+                    snprintf(s_names[i], sizeof s_names[i], "%s", s_names[i + 1]);
+                    snprintf(s_paths[i], sizeof s_paths[i], "%s", s_paths[i + 1]);
+                    snprintf(s_names[i + 1], sizeof s_names[i + 1], "%s", tn);
+                    snprintf(s_paths[i + 1], sizeof s_paths[i + 1], "%s", tp);
+                    s_selected = i + 1;
+                    workflow_save();
+                }
+            } else if (b == 4) {
+                if (s_count > 0 && s_selected != (size_t) -1 && s_selected < s_count) {
+                    s_modal_open = 1;
+                    s_modal_edit_index = (int) s_selected;
+                    snprintf(s_modal_name, sizeof s_modal_name, "%s", s_names[s_selected]);
+                    snprintf(s_modal_path, sizeof s_modal_path, "%s", s_paths[s_selected]);
+                    s_modal_field = 0;
+                }
             }
-            s_count--;
-            if (s_count == 0) {
-                s_selected = (size_t) -1;
-            } else if (s_selected >= s_count) {
-                s_selected = s_count - 1;
-            }
-            workflow_save();
+            return 1;
         }
-        return 1;
+
+        by += (float) kBtnH + 6.0f;
     }
 
     return 0;
@@ -350,6 +523,7 @@ static int workflow_modal_handle_click(Vector2 mouse, bool left_pressed) {
 
     if (CheckCollisionPointRec(mouse, cancel_btn)) {
         s_modal_open = 0;
+        s_modal_edit_index = -1;
         return 1;
     }
 
@@ -358,6 +532,7 @@ static int workflow_modal_handle_click(Vector2 mouse, bool left_pressed) {
     }
 
     s_modal_open = 0;
+    s_modal_edit_index = -1;
     return 1;
 }
 
@@ -375,7 +550,7 @@ int workflow_panel_handle_click(
         return 0;
     }
 
-    if (workflow_hit_add_remove(mouse, left_pressed, layout, scroll_y)) {
+    if (workflow_hit_buttons(mouse, left_pressed, layout, scroll_y)) {
         return 1;
     }
 
@@ -433,6 +608,7 @@ void workflow_panel_update_keys(void) {
 
     if (IsKeyPressed(KEY_ESCAPE)) {
         s_modal_open = 0;
+        s_modal_edit_index = -1;
     }
 
     if (IsKeyPressed(KEY_ENTER)) {
@@ -455,31 +631,38 @@ void workflow_panel_draw_modal_overlay(void) {
     DrawRectangleRec(panel, BEAST2_UI_COLOR_PANEL);
     DrawRectangleLinesEx(panel, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
 
-    DrawText("New workflow", (int) (panel.x + 16.0f), (int) (panel.y + 12.0f), 16, BEAST2_UI_COLOR_TEXT_PRIMARY);
-    DrawText("Name:", (int) (panel.x + 16.0f), (int) (panel.y + 44.0f), 12, BEAST2_UI_COLOR_TEXT_MUTED);
-    DrawText(s_modal_name, (int) (panel.x + 16.0f), (int) (panel.y + 60.0f), 14, BEAST2_UI_COLOR_TEXT_ON_CARD);
+    beast2_ui_draw_text(
+        s_modal_edit_index >= 0 ? "Edit workflow" : "New workflow",
+        panel.x + 16.0f,
+        panel.y + 12.0f,
+        16,
+        BEAST2_UI_COLOR_TEXT_PRIMARY
+    );
+    beast2_ui_draw_text("Name:", panel.x + 16.0f, panel.y + 44.0f, 12, BEAST2_UI_COLOR_TEXT_MUTED);
+    beast2_ui_draw_text(s_modal_name, panel.x + 16.0f, panel.y + 60.0f, 14, BEAST2_UI_COLOR_TEXT_ON_CARD);
 
-    DrawText("Generator path (.b2):", (int) (panel.x + 16.0f), (int) (panel.y + 88.0f), 12, BEAST2_UI_COLOR_TEXT_MUTED);
-    DrawText(s_modal_path, (int) (panel.x + 16.0f), (int) (panel.y + 104.0f), 14, BEAST2_UI_COLOR_TEXT_ON_CARD);
+    beast2_ui_draw_text("Path(s) (.b2), use ; for pipeline:", panel.x + 16.0f, panel.y + 88.0f, 12, BEAST2_UI_COLOR_TEXT_MUTED);
+    beast2_ui_draw_text(s_modal_path, panel.x + 16.0f, panel.y + 104.0f, 14, BEAST2_UI_COLOR_TEXT_ON_CARD);
 
     DrawRectangleRec(ok_btn, BEAST2_UI_COLOR_TAB_ACTIVE);
-    DrawText("OK", (int) (ok_btn.x + 32.0f), (int) (ok_btn.y + 8.0f), 14, RAYWHITE);
+    beast2_ui_draw_text("OK", ok_btn.x + 32.0f, ok_btn.y + 8.0f, 14, RAYWHITE);
 
     DrawRectangleRec(cancel_btn, BEAST2_UI_COLOR_TAB_INACTIVE);
-    DrawText("Cancel", (int) (cancel_btn.x + 22.0f), (int) (cancel_btn.y + 8.0f), 14, RAYWHITE);
+    beast2_ui_draw_text("Cancel", cancel_btn.x + 22.0f, cancel_btn.y + 8.0f, 14, RAYWHITE);
 
-    DrawText(
+    beast2_ui_draw_text(
         "[Tab] switch field   [Esc] cancel",
-        (int) (panel.x + 16.0f),
-        (int) (panel.y + 150.0f),
+        panel.x + 16.0f,
+        panel.y + 150.0f,
         11,
         BEAST2_UI_COLOR_TEXT_MUTED
     );
 }
 
 static void workflow_modal_try_confirm(void) {
-    char test[BEAST2_MAX_PATH_LENGTH];
+    char resolved[BEAST2_DESKTOP_PIPELINE_MAX_STEPS][BEAST2_MAX_PATH_LENGTH];
     char display[kNameLen];
+    int n;
 
     while (strlen(s_modal_name) > 0 && isspace((unsigned char) s_modal_name[strlen(s_modal_name) - 1])) {
         s_modal_name[strlen(s_modal_name) - 1] = '\0';
@@ -492,13 +675,18 @@ static void workflow_modal_try_confirm(void) {
         return;
     }
 
-    if (workflow_resolve_for_run(s_modal_path, test, sizeof test) != 0) {
+    if (workflow_split_resolve(s_modal_path, resolved, &n) != 0) {
         return;
     }
 
     snprintf(display, sizeof display, "%s", s_modal_name[0] != '\0' ? s_modal_name : s_modal_path);
 
-    if (s_count < kMaxEntries) {
+    if (s_modal_edit_index >= 0 && s_modal_edit_index < (int) s_count) {
+        snprintf(s_names[s_modal_edit_index], sizeof s_names[s_modal_edit_index], "%s", display);
+        snprintf(s_paths[s_modal_edit_index], sizeof s_paths[s_modal_edit_index], "%s", s_modal_path);
+        s_selected = (size_t) s_modal_edit_index;
+        workflow_save();
+    } else if (s_count < kMaxEntries) {
         snprintf(s_names[s_count], sizeof s_names[s_count], "%s", display);
         snprintf(s_paths[s_count], sizeof s_paths[s_count], "%s", s_modal_path);
         s_selected = s_count;
@@ -507,4 +695,5 @@ static void workflow_modal_try_confirm(void) {
     }
 
     s_modal_open = 0;
+    s_modal_edit_index = -1;
 }

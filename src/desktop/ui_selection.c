@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <raylib.h>
+
 static unsigned char *s_selected = NULL;
 static size_t s_file_count = 0;
 static size_t s_anchor = 0;
@@ -124,5 +126,42 @@ void ui_selection_for_each_selected(ui_selection_each_fn fn, void *user) {
         if (s_selected[i]) {
             fn(i, user);
         }
+    }
+}
+
+void ui_selection_keyboard_nav_grid(int cols, size_t file_count) {
+    size_t cur;
+
+    if (file_count == 0 || cols < 1 || s_selected == NULL) {
+        return;
+    }
+
+    cur = ui_selection_first_selected();
+    if (cur == (size_t) -1) {
+        ui_selection_on_click(0, 0, 0);
+        cur = 0;
+    }
+
+    if (IsKeyPressed(KEY_RIGHT)) {
+        if (cur + 1 < file_count) {
+            ui_selection_on_click(cur + 1, 0, 0);
+        }
+    } else if (IsKeyPressed(KEY_LEFT)) {
+        if (cur > 0) {
+            ui_selection_on_click(cur - 1, 0, 0);
+        }
+    } else if (IsKeyPressed(KEY_DOWN)) {
+        size_t n = cur + (size_t) cols;
+        if (n < file_count) {
+            ui_selection_on_click(n, 0, 0);
+        }
+    } else if (IsKeyPressed(KEY_UP)) {
+        if (cur >= (size_t) cols) {
+            ui_selection_on_click(cur - (size_t) cols, 0, 0);
+        }
+    } else if (IsKeyPressed(KEY_HOME)) {
+        ui_selection_on_click(0, 0, 0);
+    } else if (IsKeyPressed(KEY_END)) {
+        ui_selection_on_click(file_count - 1, 0, 0);
     }
 }

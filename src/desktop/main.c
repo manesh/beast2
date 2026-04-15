@@ -18,11 +18,14 @@
 #include "ui_sidebar.h"
 #include "gallery_model.h"
 #include "workflow_panel.h"
+#include "ui_hotkeys.h"
+#include "ui_toast.h"
 #include "theme.h"
 
 #include <raylib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef BEAST2_HAS_ONNXRUNTIME
 #include <onnxruntime_c_api.h>
@@ -63,6 +66,7 @@ int main(int argc, char **argv) {
     ui_chrome_init();
     ui_sidebar_init();
     ui_context_menu_init();
+    ui_toast_init();
     desktop_execution_init();
     ui_gallery_init(config_path);
     workflow_panel_init(gallery_model_workspace_root());
@@ -74,6 +78,7 @@ int main(int argc, char **argv) {
 
     while (!WindowShouldClose()) {
         beast2_ui_input_begin_frame();
+        beast2_ui_fonts_begin_frame();
 
         Beast2UiRootLayout layout;
         beast2_ui_layout_root(
@@ -88,6 +93,8 @@ int main(int argc, char **argv) {
         Beast2UiInput ui_in;
         beast2_ui_input_end_frame(&layout, &ui_in);
 
+        ui_toast_begin_frame(GetFrameTime());
+
         workflow_panel_sync_desktop_generator(config_path, use_cli_generator);
 
         ui_sidebar_update_interaction(&layout);
@@ -98,9 +105,25 @@ int main(int argc, char **argv) {
             ui_context_menu_update_keys();
         }
 
+        ui_hotkeys_frame(
+            &layout,
+            config_path,
+            use_cli_generator,
+            workflow_panel_is_modal_open() || ui_context_menu_is_open()
+        );
+
         if (desktop_execution_consume_completed_pulse()) {
+            const char *st = desktop_execution_status_line();
+
             media_bridge_refresh_tag_names();
             ui_gallery_reload_files();
+            if (
+                strstr(st, "failed") != NULL ||
+                strstr(st, "Failed") != NULL ||
+                strstr(st, "not found") != NULL
+            ) {
+                ui_toast_show(st, 6.0f);
+            }
         }
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
@@ -155,6 +178,7 @@ int main(int argc, char **argv) {
         ui_context_menu_draw();
         workflow_panel_draw_modal_overlay();
         ui_infobar_draw(&layout);
+        ui_toast_draw(&layout.info_bar, (float) GetRenderWidth());
         EndDrawing();
     }
 

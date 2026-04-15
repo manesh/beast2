@@ -13,4 +13,7 @@ enum {
 void beast2_ui_fonts_init(void);
 void beast2_ui_fonts_shutdown(void);
 
+/* Call once per frame before layout/draw (DPI scale). */
+void beast2_ui_fonts_begin_frame(void);
+
 #endif

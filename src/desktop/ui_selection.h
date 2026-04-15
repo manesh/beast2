@@ -17,4 +17,9 @@ size_t ui_selection_count(void);
 typedef void (*ui_selection_each_fn)(size_t index, void *user);
 void ui_selection_for_each_selected(ui_selection_each_fn fn, void *user);
 
+/*
+ * Arrow keys, Home, End — single selection only. Requires raylib each frame.
+ */
+void ui_selection_keyboard_nav_grid(int cols, size_t file_count);
+
 #endif

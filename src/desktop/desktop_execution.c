@@ -16,11 +16,14 @@
 
 typedef struct desktop_job_payload {
     char config_path[BEAST2_MAX_PATH_LENGTH];
-    char generator_path[BEAST2_MAX_PATH_LENGTH];
+    int step_count;
+    char paths[BEAST2_DESKTOP_PIPELINE_MAX_STEPS][BEAST2_MAX_PATH_LENGTH];
 } desktop_job_payload;
 
 static char s_config_path[BEAST2_MAX_PATH_LENGTH];
 static char s_generator_path[BEAST2_MAX_PATH_LENGTH];
+static char s_pipeline[BEAST2_DESKTOP_PIPELINE_MAX_STEPS][BEAST2_MAX_PATH_LENGTH];
+static int s_pipeline_step_count;
 static char s_status_line[512];
 static int s_running;
 static int s_completed_pulse;
@@ -73,23 +76,60 @@ static void *desktop_worker_thread(void *arg) {
     desktop_job_payload *job = (desktop_job_payload *) arg;
     beast2_execution_summary summary;
     char err[512];
-    int rc;
+    int rc = 0;
+    int step;
 
     memset(&summary, 0, sizeof(summary));
     memset(err, 0, sizeof(err));
 
-    rc = beast2_run_generator_with_summary(
-        job->config_path,
-        job->generator_path,
-        &summary,
-        err,
-        sizeof(err)
-    );
+    for (step = 0; step < job->step_count; step++) {
+        memset(&summary, 0, sizeof(summary));
+        memset(err, 0, sizeof(err));
 
-    free(job);
+        rc = beast2_run_generator_with_summary(
+            job->config_path,
+            job->paths[step],
+            &summary,
+            err,
+            sizeof(err)
+        );
+
+        if (rc != 0) {
+            desktop_execution_lock();
+            snprintf(
+                s_status_line,
+                sizeof s_status_line,
+                "Pipeline step %d/%d failed: %s",
+                step + 1,
+                job->step_count,
+                err
+            );
+            s_running = 0;
+            s_completed_pulse = 1;
+            desktop_execution_unlock();
+            free(job);
+
+#if defined(_WIN32)
+            _endthreadex(0);
+            return 0;
+#else
+            return NULL;
+#endif
+        }
+    }
 
     desktop_execution_lock();
-    if (rc == 0) {
+    if (job->step_count > 1) {
+        snprintf(
+            s_status_line,
+            sizeof s_status_line,
+            "Pipeline ok (%d steps) | %s | jobs %zu/%zu",
+            job->step_count,
+            summary.generator_name,
+            summary.completed_jobs,
+            summary.total_jobs
+        );
+    } else {
         snprintf(
             s_status_line,
             sizeof s_status_line,
@@ -99,13 +139,13 @@ static void *desktop_worker_thread(void *arg) {
             summary.scheduler_peak_queue_length,
             summary.generator_name
         );
-    } else {
-        snprintf(s_status_line, sizeof s_status_line, "Generation failed: %s", err);
     }
 
     s_running = 0;
     s_completed_pulse = 1;
     desktop_execution_unlock();
+
+    free(job);
 
 #if defined(_WIN32)
     _endthreadex(0);
@@ -118,6 +158,7 @@ static void *desktop_worker_thread(void *arg) {
 void desktop_execution_init(void) {
     s_config_path[0] = '\0';
     s_generator_path[0] = '\0';
+    s_pipeline_step_count = 0;
     snprintf(s_status_line, sizeof s_status_line, "%s", "Jobs: idle");
     s_running = 0;
     s_completed_pulse = 0;
@@ -139,22 +180,59 @@ void desktop_execution_shutdown(void) {
 #endif
 }
 
-void desktop_execution_set_paths(const char *config_path, const char *generator_path) {
+void desktop_execution_set_paths_pipeline(
+    const char *config_path,
+    const char *const *generator_paths,
+    int step_count
+) {
+    int i;
+
     if (config_path != NULL) {
         snprintf(s_config_path, sizeof s_config_path, "%s", config_path);
     } else {
         s_config_path[0] = '\0';
     }
 
-    if (generator_path != NULL) {
-        snprintf(s_generator_path, sizeof s_generator_path, "%s", generator_path);
-    } else {
-        s_generator_path[0] = '\0';
+    s_pipeline_step_count = 0;
+    s_generator_path[0] = '\0';
+
+    if (generator_paths == NULL || step_count < 1) {
+        return;
     }
+
+    if (step_count > BEAST2_DESKTOP_PIPELINE_MAX_STEPS) {
+        step_count = BEAST2_DESKTOP_PIPELINE_MAX_STEPS;
+    }
+
+    for (i = 0; i < step_count; i++) {
+        if (generator_paths[i] == NULL || generator_paths[i][0] == '\0') {
+            break;
+        }
+        snprintf(s_pipeline[i], sizeof s_pipeline[i], "%s", generator_paths[i]);
+        s_pipeline_step_count++;
+    }
+
+    if (s_pipeline_step_count > 0) {
+        snprintf(s_generator_path, sizeof s_generator_path, "%s", s_pipeline[0]);
+    }
+}
+
+void desktop_execution_set_paths(const char *config_path, const char *generator_path) {
+    const char *one[1];
+
+    if (generator_path == NULL) {
+        desktop_execution_set_paths_pipeline(config_path, NULL, 0);
+        return;
+    }
+
+    one[0] = generator_path;
+    desktop_execution_set_paths_pipeline(config_path, one, 1);
 }
 
 int desktop_execution_try_start(void) {
     desktop_job_payload *job = NULL;
+    int pi;
+    int n;
 
     desktop_join_previous_worker();
 
@@ -164,21 +242,22 @@ int desktop_execution_try_start(void) {
         return -1;
     }
 
-    if (s_config_path[0] == '\0' || s_generator_path[0] == '\0') {
+    if (s_config_path[0] == '\0' || s_pipeline_step_count < 1) {
         snprintf(s_status_line, sizeof s_status_line, "Set config and generator paths first");
         desktop_execution_unlock();
         return -1;
     }
 
-    {
-        FILE *probe = fopen(s_generator_path, "rb");
+    n = s_pipeline_step_count;
+    for (pi = 0; pi < n; pi++) {
+        FILE *probe = fopen(s_pipeline[pi], "rb");
 
         if (probe == NULL) {
             snprintf(
                 s_status_line,
                 sizeof s_status_line,
                 "Generator not found: %s",
-                s_generator_path
+                s_pipeline[pi]
             );
             desktop_execution_unlock();
             return -1;
@@ -194,11 +273,19 @@ int desktop_execution_try_start(void) {
         return -1;
     }
 
+    memset(job, 0, sizeof(*job));
     snprintf(job->config_path, sizeof job->config_path, "%s", s_config_path);
-    snprintf(job->generator_path, sizeof job->generator_path, "%s", s_generator_path);
+    job->step_count = n;
+    for (pi = 0; pi < n; pi++) {
+        snprintf(job->paths[pi], sizeof job->paths[pi], "%s", s_pipeline[pi]);
+    }
 
     s_running = 1;
-    snprintf(s_status_line, sizeof s_status_line, "%s", "Running generator…");
+    if (n > 1) {
+        snprintf(s_status_line, sizeof s_status_line, "Running pipeline (%d steps)…", n);
+    } else {
+        snprintf(s_status_line, sizeof s_status_line, "%s", "Running generator…");
+    }
 
 #if defined(_WIN32)
     s_thread_handle = (HANDLE) _beginthreadex(NULL, 0, desktop_worker_thread, job, 0, NULL);

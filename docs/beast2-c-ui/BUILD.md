@@ -88,6 +88,17 @@ Run `beast2_desktop` from the repo root. Verify:
 4. **Tag** tab clears selection and shows a Phase 4 stub message.
 5. **Refresh** rescans the browse folder (new files appear after a run).
 
+## Phase 7 acceptance (manual)
+
+Run `beast2_desktop` from the repo root on a **HiDPI** display if available (or normal DPI — fonts and margins should still look coherent).
+
+1. **DPI / text:** Title and toolbar strings scale with system DPI; window **margins** grow slightly on higher scale (no microscopic fonts).
+2. **Gallery:** With many files, only **visible** tile rows are drawn each frame (scroll should stay responsive); **arrow keys** move selection; **Home** / **End** jump; selection **scrolls into view**.
+3. **Shortcuts:** **F5** or **Ctrl+R** refreshes the library; **Ctrl+B** toggles **Flow** sidebar; **F6** or **Ctrl+Enter** starts a run (same constraints as **Run** button — not when already running).
+4. **Toasts:** Trigger a run failure (e.g. invalid generator path) or failed job completion — a **non-blocking** banner appears above the info bar and fades out.
+
+**Flow / workflows (Phase 6 slice):** Toggle **Flow** in the toolbar; workflows persist under `workspace/db/desktop_workflows.txt`. Use **Move up/down**, **Edit selected…**, and **`;`** between `.b2` paths to run a **multi-step pipeline** (one background job, steps run in order). Remaining Phase 6 scope (scripts, prototype API parity) is in [`ui-reimplementation-phases.md`](ui-reimplementation-phases.md).
+
 ## Optional desktop deps
 
 ONNX Runtime and FFmpeg **libavutil** probes are documented in [README.md](README.md) (repo `docs/beast2-c-ui/README.md`). They are **not** required to open the raylib window and scroll the gallery spike.

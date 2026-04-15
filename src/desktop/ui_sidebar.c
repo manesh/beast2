@@ -1,6 +1,7 @@
 #include "ui_sidebar.h"
 
 #include "theme.h"
+#include "ui_draw.h"
 #include "workflow_panel.h"
 
 #include <math.h>
@@ -119,7 +120,7 @@ void ui_sidebar_draw(const Beast2UiRootLayout *layout) {
     DrawRectangleRec(*s, BEAST2_UI_COLOR_PANEL);
     DrawRectangleLinesEx(*s, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
 
-    DrawText("Workflows", (int) (s->x + 10.0f), (int) (s->y + 8.0f), 16, BEAST2_UI_COLOR_TEXT_PRIMARY);
+    beast2_ui_draw_text("Workflows", s->x + 10.0f, s->y + 8.0f, 16, BEAST2_UI_COLOR_TEXT_PRIMARY);
 
     inner_h = s->height - 20.0f;
     content_h = sidebar_content_height();

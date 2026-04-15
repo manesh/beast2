@@ -13,6 +13,8 @@
 #include "theme.h"
 #include "ui_layout.h"
 #include "ui_selection.h"
+#include "ui_draw.h"
+#include "ui_toast.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -67,7 +69,7 @@ static void ui_chrome_default_active_tag_if_needed(void) {
 
 static bool ui_chrome_hit_tag_strip(Vector2 mouse, const Rectangle *strip) {
     size_t i;
-    float cx = strip->x + 6.0f + (float) MeasureText("Tags:", 12) + 10.0f;
+    float cx = strip->x + 6.0f + (float) beast2_ui_measure_text("Tags:", 12) + 10.0f;
     const float cy = strip->y + 4.0f;
     const float chip_h = 22.0f;
 
@@ -80,7 +82,7 @@ static bool ui_chrome_hit_tag_strip(Vector2 mouse, const Rectangle *strip) {
             continue;
         }
 
-        text_w = (float) MeasureText(name, 12);
+        text_w = (float) beast2_ui_measure_text(name, 12);
         chip_w = fmaxf(text_w + 20.0f, 48.0f);
         if (cx + chip_w > strip->x + strip->width - 4.0f) {
             break;
@@ -116,21 +118,21 @@ void ui_chrome_draw(const Beast2UiRootLayout *layout) {
 
     DrawRectangleRec(folder_tab, s_folder_view ? BEAST2_UI_COLOR_TAB_ACTIVE : BEAST2_UI_COLOR_TAB_INACTIVE);
     DrawRectangleLinesEx(folder_tab, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-    DrawText("Folder", (int) (folder_tab.x + 6), (int) (folder_tab.y + 8), 14, RAYWHITE);
+    beast2_ui_draw_text("Folder", folder_tab.x + 6.0f, folder_tab.y + 8.0f, 14, RAYWHITE);
 
     DrawRectangleRec(tag_tab, !s_folder_view ? BEAST2_UI_COLOR_TAB_ACTIVE : BEAST2_UI_COLOR_TAB_INACTIVE);
     DrawRectangleLinesEx(tag_tab, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-    DrawText("Tag", (int) (tag_tab.x + 10), (int) (tag_tab.y + 8), 14, RAYWHITE);
+    beast2_ui_draw_text("Tag", tag_tab.x + 10.0f, tag_tab.y + 8.0f, 14, RAYWHITE);
 
     DrawRectangleRec(flow_tab, flow_on ? BEAST2_UI_COLOR_TAB_ACTIVE : BEAST2_UI_COLOR_TAB_INACTIVE);
     DrawRectangleLinesEx(flow_tab, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-    DrawText("Flow", (int) (flow_tab.x + 8), (int) (flow_tab.y + 8), 14, RAYWHITE);
+    beast2_ui_draw_text("Flow", flow_tab.x + 8.0f, flow_tab.y + 8.0f, 14, RAYWHITE);
 
     x = flow_tab.x + flow_tab.width + 12.0f;
     {
         char br[BEAST2_MAX_PATH_LENGTH + 32];
         snprintf(br, sizeof br, "Browse: %s", root != NULL ? root : ".");
-        DrawText(br, (int) x, (int) y, 14, BEAST2_UI_COLOR_TEXT_MUTED);
+        beast2_ui_draw_text(br, x, y, 14, BEAST2_UI_COLOR_TEXT_MUTED);
     }
 
     {
@@ -155,33 +157,33 @@ void ui_chrome_draw(const Beast2UiRootLayout *layout) {
             running ? BEAST2_UI_COLOR_TAB_INACTIVE : BEAST2_UI_COLOR_TAB_ACTIVE
         );
         DrawRectangleLinesEx(run_btn, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-        DrawText(
+        beast2_ui_draw_text(
             "Run",
-            (int) (run_btn.x + 12),
-            (int) (run_btn.y + 8),
+            run_btn.x + 12.0f,
+            run_btn.y + 8.0f,
             14,
             running ? BEAST2_UI_COLOR_TEXT_MUTED : RAYWHITE
         );
 
         DrawRectangleRec(refresh_btn, BEAST2_UI_COLOR_TAB_INACTIVE);
         DrawRectangleLinesEx(refresh_btn, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-        DrawText("Refresh", (int) (refresh_btn.x + 8), (int) (refresh_btn.y + 8), 14, RAYWHITE);
+        beast2_ui_draw_text("Refresh", refresh_btn.x + 8.0f, refresh_btn.y + 8.0f, 14, RAYWHITE);
 
         DrawRectangleRec(col_minus, BEAST2_UI_COLOR_TAB_INACTIVE);
-        DrawText("<", (int) (col_minus.x + 8), (int) (col_minus.y + 6), 16, RAYWHITE);
+        beast2_ui_draw_text("<", col_minus.x + 8.0f, col_minus.y + 6.0f, 16, RAYWHITE);
 
         {
             char nc[16];
             snprintf(nc, sizeof nc, "%d", s_columns);
-            DrawText(nc, (int) (col_minus.x + col_w + 6.0f), (int) (col_minus.y + 8), 14, BEAST2_UI_COLOR_TEXT_PRIMARY);
+            beast2_ui_draw_text(nc, col_minus.x + col_w + 6.0f, col_minus.y + 8.0f, 14, BEAST2_UI_COLOR_TEXT_PRIMARY);
         }
 
         DrawRectangleRec(col_plus, BEAST2_UI_COLOR_TAB_INACTIVE);
-        DrawText(">", (int) (col_plus.x + 8), (int) (col_plus.y + 6), 16, RAYWHITE);
+        beast2_ui_draw_text(">", col_plus.x + 8.0f, col_plus.y + 6.0f, 16, RAYWHITE);
 
         DrawRectangleRec(fname_btn, s_show_filename ? BEAST2_UI_COLOR_TAB_ACTIVE : BEAST2_UI_COLOR_TAB_INACTIVE);
         DrawRectangleLinesEx(fname_btn, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-        DrawText("F", (int) (fname_btn.x + 10), (int) (fname_btn.y + 8), 14, RAYWHITE);
+        beast2_ui_draw_text("F", fname_btn.x + 10.0f, fname_btn.y + 8.0f, 14, RAYWHITE);
     }
 
     if (!s_folder_view && layout->tag_strip.height > 1.0f) {
@@ -192,8 +194,8 @@ void ui_chrome_draw(const Beast2UiRootLayout *layout) {
 
         DrawRectangleRec(layout->tag_strip, BEAST2_UI_COLOR_PANEL);
         DrawRectangleLinesEx(layout->tag_strip, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-        DrawText("Tags:", (int) cx, (int) (cy + 3), 12, BEAST2_UI_COLOR_TEXT_MUTED);
-        cx += (float) MeasureText("Tags:", 12) + 10.0f;
+        beast2_ui_draw_text("Tags:", cx, cy + 3.0f, 12, BEAST2_UI_COLOR_TEXT_MUTED);
+        cx += (float) beast2_ui_measure_text("Tags:", 12) + 10.0f;
 
         for (i = 0; i < media_bridge_tag_count(); i++) {
             const char *name = media_bridge_tag_name(i);
@@ -205,7 +207,7 @@ void ui_chrome_draw(const Beast2UiRootLayout *layout) {
                 continue;
             }
 
-            text_w = (float) MeasureText(name, 12);
+            text_w = (float) beast2_ui_measure_text(name, 12);
             chip_w = fmaxf(text_w + 20.0f, 48.0f);
             if (cx + chip_w > layout->tag_strip.x + layout->tag_strip.width - 4.0f) {
                 break;
@@ -216,10 +218,10 @@ void ui_chrome_draw(const Beast2UiRootLayout *layout) {
                 Rectangle chip = {cx, cy, chip_w, chip_h};
                 DrawRectangleRec(chip, active ? BEAST2_UI_COLOR_TAB_ACTIVE : BEAST2_UI_COLOR_TAB_INACTIVE);
                 DrawRectangleLinesEx(chip, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-                DrawText(
+                beast2_ui_draw_text(
                     name,
-                    (int) (cx + 8.0f),
-                    (int) (cy + 4.0f),
+                    cx + 8.0f,
+                    cy + 4.0f,
                     12,
                     RAYWHITE
                 );
@@ -296,7 +298,9 @@ bool ui_chrome_handle_click(Vector2 mouse, bool left_pressed, const Beast2UiRoot
 
         if (hit_rect(mouse, run_btn)) {
             if (!desktop_execution_is_running()) {
-                (void) desktop_execution_try_start();
+                if (desktop_execution_try_start() != 0) {
+                    ui_toast_show(desktop_execution_status_line(), 4.5f);
+                }
             }
             return true;
         }

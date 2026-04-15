@@ -6,6 +6,7 @@
 #include "gallery_model.h"
 #include "theme.h"
 #include "ui_chrome.h"
+#include "ui_draw.h"
 #include "ui_fonts.h"
 #include "ui_selection.h"
 
@@ -216,10 +217,10 @@ void ui_gallery_draw(Rectangle panel_bounds) {
     DrawRectangleLinesEx(panel_bounds, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
 
     if (item_count == 0) {
-        DrawText(
+        beast2_ui_draw_text(
             "No media files here (png/jpg/webp/… or video extensions).",
-            (int) (panel_bounds.x + (float) kGalleryPad),
-            (int) (panel_bounds.y + (float) kGalleryPad),
+            panel_bounds.x + (float) kGalleryPad,
+            panel_bounds.y + (float) kGalleryPad,
             BEAST2_UI_FONT_BODY_PX,
             BEAST2_UI_COLOR_TEXT_MUTED
         );
@@ -231,49 +232,78 @@ void ui_gallery_draw(Rectangle panel_bounds) {
         const int sy = (int) floorf(panel_bounds.y);
         const int sw = (int) floorf(panel_bounds.width);
         const int sh = (int) floorf(panel_bounds.height);
-        size_t i;
+        const float row_stride = (float) (kCardH + kGalleryGap);
+        int total_rows = (int) ((item_count + (size_t) s_cols - 1) / (size_t) s_cols);
+        int row;
+        int col;
 
         BeginScissorMode(sx, sy, sw, sh);
 
-        for (i = 0; i < item_count; i++) {
-            const int col = (int) (i % (size_t) s_cols);
-            const int row = (int) (i / (size_t) s_cols);
-            const float x = panel_bounds.x + (float) kGalleryPad + (float) col * (float) (kCardW + kGalleryGap);
-            const float y =
-                panel_bounds.y + (float) kGalleryPad + (float) row * (float) (kCardH + kGalleryGap) - s_scroll_y;
-            const Rectangle card = {x, y, (float) kCardW, (float) kCardH};
-            const char *full = gallery_model_full_path(i);
-            const char *base = gallery_model_basename(i);
-            Texture2D thumb = s_placeholder;
+        {
+            int row0 = (int) floorf((s_scroll_y - (float) kGalleryPad) / row_stride);
+            int row1 = (int) ceilf((s_scroll_y - (float) kGalleryPad + inner_h) / row_stride);
 
-            DrawRectangleRounded(card, 6.0f, 8, BEAST2_UI_COLOR_CARD);
-            DrawRectangleRoundedLinesEx(card, 6.0f, 8, 1.0f, BEAST2_UI_COLOR_CARD_BORDER);
-
-            if (ui_selection_is_selected(i)) {
-                DrawRectangleRoundedLinesEx(card, 6.0f, 8, 2.5f, BEAST2_UI_COLOR_SELECTION_RING);
+            if (row0 < 0) {
+                row0 = 0;
+            }
+            if (row1 >= total_rows) {
+                row1 = total_rows - 1;
+            }
+            if (row1 < row0) {
+                row1 = row0;
             }
 
-            thumb_cache_touch(i, full, gallery_model_file_is_image(i), &thumb);
+            for (row = row0; row <= row1; row++) {
+                for (col = 0; col < s_cols; col++) {
+                    size_t i = (size_t) row * (size_t) s_cols + (size_t) col;
+                    float x;
+                    float y;
+                    Rectangle card;
+                    const char *full;
+                    const char *base;
+                    Texture2D thumb;
 
-            {
-                const float scale = fminf(
-                    ((float) kCardW - 16.0f) / (float) thumb.width,
-                    ((float) kCardH - 36.0f) / (float) thumb.height
-                );
-                const float tw = (float) thumb.width * scale;
-                const float tx = x + (float) kCardW * 0.5f - tw * 0.5f;
-                const float ty = y + 6.0f;
-                DrawTextureEx(thumb, (Vector2){tx, ty}, 0.0f, scale, WHITE);
-            }
+                    if (i >= item_count) {
+                        break;
+                    }
 
-            if (base != NULL && ui_chrome_show_filename()) {
-                DrawText(
-                    base,
-                    (int) (x + 4),
-                    (int) (y + (float) kCardH - 22.0f),
-                    12,
-                    BEAST2_UI_COLOR_TEXT_ON_CARD
-                );
+                    x = panel_bounds.x + (float) kGalleryPad + (float) col * (float) (kCardW + kGalleryGap);
+                    y = panel_bounds.y + (float) kGalleryPad + (float) row * row_stride - s_scroll_y;
+                    card = (Rectangle){x, y, (float) kCardW, (float) kCardH};
+                    full = gallery_model_full_path(i);
+                    base = gallery_model_basename(i);
+                    thumb = s_placeholder;
+
+                    DrawRectangleRounded(card, 6.0f, 8, BEAST2_UI_COLOR_CARD);
+                    DrawRectangleRoundedLinesEx(card, 6.0f, 8, 1.0f, BEAST2_UI_COLOR_CARD_BORDER);
+
+                    if (ui_selection_is_selected(i)) {
+                        DrawRectangleRoundedLinesEx(card, 6.0f, 8, 2.5f, BEAST2_UI_COLOR_SELECTION_RING);
+                    }
+
+                    thumb_cache_touch(i, full, gallery_model_file_is_image(i), &thumb);
+
+                    {
+                        const float scale = fminf(
+                            ((float) kCardW - 16.0f) / (float) thumb.width,
+                            ((float) kCardH - 36.0f) / (float) thumb.height
+                        );
+                        const float tw = (float) thumb.width * scale;
+                        const float tx = x + (float) kCardW * 0.5f - tw * 0.5f;
+                        const float ty = y + 6.0f;
+                        DrawTextureEx(thumb, (Vector2){tx, ty}, 0.0f, scale, WHITE);
+                    }
+
+                    if (base != NULL && ui_chrome_show_filename()) {
+                        beast2_ui_draw_text(
+                            base,
+                            x + 4.0f,
+                            y + (float) kCardH - 22.0f,
+                            12,
+                            BEAST2_UI_COLOR_TEXT_ON_CARD
+                        );
+                    }
+                }
             }
         }
 
@@ -288,5 +318,47 @@ void ui_gallery_draw(Rectangle panel_bounds) {
         const float bar_x = panel_bounds.x + panel_bounds.width - 10.0f;
         DrawRectangle((int) bar_x, (int) panel_bounds.y + 12, 6, (int) track_h, BEAST2_UI_COLOR_SCROLL_TRACK);
         DrawRectangle((int) bar_x, (int) thumb_y, 6, (int) thumb_h, BEAST2_UI_COLOR_SCROLL_THUMB);
+    }
+}
+
+static void gallery_scroll_index_into_view(size_t idx, Rectangle panel_bounds, int cols) {
+    const size_t n = gallery_model_file_count();
+    const float inner_h = panel_bounds.height - (float) kGalleryPad * 2.0f;
+    const float row_stride = (float) (kCardH + kGalleryGap);
+    int row;
+
+    if (n == 0 || idx >= n || cols < 1) {
+        return;
+    }
+
+    row = (int) (idx / (size_t) cols);
+    {
+        float y_top = (float) kGalleryPad + (float) row * row_stride;
+        float y_bot = y_top + (float) kCardH;
+
+        if (y_top < s_scroll_y) {
+            s_scroll_y = y_top;
+        } else if (y_bot > s_scroll_y + inner_h) {
+            s_scroll_y = y_bot - inner_h;
+        }
+    }
+}
+
+void ui_gallery_handle_keyboard(const Beast2UiRootLayout *layout) {
+    const size_t n = gallery_model_file_count();
+    int cols;
+
+    if (layout == NULL || n == 0) {
+        return;
+    }
+
+    cols = ui_chrome_get_columns();
+    ui_selection_keyboard_nav_grid(cols, n);
+    {
+        size_t sel = ui_selection_first_selected();
+
+        if (sel != (size_t) -1) {
+            gallery_scroll_index_into_view(sel, layout->gallery, cols);
+        }
     }
 }

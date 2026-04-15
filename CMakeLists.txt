@@ -61,12 +61,16 @@ if(BEAST2_BUILD_RAYLIB_UI)
         src/desktop/ui_context_menu.c
         src/desktop/ui_fonts.c
         src/desktop/ui_gallery.c
+        src/desktop/ui_hotkeys.c
         src/desktop/ui_infobar.c
         src/desktop/ui_input.c
         src/desktop/ui_layout.c
+        src/desktop/ui_draw.c
+        src/desktop/ui_scale.c
         src/desktop/ui_selection.c
         src/desktop/ui_shell.c
         src/desktop/ui_sidebar.c
+        src/desktop/ui_toast.c
         src/desktop/workflow_panel.c
     )
     target_include_directories(beast2_desktop PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")

@@ -8,6 +8,7 @@
 #include "desktop_execution.h"
 #include "gallery_model.h"
 #include "theme.h"
+#include "ui_draw.h"
 #include "ui_layout.h"
 #include "ui_selection.h"
 
@@ -26,22 +27,22 @@ void ui_infobar_draw(const Beast2UiRootLayout *layout) {
 
     {
         const char *job = desktop_execution_status_line();
-        int jw = MeasureText(job, 12);
+        int jw = beast2_ui_measure_text(job, 12);
 
-        DrawText(
+        beast2_ui_draw_text(
             job,
-            (int) (b->x + b->width - (float) jw - 8.0f),
-            (int) (b->y + 9.0f),
+            b->x + b->width - (float) jw - 8.0f,
+            b->y + 9.0f,
             12,
             BEAST2_UI_COLOR_TEXT_MUTED
         );
     }
 
     if (idx == (size_t) -1 || gallery_model_file_count() == 0) {
-        DrawText(
+        beast2_ui_draw_text(
             "No selection",
-            (int) (b->x + 8.0f),
-            (int) (b->y + 7.0f),
+            b->x + 8.0f,
+            b->y + 7.0f,
             14,
             BEAST2_UI_COLOR_TEXT_MUTED
         );
@@ -73,6 +74,6 @@ void ui_infobar_draw(const Beast2UiRootLayout *layout) {
             );
         }
 
-        DrawText(line, (int) (b->x + 8.0f), (int) (b->y + 7.0f), 14, BEAST2_UI_COLOR_TEXT_ON_CARD);
+        beast2_ui_draw_text(line, b->x + 8.0f, b->y + 7.0f, 14, BEAST2_UI_COLOR_TEXT_ON_CARD);
     }
 }

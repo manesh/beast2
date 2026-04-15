@@ -5,6 +5,7 @@
 #include "gallery_model.h"
 #include "media_bridge.h"
 #include "theme.h"
+#include "ui_draw.h"
 #include "ui_gallery.h"
 #include "ui_selection.h"
 
@@ -161,18 +162,18 @@ static void ui_tag_prompt_draw(void) {
     DrawRectangle(0, 0, sw, sh, (Color){0, 0, 0, 160});
     DrawRectangleRec(panel, BEAST2_UI_COLOR_PANEL);
     DrawRectangleLinesEx(panel, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-    DrawText("New tag name:", (int) panel.x + 10, (int) panel.y + 10, 14, BEAST2_UI_COLOR_TEXT_PRIMARY);
-    DrawText(
+    beast2_ui_draw_text("New tag name:", panel.x + 10.0f, panel.y + 10.0f, 14, BEAST2_UI_COLOR_TEXT_PRIMARY);
+    beast2_ui_draw_text(
         s_prompt_buf,
-        (int) panel.x + 10,
-        (int) panel.y + 36,
+        panel.x + 10.0f,
+        panel.y + 36.0f,
         20,
         BEAST2_UI_COLOR_TEXT_ON_CARD
     );
-    DrawText(
+    beast2_ui_draw_text(
         "[Enter] apply   [Esc] cancel",
-        (int) panel.x + 10,
-        (int) panel.y + 58,
+        panel.x + 10.0f,
+        panel.y + 58.0f,
         12,
         BEAST2_UI_COLOR_TEXT_MUTED
     );
@@ -205,7 +206,7 @@ void ui_context_menu_open(Vector2 screen_position, int file_index) {
             continue;
         }
 
-        w = (float) MeasureText(name, 12);
+        w = (float) beast2_ui_measure_text(name, 12);
         if (w > max_tw) {
             max_tw = w;
         }
@@ -248,7 +249,7 @@ void ui_context_menu_draw(void) {
     }
 
     row_y = s_y + (float) kMenuPad;
-    DrawText("Tags", (int) (s_x + (float) kMenuPad), (int) row_y, 12, BEAST2_UI_COLOR_TEXT_MUTED);
+    beast2_ui_draw_text("Tags", s_x + (float) kMenuPad, row_y, 12, BEAST2_UI_COLOR_TEXT_MUTED);
     row_y += (float) kRowH;
 
     for (i = 0; i < media_bridge_tag_count(); i++) {
@@ -260,11 +261,11 @@ void ui_context_menu_draw(void) {
         }
 
         snprintf(line, sizeof line, "  %s", name);
-        DrawText(line, (int) (s_x + (float) kMenuPad), (int) row_y, 12, BEAST2_UI_COLOR_TEXT_PRIMARY);
+        beast2_ui_draw_text(line, s_x + (float) kMenuPad, row_y, 12, BEAST2_UI_COLOR_TEXT_PRIMARY);
         row_y += (float) kRowH;
     }
 
-    DrawText("  New tag…", (int) (s_x + (float) kMenuPad), (int) row_y, 12, BEAST2_UI_COLOR_TEXT_PRIMARY);
+    beast2_ui_draw_text("  New tag…", s_x + (float) kMenuPad, row_y, 12, BEAST2_UI_COLOR_TEXT_PRIMARY);
 }
 
 bool ui_context_menu_handle_click(Vector2 mouse, bool left_pressed) {

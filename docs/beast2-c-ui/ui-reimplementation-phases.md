@@ -162,6 +162,8 @@ Below, each phase lists **scope**, **dependencies**, and **concrete deliverables
 
 - Core workflow CRUD and pipeline steps usable for daily work; exact route parity is not required if behavior matches.
 
+**Remaining (continue alongside Phase 7+)** — optional **scripts** surface; closer parity with prototype `pipelines.js` / `/api/beast2/*` (server routes, discovery). **Done in-repo slice:** Flow sidebar list + **reorder / edit** + **`;`-separated multi-step pipelines** (sequential `beast2_run` per step in one worker job) + Run sync.
+
 **Dependencies:** Phase 5 for running what users edit.
 
 ---
@@ -176,6 +178,8 @@ Below, each phase lists **scope**, **dependencies**, and **concrete deliverables
 - **Keyboard:** navigation, shortcuts for common actions.
 - **Virtualization:** only draw visible tiles; profile scroll and resize.
 - **Error UX:** non-blocking toasts or modal patterns for FFmpeg/ONNX/disk failures.
+
+**Status (initial slice):** `GetWindowScaleDPI()` drives layout margins and `DrawText` sizes via `ui_scale` / `beast2_ui_draw_text`; gallery draws **visible rows only** (thumbs still LRU-cached); **shortcuts** — `F5` / `Ctrl+R` refresh, `Ctrl+B` toggle Flow, `F6` / `Ctrl+Enter` run, arrows/Home/End gallery selection; **toasts** on run failures (sync errors + completed jobs whose status line matches failure heuristics). See [`BUILD.md`](BUILD.md) § *Phase 7 acceptance*.
 
 **Exit**
 
