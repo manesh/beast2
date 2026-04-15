@@ -56,6 +56,38 @@ After building with `BEAST2_BUILD_RAYLIB_UI=ON`, run `beast2_desktop` and confir
 
 Scaffolding modules live under `src/desktop/` (`theme.h`, `ui_layout.c`, `ui_input.c`, `ui_shell.c`, …); see [`ui-spec-inventory.md`](ui-spec-inventory.md).
 
+## Phase 2 acceptance (manual)
+
+From the repo root (so `config/beast2.conf` resolves):
+
+```text
+.\build\Debug\beast2_desktop.exe
+```
+
+Optional config path:
+
+```text
+.\build\Debug\beast2_desktop.exe path\to\custom.conf
+```
+
+Confirm:
+
+1. Header **status line** shows the **browse directory** (first existing among `outputs/images`, `outputs`, `thumbs`, else workspace root) and a **media file count**.
+2. **Image** files in that folder show **raylib-loaded thumbnails** (LRU cache); **video** extensions appear as **tiles with placeholder art** and filename.
+3. **Scroll** remains smooth with many files; wheel only over the gallery panel (unchanged from Phase 1).
+
+FFmpeg decode in a worker thread is **not** in this slice — see [`plan.md`](plan.md) `ffmpeg-integration`.
+
+## Phase 3 acceptance (manual)
+
+Run `beast2_desktop` from the repo root. Verify:
+
+1. **Toolbar** under the title: **Folder** / **Tag** tabs, **Browse:** path, **Refresh**, column **− / +** (2–8), **F** toggles filenames on tiles.
+2. **Click** a tile: single selection (**cyan** outline). **Ctrl+click** toggles. **Shift+click** range from last anchor.
+3. **Info bar** at the bottom shows selected file **name**, **size**, and placeholders for duration/resolution.
+4. **Tag** tab clears selection and shows a Phase 4 stub message.
+5. **Refresh** rescans the browse folder (new files appear after a run).
+
 ## Optional desktop deps
 
 ONNX Runtime and FFmpeg **libavutil** probes are documented in [README.md](README.md) (repo `docs/beast2-c-ui/README.md`). They are **not** required to open the raylib window and scroll the gallery spike.

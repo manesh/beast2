@@ -9,7 +9,7 @@ Maps the **Python/Flask + static JS** prototype ([`prototype/beast2/app/`](../..
 
 | Prototype surface | Key files | Planned / current C home |
 |-------------------|-----------|---------------------------|
-| Main gallery page | `gallery.html`, `styles.css` | `ui_shell.c` (chrome), `ui_gallery.c` (grid), `theme.h` |
+| Main gallery page | `gallery.html`, `styles.css` | `ui_shell.c` (title), `ui_chrome.c` (toolbar), `ui_gallery.c` (grid), `ui_infobar.c`, `ui_selection.c`, `theme.h` |
 | Gallery logic | `gallery.js`, `filters.js`, `pipelines.js` | `ui_gallery.c` (+ future `ui_gallery_data.c`) |
 | Selection | `selection.js` | Future `ui_selection.c` (Phase 3) |
 | Sidebar / workflows | `sidebar.js`, `workflow.js`, `beast2_workflow.js`, `scripts.js` | Future `ui_sidebar.c`, `ui_workflow.c` (Phase 6) |

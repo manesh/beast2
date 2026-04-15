@@ -86,6 +86,8 @@ Below, each phase lists **scope**, **dependencies**, and **concrete deliverables
 - Scroll a large folder without freezing the window; thumbnails appear as workers complete.
 - Document FFmpeg CMake linkage beyond libavutil when codecs are required.
 
+**Status (partial):** Config-driven browse root + sorted media list + **raylib** image thumbnails + **LRU GPU cache** (`gallery_model.c`, `beast2_fs_list_regular_files`, `ui_gallery.c`). **FFmpeg** first-frame decode and **background workers** are still **out of scope** for this slice — see [`BUILD.md`](BUILD.md) § *Phase 2 acceptance*.
+
 **Dependencies:** Phase 1 layout; [`plan.md`](plan.md) `ffmpeg-integration`.
 
 ---
@@ -103,6 +105,8 @@ Below, each phase lists **scope**, **dependencies**, and **concrete deliverables
 **Exit**
 
 - Pixel and interaction parity for the **main gallery strip** on happy path (folder view only is acceptable before Phase 4).
+
+**Status (partial):** Toolbar (**Folder / Tag** placeholder, browse path, **Refresh**, column steppers (**−** / **+**), **F** filename toggle), **Ctrl/Shift** multi-select with **selection ring**, **info bar** (basename + file size + placeholders for duration/resolution). Tag mode shows Phase 4 stub. See [`BUILD.md`](BUILD.md) (*Phase 3 acceptance*).
 
 **Dependencies:** Phase 2.
 

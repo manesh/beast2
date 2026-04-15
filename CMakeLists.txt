@@ -52,11 +52,15 @@ if(BEAST2_BUILD_RAYLIB_UI)
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Beast2DesktopDeps.cmake")
 
     add_executable(beast2_desktop
+        src/desktop/gallery_model.c
         src/desktop/main.c
+        src/desktop/ui_chrome.c
         src/desktop/ui_fonts.c
         src/desktop/ui_gallery.c
+        src/desktop/ui_infobar.c
         src/desktop/ui_input.c
         src/desktop/ui_layout.c
+        src/desktop/ui_selection.c
         src/desktop/ui_shell.c
     )
     target_include_directories(beast2_desktop PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")

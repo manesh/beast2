@@ -9,6 +9,7 @@
 #if defined(_WIN32)
 #include <direct.h>
 #include <io.h>
+#include <windows.h>
 #define BEAST2_TEST_UNLINK _unlink
 #define BEAST2_TEST_RMDIR _rmdir
 #else
@@ -38,7 +39,48 @@ static int beast2_test_remove_tree_inner(const char *path) {
     }
 
 #if defined(_WIN32)
-    return BEAST2_TEST_RMDIR(path);
+    {
+        char search[BEAST2_MAX_PATH_LENGTH];
+        HANDLE h_find = INVALID_HANDLE_VALUE;
+        WIN32_FIND_DATAA find_data;
+
+        if (strlen(path) + 3 >= sizeof(search)) {
+            return -1;
+        }
+
+        if (snprintf(search, sizeof(search), "%s\\*", path) >= (int) sizeof(search)) {
+            return -1;
+        }
+
+        h_find = FindFirstFileA(search, &find_data);
+        if (h_find == INVALID_HANDLE_VALUE) {
+            if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+                return BEAST2_TEST_RMDIR(path);
+            }
+            return -1;
+        }
+
+        do {
+            char child_path[BEAST2_MAX_PATH_LENGTH];
+
+            if (strcmp(find_data.cFileName, ".") == 0 || strcmp(find_data.cFileName, "..") == 0) {
+                continue;
+            }
+
+            if (beast2_fs_join_path(child_path, sizeof(child_path), path, find_data.cFileName) != 0) {
+                FindClose(h_find);
+                return -1;
+            }
+
+            if (beast2_test_remove_tree_inner(child_path) != 0) {
+                FindClose(h_find);
+                return -1;
+            }
+        } while (FindNextFileA(h_find, &find_data) != 0);
+
+        FindClose(h_find);
+        return BEAST2_TEST_RMDIR(path);
+    }
 #else
     {
         DIR *directory = opendir(path);
