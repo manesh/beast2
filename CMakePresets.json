@@ -1,0 +1,25 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "desktop",
+      "displayName": "beast2 + beast2_desktop (raylib UI)",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "BEAST2_BUILD_RAYLIB_UI": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "desktop",
+      "configurePreset": "desktop",
+      "configuration": "Debug"
+    }
+  ]
+}

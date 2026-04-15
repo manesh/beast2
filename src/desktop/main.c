@@ -1,10 +1,15 @@
 /*
- * Beast2 desktop shell (raylib): gallery MVP + optional ONNX/FFmpeg link probes.
+ * Beast2 desktop shell (raylib): Phase 1 — layout + input scaffolding + gallery strip.
  * Build with -DBEAST2_BUILD_RAYLIB_UI=ON (see root CMakeLists.txt).
  */
 #include <beast2/app.h>
 
+#include "ui_fonts.h"
 #include "ui_gallery.h"
+#include "ui_input.h"
+#include "ui_layout.h"
+#include "ui_shell.h"
+#include "theme.h"
 
 #include <raylib.h>
 #include <stdint.h>
@@ -27,7 +32,6 @@ static void beast2_desktop_log_native_deps(void) {
 }
 
 int main(void) {
-    /* Reference a symbol from beast2_core so the static library is linked on all toolchains. */
     printf("beast2_core: beast2_run @ %p\n", (void *)(uintptr_t)beast2_run);
     beast2_desktop_log_native_deps();
 
@@ -38,30 +42,29 @@ int main(void) {
     InitWindow(screen_width, screen_height, "Beast2");
     SetTargetFPS(60);
 
+    beast2_ui_fonts_init();
     ui_gallery_init();
 
     while (!WindowShouldClose()) {
-        const int rw = GetRenderWidth();
-        const int rh = GetRenderHeight();
-        const Rectangle gallery = {24.0f, 84.0f, (float)rw - 48.0f, (float)rh - 108.0f};
+        beast2_ui_input_begin_frame();
 
-        float wheel = GetMouseWheelMove();
-        if (!CheckCollisionPointRec(GetMousePosition(), gallery)) {
-            wheel = 0.0f;
-        }
-        ui_gallery_update(wheel);
+        Beast2UiRootLayout layout;
+        beast2_ui_layout_root(GetRenderWidth(), GetRenderHeight(), &layout);
+
+        Beast2UiInput ui_in;
+        beast2_ui_input_end_frame(&layout, &ui_in);
+
+        ui_gallery_update(ui_in.wheel_for_gallery);
 
         BeginDrawing();
-        ClearBackground((Color){18, 18, 24, 255});
-        DrawText("Beast2", 24, 18, 26, RAYWHITE);
-        DrawText("Gallery (scroll wheel)", 24, 48, 16, (Color){160, 160, 175, 255});
-
-        ui_gallery_draw(gallery);
-
+        ClearBackground(BEAST2_UI_COLOR_BG);
+        beast2_ui_shell_draw_header(&layout);
+        ui_gallery_draw(layout.gallery);
         EndDrawing();
     }
 
     ui_gallery_shutdown();
+    beast2_ui_fonts_shutdown();
     CloseWindow();
     return 0;
 }

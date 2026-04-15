@@ -3,6 +3,9 @@
  */
 #include "ui_gallery.h"
 
+#include "theme.h"
+#include "ui_fonts.h"
+
 #include <math.h>
 #include <stdio.h>
 
@@ -24,7 +27,7 @@ static float gallery_content_height(void) {
 }
 
 void ui_gallery_init(void) {
-    Image img = GenImageChecked(64, 64, 8, 8, (Color){90, 70, 120, 255}, (Color){35, 38, 48, 255});
+    Image img = GenImageChecked(64, 64, 8, 8, (Color){90, 70, 120, 255}, BEAST2_UI_COLOR_CARD);
     s_placeholder = LoadTextureFromImage(img);
     UnloadImage(img);
     SetTextureFilter(s_placeholder, TEXTURE_FILTER_BILINEAR);
@@ -51,8 +54,8 @@ void ui_gallery_draw(Rectangle panel_bounds) {
         s_scroll_y = max_scroll;
     }
 
-    DrawRectangleRec(panel_bounds, (Color){28, 28, 36, 255});
-    DrawRectangleLinesEx(panel_bounds, 1.0f, (Color){55, 58, 72, 255});
+    DrawRectangleRec(panel_bounds, BEAST2_UI_COLOR_PANEL);
+    DrawRectangleLinesEx(panel_bounds, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
 
     const int sx = (int)floorf(panel_bounds.x);
     const int sy = (int)floorf(panel_bounds.y);
@@ -67,8 +70,8 @@ void ui_gallery_draw(Rectangle panel_bounds) {
         const float y = panel_bounds.y + (float)kGalleryPad + (float)row * (float)(kCardH + kGalleryGap) - s_scroll_y;
         const Rectangle card = {x, y, (float)kCardW, (float)kCardH};
 
-        DrawRectangleRounded(card, 6.0f, 8, (Color){40, 42, 52, 255});
-        DrawRectangleRoundedLinesEx(card, 6.0f, 8, 1.0f, (Color){70, 74, 90, 255});
+        DrawRectangleRounded(card, 6.0f, 8, BEAST2_UI_COLOR_CARD);
+        DrawRectangleRoundedLinesEx(card, 6.0f, 8, 1.0f, BEAST2_UI_COLOR_CARD_BORDER);
 
         if (i == 0) {
             const float tw = (float)s_placeholder.width * 2.0f;
@@ -79,7 +82,7 @@ void ui_gallery_draw(Rectangle panel_bounds) {
         } else {
             char label[24];
             (void)snprintf(label, sizeof label, "%d", i);
-            DrawText(label, (int)(x + 10), (int)(y + 10), 18, (Color){200, 200, 210, 255});
+            DrawText(label, (int)(x + 10), (int)(y + 10), BEAST2_UI_FONT_BODY_PX, BEAST2_UI_COLOR_TEXT_ON_CARD);
         }
     }
 
@@ -91,7 +94,7 @@ void ui_gallery_draw(Rectangle panel_bounds) {
         const float t = (max_scroll > 0.0f) ? (s_scroll_y / max_scroll) : 0.0f;
         const float thumb_y = panel_bounds.y + 12.0f + (track_h - thumb_h) * t;
         const float bar_x = panel_bounds.x + panel_bounds.width - 10.0f;
-        DrawRectangle((int)bar_x, (int)panel_bounds.y + 12, 6, (int)track_h, (Color){45, 45, 55, 255});
-        DrawRectangle((int)bar_x, (int)thumb_y, 6, (int)thumb_h, (Color){120, 125, 150, 255});
+        DrawRectangle((int)bar_x, (int)panel_bounds.y + 12, 6, (int)track_h, BEAST2_UI_COLOR_SCROLL_TRACK);
+        DrawRectangle((int)bar_x, (int)thumb_y, 6, (int)thumb_h, BEAST2_UI_COLOR_SCROLL_THUMB);
     }
 }

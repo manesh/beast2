@@ -3,7 +3,8 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h>
+
+#include "beast2/c_compat.h"
 
 #if defined(_WIN32)
 #include <direct.h>

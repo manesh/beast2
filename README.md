@@ -301,6 +301,27 @@ cmake -S . -B build
 cmake --build build
 ```
 
+**SQLite:** CMake uses **system SQLite** when `find_package(SQLite3)` succeeds
+(e.g. `libsqlite3-dev` on Debian/Ubuntu). Otherwise it downloads the official
+**SQLite amalgamation** on first configure (common on Windows; requires
+network once).
+
+### Desktop UI (`beast2_desktop`)
+
+The raylib shell is optional. Enable it for local UI work (first configure needs
+**Git** + **network** to fetch **raylib**):
+
+```sh
+cmake -S . -B build -DBEAST2_BUILD_RAYLIB_UI=ON
+cmake --build build
+```
+
+With **Visual Studio** generators, use `cmake --build build --config Debug` (or
+`Release`), then run `build/Debug/beast2_desktop.exe`.
+
+Shortcut: `cmake --preset desktop` then `cmake --build --preset desktop` (see
+[`docs/beast2-c-ui/BUILD.md`](docs/beast2-c-ui/BUILD.md)).
+
 ## Test
 
 Run the current automated test suite with:

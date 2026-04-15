@@ -28,6 +28,10 @@ cmake -S . -B build
 cmake --build build
 ```
 
+CMake bundles SQLite via the official amalgamation when no system SQLite is
+found (see `cmake/Beast2Sqlite.cmake`). For the optional raylib desktop target,
+see [`docs/beast2-c-ui/BUILD.md`](docs/beast2-c-ui/BUILD.md).
+
 ## Test
 
 Run the automated test suite with:

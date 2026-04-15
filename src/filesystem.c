@@ -1,13 +1,15 @@
 #include "beast2/filesystem.h"
+#include "beast2/c_compat.h"
 
-#include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h>
 
 #if defined(_WIN32)
 #include <direct.h>
+#include <windows.h>
+#else
+#include <dirent.h>
 #endif
 
 static void beast2_fs_set_error(
@@ -38,6 +40,73 @@ static int beast2_fs_make_directory(const char *path) {
 #endif
 }
 
+#if defined(_WIN32)
+static int beast2_fs_scan_tree(
+    const char *path,
+    beast2_scan_result *result,
+    char *error_message,
+    size_t error_message_size
+) {
+    char search[BEAST2_MAX_PATH_LENGTH];
+    HANDLE h_find = INVALID_HANDLE_VALUE;
+    WIN32_FIND_DATAA find_data;
+
+    if (strlen(path) + 3 >= sizeof(search)) {
+        beast2_fs_set_error(error_message, error_message_size, "path too long for directory scan");
+        return -1;
+    }
+
+    if (snprintf(search, sizeof(search), "%s\\*", path) >= (int) sizeof(search)) {
+        beast2_fs_set_error(error_message, error_message_size, "path too long for directory scan");
+        return -1;
+    }
+
+    h_find = FindFirstFileA(search, &find_data);
+    if (h_find == INVALID_HANDLE_VALUE) {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+            result->directories_seen++;
+            return 0;
+        }
+        snprintf(error_message, error_message_size, "failed to open directory: %s", path);
+        return -1;
+    }
+
+    result->directories_seen++;
+
+    do {
+        char child_path[BEAST2_MAX_PATH_LENGTH];
+        struct stat child_stat;
+
+        if (strcmp(find_data.cFileName, ".") == 0 || strcmp(find_data.cFileName, "..") == 0) {
+            continue;
+        }
+
+        if (beast2_fs_join_path(child_path, sizeof(child_path), path, find_data.cFileName) != 0) {
+            beast2_fs_set_error(error_message, error_message_size, "encountered path longer than supported limit");
+            FindClose(h_find);
+            return -1;
+        }
+
+        if (beast2_fs_path_exists(child_path, &child_stat) != 0) {
+            snprintf(error_message, error_message_size, "failed to stat path: %s", child_path);
+            FindClose(h_find);
+            return -1;
+        }
+
+        if (S_ISDIR(child_stat.st_mode)) {
+            if (beast2_fs_scan_tree(child_path, result, error_message, error_message_size) != 0) {
+                FindClose(h_find);
+                return -1;
+            }
+        } else {
+            result->files_seen++;
+        }
+    } while (FindNextFileA(h_find, &find_data) != 0);
+
+    FindClose(h_find);
+    return 0;
+}
+#else
 static int beast2_fs_scan_tree(
     const char *path,
     beast2_scan_result *result,
@@ -89,6 +158,7 @@ static int beast2_fs_scan_tree(
     closedir(directory);
     return 0;
 }
+#endif
 
 int beast2_fs_is_absolute(const char *path) {
     if (path == NULL || *path == '\0') {

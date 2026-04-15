@@ -33,6 +33,8 @@ Beast2’s gallery, side panels, and modals are **custom-drawn** on top of rayli
 
 [`../../prototype/beast2/app/`](../../prototype/beast2/app/) — interaction and visual-density spec.
 
+Phased delivery order for porting that experience to **`beast2_desktop`**: [`ui-reimplementation-phases.md`](ui-reimplementation-phases.md).
+
 ## Deliverables
 
 1. Docs: raylib in `beast2-ui-architecture.md` (done with first implementation step).
@@ -51,7 +53,7 @@ Beast2’s gallery, side panels, and modals are **custom-drawn** on top of rayli
 | doc-ui-dep | Document raylib in `beast2-ui-architecture.md` |
 | dep-allowlist | CMake: ONNX + FFmpeg + raylib (+ sqlite via core) — **partial:** optional ONNX + libavutil probes in `Beast2DesktopDeps.cmake` |
 | raylib-spike | Window, scroll region, texture blit proof — **done:** `ui_gallery.c` |
-| ui-spec-inventory | Map prototype screens to raylib views |
+| ui-spec-inventory | Map prototype screens to raylib views — **done:** [`ui-spec-inventory.md`](ui-spec-inventory.md) |
 | ffmpeg-integration | Thumbs/duration via FFmpeg → textures |
 | onnx-runtime-c | ONNX C API + executor hooks |
 | core-ui-threading | Main loop vs worker queues |

@@ -6,6 +6,8 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Beast2Sqlite.cmake")
+
 function(beast2_apply_warnings target_name)
     if(MSVC)
         target_compile_options(${target_name} PRIVATE /W4)
@@ -27,7 +29,7 @@ add_library(beast2_core STATIC
 )
 
 target_include_directories(beast2_core PUBLIC include)
-target_link_libraries(beast2_core PUBLIC sqlite3)
+target_link_libraries(beast2_core PUBLIC beast2_sqlite)
 beast2_apply_warnings(beast2_core)
 
 add_executable(beast2 src/main.c)
@@ -51,7 +53,11 @@ if(BEAST2_BUILD_RAYLIB_UI)
 
     add_executable(beast2_desktop
         src/desktop/main.c
+        src/desktop/ui_fonts.c
         src/desktop/ui_gallery.c
+        src/desktop/ui_input.c
+        src/desktop/ui_layout.c
+        src/desktop/ui_shell.c
     )
     target_include_directories(beast2_desktop PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
     target_include_directories(beast2_desktop PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/desktop")

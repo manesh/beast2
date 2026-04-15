@@ -3,6 +3,9 @@
 Planning and notes for the native **raylib**-based UI (`beast2_desktop`), integrating with **`beast2_core`**.
 
 - **[plan.md](plan.md)** — full plan (dependencies, architecture, todos).
+- **[ui-reimplementation-phases.md](ui-reimplementation-phases.md)** — phased roadmap from prototype parity → native UI.
+- **[ui-spec-inventory.md](ui-spec-inventory.md)** — prototype files → planned C modules (Phase 1 inventory).
+- **[BUILD.md](BUILD.md)** — configure, build, and run `beast2_desktop` for iterative UI work.
 
 Implementation lives under `src/desktop/` and is enabled with `-DBEAST2_BUILD_RAYLIB_UI=ON` when configuring CMake.
 
