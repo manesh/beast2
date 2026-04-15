@@ -8,6 +8,7 @@
 
 #include "desktop_execution.h"
 #include "gallery_model.h"
+#include "ui_sidebar.h"
 #include "media_bridge.h"
 #include "theme.h"
 #include "ui_layout.h"
@@ -107,6 +108,8 @@ void ui_chrome_draw(const Beast2UiRootLayout *layout) {
     const float y = t->y + 8.0f;
     Rectangle folder_tab = {x, t->y + 4.0f, 56.0f, t->height - 8.0f};
     Rectangle tag_tab = {x + 60.0f, t->y + 4.0f, 48.0f, t->height - 8.0f};
+    Rectangle flow_tab = {tag_tab.x + tag_tab.width + 6.0f, t->y + 4.0f, 52.0f, t->height - 8.0f};
+    int flow_on = ui_sidebar_is_visible();
 
     DrawRectangleRec(*t, BEAST2_UI_COLOR_TOOLBAR_BG);
     DrawRectangleLinesEx(*t, 1.0f, BEAST2_UI_COLOR_TOOLBAR_BORDER);
@@ -119,7 +122,11 @@ void ui_chrome_draw(const Beast2UiRootLayout *layout) {
     DrawRectangleLinesEx(tag_tab, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
     DrawText("Tag", (int) (tag_tab.x + 10), (int) (tag_tab.y + 8), 14, RAYWHITE);
 
-    x = tag_tab.x + tag_tab.width + 14.0f;
+    DrawRectangleRec(flow_tab, flow_on ? BEAST2_UI_COLOR_TAB_ACTIVE : BEAST2_UI_COLOR_TAB_INACTIVE);
+    DrawRectangleLinesEx(flow_tab, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
+    DrawText("Flow", (int) (flow_tab.x + 8), (int) (flow_tab.y + 8), 14, RAYWHITE);
+
+    x = flow_tab.x + flow_tab.width + 12.0f;
     {
         char br[BEAST2_MAX_PATH_LENGTH + 32];
         snprintf(br, sizeof br, "Browse: %s", root != NULL ? root : ".");
@@ -227,6 +234,7 @@ bool ui_chrome_handle_click(Vector2 mouse, bool left_pressed, const Beast2UiRoot
     const Rectangle *t = &layout->toolbar;
     Rectangle folder_tab;
     Rectangle tag_tab;
+    Rectangle flow_tab;
     Rectangle refresh_btn;
     Rectangle col_minus;
     Rectangle col_plus;
@@ -246,6 +254,7 @@ bool ui_chrome_handle_click(Vector2 mouse, bool left_pressed, const Beast2UiRoot
 
     folder_tab = (Rectangle){t->x + 6.0f, t->y + 4.0f, 56.0f, t->height - 8.0f};
     tag_tab = (Rectangle){t->x + 66.0f, t->y + 4.0f, 48.0f, t->height - 8.0f};
+    flow_tab = (Rectangle){tag_tab.x + tag_tab.width + 6.0f, t->y + 4.0f, 52.0f, t->height - 8.0f};
 
     if (hit_rect(mouse, folder_tab)) {
         s_folder_view = 1;
@@ -260,6 +269,11 @@ bool ui_chrome_handle_click(Vector2 mouse, bool left_pressed, const Beast2UiRoot
         media_bridge_refresh_tag_names();
         ui_chrome_default_active_tag_if_needed();
         ui_gallery_reload_files();
+        return true;
+    }
+
+    if (hit_rect(mouse, flow_tab)) {
+        ui_sidebar_toggle_visible();
         return true;
     }
 

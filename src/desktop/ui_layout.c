@@ -5,12 +5,34 @@
 
 #include "theme.h"
 
-void beast2_ui_layout_root(int render_w, int render_h, int show_tag_strip, Beast2UiRootLayout *out) {
+void beast2_ui_layout_root(
+    int render_w,
+    int render_h,
+    int show_tag_strip,
+    int show_sidebar,
+    float sidebar_w,
+    Beast2UiRootLayout *out
+) {
     const float rw = (float) render_w;
     const float rh = (float) render_h;
     const float inner_w = rw - BEAST2_UI_MARGIN_H * 2.0f;
     const float tag_h = show_tag_strip ? BEAST2_UI_TAG_STRIP_H : 0.0f;
+    const float gap = 8.0f;
+    float sw = (show_sidebar && sidebar_w > 1.0f) ? sidebar_w : 0.0f;
+    float gallery_w = inner_w;
     float y = BEAST2_UI_MARGIN_V;
+
+    if (sw > 0.0f) {
+        gallery_w = inner_w - sw - gap;
+        if (gallery_w < 120.0f) {
+            gallery_w = 120.0f;
+            sw = inner_w - gallery_w - gap;
+            if (sw < 1.0f) {
+                sw = 0.0f;
+                gallery_w = inner_w;
+            }
+        }
+    }
 
     out->header.x = BEAST2_UI_MARGIN_H;
     out->header.y = y;
@@ -37,9 +59,14 @@ void beast2_ui_layout_root(int render_w, int render_h, int show_tag_strip, Beast
 
     out->gallery.x = BEAST2_UI_MARGIN_H;
     out->gallery.y = y;
-    out->gallery.width = inner_w;
+    out->gallery.width = gallery_w;
     out->gallery.height = out->info_bar.y - y;
     if (out->gallery.height < 60.0f) {
         out->gallery.height = 60.0f;
     }
+
+    out->sidebar.width = sw;
+    out->sidebar.height = out->gallery.height;
+    out->sidebar.y = y;
+    out->sidebar.x = BEAST2_UI_MARGIN_H + gallery_w + (sw > 0.0f ? gap : 0.0f);
 }

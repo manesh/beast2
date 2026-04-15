@@ -17,6 +17,10 @@ size_t gallery_model_file_count(void);
 const char *gallery_model_full_path(size_t index);
 const char *gallery_model_basename(size_t index);
 const char *gallery_model_browse_root(void);
+/*
+ * Workspace root from the last successful config load (else ".").
+ */
+const char *gallery_model_workspace_root(void);
 const char *gallery_model_status_line(void);
 int gallery_model_file_is_image(size_t index);
 

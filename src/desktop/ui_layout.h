@@ -11,9 +11,17 @@ typedef struct Beast2UiRootLayout {
     Rectangle toolbar;
     Rectangle tag_strip;
     Rectangle gallery;
+    Rectangle sidebar;
     Rectangle info_bar;
 } Beast2UiRootLayout;
 
-void beast2_ui_layout_root(int render_w, int render_h, int show_tag_strip, Beast2UiRootLayout *out);
+void beast2_ui_layout_root(
+    int render_w,
+    int render_h,
+    int show_tag_strip,
+    int show_sidebar,
+    float sidebar_w,
+    Beast2UiRootLayout *out
+);
 
 #endif

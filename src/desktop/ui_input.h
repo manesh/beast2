@@ -18,6 +18,7 @@ typedef struct Beast2UiInput {
     Vector2 mouse;
     float wheel_raw;
     float wheel_for_gallery;
+    float wheel_for_sidebar;
     int hover_id;
     int focus_id;
     bool left_pressed;

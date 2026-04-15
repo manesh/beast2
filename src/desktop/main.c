@@ -15,6 +15,9 @@
 #include "ui_layout.h"
 #include "ui_selection.h"
 #include "ui_shell.h"
+#include "ui_sidebar.h"
+#include "gallery_model.h"
+#include "workflow_panel.h"
 #include "theme.h"
 
 #include <raylib.h>
@@ -47,6 +50,8 @@ int main(int argc, char **argv) {
         config_path = argv[1];
     }
 
+    const int use_cli_generator = (argc > 2 && argv[2] != NULL && argv[2][0] != '\0');
+
     const int screen_width = 960;
     const int screen_height = 540;
 
@@ -56,25 +61,42 @@ int main(int argc, char **argv) {
 
     beast2_ui_fonts_init();
     ui_chrome_init();
+    ui_sidebar_init();
     ui_context_menu_init();
     desktop_execution_init();
     ui_gallery_init(config_path);
-    if (argc > 2 && argv[2] != NULL && argv[2][0] != '\0') {
+    workflow_panel_init(gallery_model_workspace_root());
+    if (use_cli_generator) {
         desktop_execution_set_paths(config_path, argv[2]);
     } else {
-        desktop_execution_set_paths(config_path, "examples/sdxl_character_concept.b2");
+        workflow_panel_sync_desktop_generator(config_path, 0);
     }
 
     while (!WindowShouldClose()) {
         beast2_ui_input_begin_frame();
 
         Beast2UiRootLayout layout;
-        beast2_ui_layout_root(GetRenderWidth(), GetRenderHeight(), !ui_chrome_is_folder_view(), &layout);
+        beast2_ui_layout_root(
+            GetRenderWidth(),
+            GetRenderHeight(),
+            !ui_chrome_is_folder_view(),
+            ui_sidebar_is_visible(),
+            ui_sidebar_get_width(),
+            &layout
+        );
 
         Beast2UiInput ui_in;
         beast2_ui_input_end_frame(&layout, &ui_in);
 
-        ui_context_menu_update_keys();
+        workflow_panel_sync_desktop_generator(config_path, use_cli_generator);
+
+        ui_sidebar_update_interaction(&layout);
+
+        if (workflow_panel_is_modal_open()) {
+            workflow_panel_update_keys();
+        } else {
+            ui_context_menu_update_keys();
+        }
 
         if (desktop_execution_consume_completed_pulse()) {
             media_bridge_refresh_tag_names();
@@ -96,10 +118,14 @@ int main(int argc, char **argv) {
         }
 
         if (ui_in.left_pressed) {
-            if (ui_context_menu_handle_click(ui_in.mouse, true)) {
+            if (workflow_panel_handle_click(ui_in.mouse, true, &layout, ui_sidebar_get_scroll_y())) {
+                /* workflow panel or modal consumed */
+            } else if (ui_context_menu_handle_click(ui_in.mouse, true)) {
                 /* menu consumed */
             } else if (!ui_chrome_handle_click(ui_in.mouse, true, &layout)) {
-                if (CheckCollisionPointRec(ui_in.mouse, layout.gallery)) {
+                if (ui_sidebar_handle_click(ui_in.mouse, true, &layout)) {
+                    /* sidebar resize grip consumed */
+                } else if (CheckCollisionPointRec(ui_in.mouse, layout.gallery)) {
                     const int idx = ui_gallery_pick_file_index(ui_in.mouse, layout.gallery);
                     if (idx >= 0) {
                         const int ctrl =
@@ -112,14 +138,22 @@ int main(int argc, char **argv) {
             }
         }
 
-        ui_gallery_update(ui_context_menu_is_open() ? 0.0f : ui_in.wheel_for_gallery);
+        if (ui_context_menu_is_open() || workflow_panel_is_modal_open()) {
+            ui_sidebar_scroll(0.0f);
+            ui_gallery_update(0.0f);
+        } else {
+            ui_sidebar_scroll(ui_in.wheel_for_sidebar);
+            ui_gallery_update(ui_in.wheel_for_gallery);
+        }
 
         BeginDrawing();
         ClearBackground(BEAST2_UI_COLOR_BG);
         beast2_ui_shell_draw_header(&layout);
         ui_chrome_draw(&layout);
         ui_gallery_draw(layout.gallery);
+        ui_sidebar_draw(&layout);
         ui_context_menu_draw();
+        workflow_panel_draw_modal_overlay();
         ui_infobar_draw(&layout);
         EndDrawing();
     }

@@ -21,6 +21,7 @@ enum {
 };
 
 static char s_browse_root[BEAST2_MAX_PATH_LENGTH];
+static char s_workspace_root[BEAST2_MAX_PATH_LENGTH];
 static char s_status_line[512];
 static char (*s_full_paths)[BEAST2_MAX_PATH_LENGTH];
 static size_t s_file_count;
@@ -341,6 +342,7 @@ void gallery_model_init(const char *config_path) {
     beast2_config cfg;
     char err[512];
 
+    snprintf(s_workspace_root, sizeof s_workspace_root, ".");
     snprintf(s_browse_root, sizeof s_browse_root, ".");
     snprintf(
         s_status_line,
@@ -351,6 +353,7 @@ void gallery_model_init(const char *config_path) {
 
     beast2_config_set_defaults(&cfg);
     if (config_path != NULL && beast2_config_load(&cfg, config_path, err, sizeof err) == 0) {
+        snprintf(s_workspace_root, sizeof s_workspace_root, "%s", cfg.workspace_root);
         beast2_gallery_pick_browse_root(&cfg, s_browse_root, sizeof s_browse_root);
         if (media_bridge_init(cfg.workspace_root) != 0) {
             snprintf(
@@ -412,6 +415,10 @@ const char *gallery_model_basename(size_t index) {
 
 const char *gallery_model_browse_root(void) {
     return s_browse_root;
+}
+
+const char *gallery_model_workspace_root(void) {
+    return s_workspace_root;
 }
 
 const char *gallery_model_status_line(void) {
