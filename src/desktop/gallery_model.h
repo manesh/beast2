@@ -7,7 +7,10 @@
 #include <stddef.h>
 
 void gallery_model_init(const char *config_path);
-void gallery_model_reload(void);
+/*
+ * is_folder_view: list files from the browse directory. Otherwise list files tagged with active_tag_name.
+ */
+void gallery_model_reload(int is_folder_view, const char *active_tag_name);
 void gallery_model_shutdown(void);
 
 size_t gallery_model_file_count(void);

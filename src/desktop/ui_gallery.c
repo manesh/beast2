@@ -120,7 +120,7 @@ void ui_gallery_set_column_count(int cols) {
 }
 
 void ui_gallery_reload_files(void) {
-    gallery_model_reload();
+    gallery_model_reload(ui_chrome_is_folder_view(), ui_chrome_get_active_tag());
     thumb_cache_evict_all();
     ui_selection_reset_for_count(gallery_model_file_count());
     s_scroll_y = 0.0f;
@@ -161,7 +161,7 @@ int ui_gallery_pick_file_index(Vector2 mouse, Rectangle panel_bounds) {
     float oy;
     size_t idx;
 
-    if (!ui_chrome_is_folder_view() || item_count == 0) {
+    if (item_count == 0) {
         return -1;
     }
 
@@ -214,17 +214,6 @@ void ui_gallery_draw(Rectangle panel_bounds) {
 
     DrawRectangleRec(panel_bounds, BEAST2_UI_COLOR_PANEL);
     DrawRectangleLinesEx(panel_bounds, 1.0f, BEAST2_UI_COLOR_PANEL_BORDER);
-
-    if (!ui_chrome_is_folder_view()) {
-        DrawText(
-            "Tag view — Phase 4 (SQLite tags + context menus).",
-            (int) (panel_bounds.x + (float) kGalleryPad),
-            (int) (panel_bounds.y + (float) kGalleryPad),
-            BEAST2_UI_FONT_BODY_PX,
-            BEAST2_UI_COLOR_TEXT_MUTED
-        );
-        return;
-    }
 
     if (item_count == 0) {
         DrawText(

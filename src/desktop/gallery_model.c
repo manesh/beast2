@@ -3,9 +3,12 @@
  */
 #include "gallery_model.h"
 
+#include "media_bridge.h"
+
 #include "beast2/c_compat.h"
 #include "beast2/config.h"
 #include "beast2/filesystem.h"
+#include "beast2/media_library.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -124,6 +127,118 @@ static void beast2_gallery_pick_browse_root(const beast2_config *cfg, char *out,
     snprintf(out, out_size, ".");
 }
 
+static void gallery_model_release_paths(void) {
+    free(s_full_paths);
+    free(s_is_image_flags);
+    s_full_paths = NULL;
+    s_is_image_flags = NULL;
+    s_file_count = 0;
+}
+
+static void beast2_gallery_load_from_tag(const char *tag_name) {
+    char (*rels)[BEAST2_MAX_PATH_LENGTH] = NULL;
+    size_t n = 0;
+    size_t i;
+    size_t m = 0;
+    size_t k = 0;
+    char err[256];
+    beast2_media_library_context *ctx = NULL;
+
+    gallery_model_release_paths();
+
+    if (!media_bridge_ready() || tag_name == NULL || tag_name[0] == '\0') {
+        snprintf(
+            s_status_line,
+            sizeof s_status_line,
+            "Tag view — select a tag above or add tags via right-click (Folder view)."
+        );
+        return;
+    }
+
+    ctx = media_bridge_context();
+    rels = (char (*)[BEAST2_MAX_PATH_LENGTH]) calloc(kGalleryModelCap, sizeof(*rels));
+    if (rels == NULL) {
+        snprintf(s_status_line, sizeof s_status_line, "out of memory loading tag paths");
+        return;
+    }
+
+    if (
+        beast2_media_library_list_relative_paths_for_tag(
+            ctx,
+            tag_name,
+            rels,
+            kGalleryModelCap,
+            &n,
+            err,
+            sizeof err
+        ) != 0
+    ) {
+        snprintf(s_status_line, sizeof s_status_line, "tag query failed: %s", err);
+        free(rels);
+        return;
+    }
+
+    for (i = 0; i < n; i++) {
+        const char *slash = strrchr(rels[i], '/');
+        const char *base = slash != NULL ? slash + 1 : rels[i];
+
+        if (beast2_gallery_basename_is_media(base)) {
+            m++;
+        }
+    }
+
+    if (m == 0) {
+        free(rels);
+        snprintf(
+            s_status_line,
+            sizeof s_status_line,
+            "%s — no gallery media for tag \"%s\"",
+            s_browse_root,
+            tag_name
+        );
+        return;
+    }
+
+    s_full_paths = (char (*)[BEAST2_MAX_PATH_LENGTH]) calloc(m, sizeof(*s_full_paths));
+    s_is_image_flags = (unsigned char *) calloc(m, sizeof(*s_is_image_flags));
+    if (s_full_paths == NULL || s_is_image_flags == NULL) {
+        free(rels);
+        free(s_full_paths);
+        free(s_is_image_flags);
+        s_full_paths = NULL;
+        s_is_image_flags = NULL;
+        snprintf(s_status_line, sizeof s_status_line, "out of memory for tag file table");
+        return;
+    }
+
+    for (i = 0; i < n; i++) {
+        const char *slash = strrchr(rels[i], '/');
+        const char *base = slash != NULL ? slash + 1 : rels[i];
+
+        if (!beast2_gallery_basename_is_media(base)) {
+            continue;
+        }
+
+        if (beast2_fs_join_path(s_full_paths[k], BEAST2_MAX_PATH_LENGTH, ctx->workspace_root, rels[i]) != 0) {
+            continue;
+        }
+
+        s_is_image_flags[k] = (unsigned char) (beast2_gallery_basename_is_image(base) ? 1 : 0);
+        k++;
+    }
+
+    free(rels);
+    s_file_count = k;
+
+    snprintf(
+        s_status_line,
+        sizeof s_status_line,
+        "Tag \"%s\" — %zu media file(s)",
+        tag_name,
+        s_file_count
+    );
+}
+
 static void beast2_gallery_load_from_disk(void) {
     char (*basenames)[BEAST2_MAX_PATH_LENGTH] = NULL;
     size_t raw_count = 0;
@@ -131,7 +246,7 @@ static void beast2_gallery_load_from_disk(void) {
     size_t i;
     size_t m = 0;
 
-    gallery_model_shutdown();
+    gallery_model_release_paths();
 
     basenames = (char (*)[BEAST2_MAX_PATH_LENGTH]) calloc(kGalleryModelCap, sizeof(*basenames));
     if (basenames == NULL) {
@@ -214,8 +329,12 @@ static void beast2_gallery_load_from_disk(void) {
     );
 }
 
-void gallery_model_reload(void) {
-    beast2_gallery_load_from_disk();
+void gallery_model_reload(int is_folder_view, const char *active_tag_name) {
+    if (is_folder_view) {
+        beast2_gallery_load_from_disk();
+    } else {
+        beast2_gallery_load_from_tag(active_tag_name);
+    }
 }
 
 void gallery_model_init(const char *config_path) {
@@ -233,6 +352,14 @@ void gallery_model_init(const char *config_path) {
     beast2_config_set_defaults(&cfg);
     if (config_path != NULL && beast2_config_load(&cfg, config_path, err, sizeof err) == 0) {
         beast2_gallery_pick_browse_root(&cfg, s_browse_root, sizeof s_browse_root);
+        if (media_bridge_init(cfg.workspace_root) != 0) {
+            snprintf(
+                s_status_line,
+                sizeof s_status_line,
+                "media library init failed — tag features disabled (%s)",
+                cfg.workspace_root
+            );
+        }
     } else {
         if (config_path != NULL) {
             snprintf(
@@ -251,11 +378,8 @@ void gallery_model_init(const char *config_path) {
 }
 
 void gallery_model_shutdown(void) {
-    free(s_full_paths);
-    free(s_is_image_flags);
-    s_full_paths = NULL;
-    s_is_image_flags = NULL;
-    s_file_count = 0;
+    gallery_model_release_paths();
+    media_bridge_shutdown();
 }
 
 size_t gallery_model_file_count(void) {

@@ -112,3 +112,17 @@ size_t ui_selection_count(void) {
 
     return n;
 }
+
+void ui_selection_for_each_selected(ui_selection_each_fn fn, void *user) {
+    size_t i;
+
+    if (fn == NULL || s_selected == NULL) {
+        return;
+    }
+
+    for (i = 0; i < s_file_count; i++) {
+        if (s_selected[i]) {
+            fn(i, user);
+        }
+    }
+}

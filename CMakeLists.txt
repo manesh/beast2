@@ -39,6 +39,7 @@ beast2_apply_warnings(beast2)
 option(BEAST2_BUILD_RAYLIB_UI "Build beast2_desktop (raylib spike; requires FetchContent network)" OFF)
 
 if(BEAST2_BUILD_RAYLIB_UI)
+    find_package(Threads REQUIRED)
     include(FetchContent)
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
@@ -52,9 +53,12 @@ if(BEAST2_BUILD_RAYLIB_UI)
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Beast2DesktopDeps.cmake")
 
     add_executable(beast2_desktop
+        src/desktop/desktop_execution.c
         src/desktop/gallery_model.c
         src/desktop/main.c
+        src/desktop/media_bridge.c
         src/desktop/ui_chrome.c
+        src/desktop/ui_context_menu.c
         src/desktop/ui_fonts.c
         src/desktop/ui_gallery.c
         src/desktop/ui_infobar.c
@@ -65,7 +69,7 @@ if(BEAST2_BUILD_RAYLIB_UI)
     )
     target_include_directories(beast2_desktop PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
     target_include_directories(beast2_desktop PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/desktop")
-    target_link_libraries(beast2_desktop PRIVATE beast2_core raylib)
+    target_link_libraries(beast2_desktop PRIVATE beast2_core raylib Threads::Threads)
 
     if(BEAST2_ONNXRUNTIME_FOUND)
         target_include_directories(beast2_desktop PRIVATE "${BEAST2_ONNXRUNTIME_INCLUDE_DIR}")

@@ -365,17 +365,26 @@ int beast2_run_generator(const char *generator_path, int print_all_prompts) {
     return 0;
 }
 
-int beast2_run_generator_execution(const char *config_path, const char *generator_path) {
+int beast2_run_generator_with_summary(
+    const char *config_path,
+    const char *generator_path,
+    beast2_execution_summary *summary,
+    char *error_message,
+    size_t error_message_size
+) {
     beast2_runtime_context runtime;
-    beast2_execution_summary summary;
-    char error_message[512];
 
-    memset(error_message, 0, sizeof(error_message));
-    memset(&summary, 0, sizeof(summary));
+    if (summary == NULL) {
+        if (error_message != NULL && error_message_size > 0) {
+            snprintf(error_message, error_message_size, "summary pointer is null");
+        }
+        return -1;
+    }
 
-    if (beast2_prepare_runtime(config_path, &runtime, error_message, sizeof(error_message)) != 0) {
-        fprintf(stderr, "beast2: failed to prepare runtime: %s\n", error_message);
-        return 1;
+    memset(summary, 0, sizeof(*summary));
+
+    if (beast2_prepare_runtime(config_path, &runtime, error_message, error_message_size) != 0) {
+        return -1;
     }
 
     if (
@@ -386,14 +395,29 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
             &runtime.scheduler,
             &runtime.model_runtime,
             generator_path,
-            &summary,
+            summary,
             error_message,
-            sizeof(error_message)
+            error_message_size
         ) != 0
     ) {
         beast2_logger_log(&runtime.logger, BEAST2_LOG_LEVEL_ERROR, "phase five execution failed: %s", error_message);
         beast2_cleanup_runtime(&runtime);
-        fprintf(stderr, "beast2: failed to execute generator: %s\n", error_message);
+        return -1;
+    }
+
+    beast2_cleanup_runtime(&runtime);
+    return 0;
+}
+
+int beast2_run_generator_execution(const char *config_path, const char *generator_path) {
+    beast2_execution_summary summary;
+    char error_message[512];
+
+    memset(error_message, 0, sizeof(error_message));
+    memset(&summary, 0, sizeof(summary));
+
+    if (beast2_run_generator_with_summary(config_path, generator_path, &summary, error_message, sizeof(error_message)) != 0) {
+        fprintf(stderr, "beast2: failed to prepare or execute: %s\n", error_message);
         return 1;
     }
 
@@ -423,6 +447,5 @@ int beast2_run_generator_execution(const char *config_path, const char *generato
     printf("First thumbnail: %s\n", summary.first_thumbnail_path);
     printf("First generator artifact: %s\n", summary.first_generator_artifact_path);
 
-    beast2_cleanup_runtime(&runtime);
     return 0;
 }

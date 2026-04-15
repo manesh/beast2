@@ -19,5 +19,6 @@ bool ui_chrome_handle_click(Vector2 mouse, bool left_pressed, const struct Beast
 int ui_chrome_get_columns(void);
 int ui_chrome_show_filename(void);
 int ui_chrome_is_folder_view(void);
+const char *ui_chrome_get_active_tag(void);
 
 #endif

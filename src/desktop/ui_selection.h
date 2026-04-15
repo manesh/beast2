@@ -14,4 +14,7 @@ int ui_selection_is_selected(size_t file_index);
 size_t ui_selection_first_selected(void);
 size_t ui_selection_count(void);
 
+typedef void (*ui_selection_each_fn)(size_t index, void *user);
+void ui_selection_for_each_selected(ui_selection_each_fn fn, void *user);
+
 #endif
