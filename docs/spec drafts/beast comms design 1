@@ -1,0 +1,743 @@
+Here is a first-pass Beast2 comms design aimed at fault tolerance, with wings as the delivery reward layer rather than halos.
+
+The core idea is simple:
+
+Do not assume the network is alive. Do not assume the route exists. Do not assume a central server will answer.
+Instead, every node is a possible courier, every message is a durable artifact, and every transport is opportunistic.
+
+System shape
+
+Think of Beast Comms as five layers:
+
+1. Identity and trust
+Each device has a persistent Beast identity keypair.
+Users can have human identities mapped to several devices.
+	•	person identity: Michael
+	•	device identities: phone, laptop, village hub, family tablet
+	•	trust graph: family, village, friends, subscribed hubs, known relays
+
+Messages are signed by sender identity.
+Payloads can be end-to-end encrypted to intended recipients.
+Relays can carry them without reading them.
+
+2. Postal artifact format
+Everything becomes a Beast artifact:
+	•	message
+	•	photo
+	•	file
+	•	voice note
+	•	generator
+	•	encyclopedia shard
+	•	routing update
+	•	delivery receipt
+
+Each artifact has:
+	•	content hash
+	•	sender id
+	•	recipient scope
+	•	priority
+	•	size
+	•	expiration / retention policy
+	•	redundancy target
+	•	routing hints
+	•	delivery status metadata
+
+This fits Beast2 naturally: artifacts persist, are hash-addressed, deduplicate cleanly, and can be re-forwarded safely.
+
+3. Multi-transport delivery fabric
+Messages can move over any available transport:
+	•	direct internet peer connection
+	•	relayed internet connection
+	•	local Wi-Fi / LAN
+	•	Wi-Fi Direct
+	•	Bluetooth / BLE
+	•	tethered device bridge
+	•	sneakernet sync when devices come near each other
+	•	village hub sync
+	•	satellite or long-range link later if ever added
+
+The system does not care which path is used.
+It cares only that a courier moved the artifact closer to where it belongs.
+
+4. Store-and-forward routing
+Nodes do not merely connect; they carry mail.
+
+A node may hold:
+	•	mail for itself
+	•	mail for local cluster
+	•	mail for adjacent villages
+	•	global cached public artifacts
+	•	queued outbound mail waiting for any viable path
+
+This is postal logic, not fragile socket logic.
+
+5. Reward layer: wings
+Wings symbolize movement, delivery, and service to the network.
+
+Not "I computed hard."
+Not "I spammed packets."
+But: I helped communication move.
+
+Examples:
+	•	carried village mail to a hub
+	•	hosted a stable always-on post office
+	•	delivered bundles across a partition
+	•	maintained trusted address books / route summaries
+	•	served as a bridge between two clusters
+	•	preserved mail during outage until route restored
+
+That is much harder to fake than generic engagement points, if designed carefully.
+
+⸻
+
+Fault-tolerance principles
+
+These should be explicit Beast axioms for comms:
+
+Axiom 1: Every message expects failure
+
+A message should survive:
+	•	sender going offline
+	•	receiver going offline
+	•	relay disappearing
+	•	IP address changes
+	•	temporary split-brain networks
+	•	duplicate delivery attempts
+	•	reorder
+	•	retransmission
+
+Axiom 2: Delivery is eventual, not fragile
+
+Do not promise "live connection."
+Promise:
+	•	queued
+	•	carried
+	•	reached village
+	•	reached recipient cluster
+	•	decrypted by recipient device
+	•	acknowledged
+
+That is more honest and more robust.
+
+Axiom 3: Redundancy should match reality
+
+When internet is stable, use low redundancy.
+When links are unstable or war/disaster mode is detected, raise redundancy automatically.
+
+Axiom 4: Locality matters
+
+A device in or near a village should preferentially preload or retain village mail.
+This is your "intelligently loaded local mail" idea.
+
+Axiom 5: Couriers are first-class citizens
+
+Relays and hubs are not invisible plumbing.
+They are part of the social architecture of the network.
+
+⸻
+
+Data model
+
+A message bundle might look conceptually like this:
+
+b2_artifact_type message_bundle
+b2_bundle_hash H(...)
+b2_sender_id person:granddaughter
+b2_recipient_scope household:grandparents
+b2_encryption e2ee
+b2_priority family_high
+b2_created_at 2026-04-15T22:11:00Z
+b2_expire_at 2026-05-15T22:11:00Z
+b2_redundancy_target 3
+b2_locality_hint village:khaneh_red
+b2_transport_hint internet mesh bluetooth wifi_direct
+b2_payload_refs
+  message_text_hash ...
+  photo_hash ...
+b2_ack_policy recipient_ack
+b2_forward_policy store_and_forward
+
+Large payloads should be chunked and content-addressed.
+That gives resumability and deduplication almost for free.
+
+⸻
+
+Routing model
+
+Use a hybrid approach, because pure elegance usually loses to real networks.
+
+Routing tiers
+
+Tier A: direct delivery
+
+If recipient is online and reachable:
+	•	send directly
+	•	receive ack
+	•	done
+
+Tier B: assisted direct delivery
+
+Use rendezvous / introducer / hole punching:
+	•	a known hub or introducer helps peers discover each other
+	•	attempt NAT traversal
+	•	if direct path succeeds, switch to p2p
+
+Tier C: trusted relay delivery
+
+If direct connection fails:
+	•	encrypted message passes through one or more relays
+	•	relays cannot read it, but can store and forward it
+
+Tier D: locality cache delivery
+
+If recipient cluster is offline:
+	•	store mail at nearest trusted locality hub or courier set
+	•	when someone from recipient locality appears, sync opportunistically
+
+Tier E: physical / opportunistic mesh
+
+If internet path is absent:
+	•	carry by nearby phones, hubs, travelers, vehicles, etc.
+	•	eventual sync when path emerges
+
+That last one is where the network becomes genuinely resilient.
+
+⸻
+
+Wings reward design
+
+The reward system should celebrate movement and reliability, not volume.
+
+Why wings
+
+Halo implies virtue in a vague moral sense.
+Wings imply:
+	•	motion
+	•	carrying
+	•	bridging distance
+	•	service between places
+
+It is visually and conceptually correct.
+
+Types of wings
+
+Courier Wings
+Earned for successful forwarding of mail toward destinations.
+
+Postmaster Wings
+Earned for running stable hubs, maintaining uptime, serving cached mail reliably.
+
+Bridge Wings
+Earned when a node meaningfully connects otherwise separated clusters.
+
+Storm Wings
+Earned for successful carriage during outages, degraded networks, or emergency mode.
+
+Memory Wings
+Earned for preserving important public artifacts, directory shards, and address books.
+
+Anti-gaming principles
+
+Do not reward:
+	•	raw bytes forwarded
+	•	raw message count
+	•	self-sent loops
+	•	repeated duplicate forwarding
+	•	spam relays
+	•	easy same-room churn
+
+Instead reward:
+	•	unique useful deliveries
+	•	path-shortening contribution
+	•	successful custody transfer
+	•	persistence over time
+	•	delivery under adversity
+	•	validated bridge service between distinct trust/locality zones
+
+A relay only gets credit when its participation was actually needed.
+
+Wings accounting
+
+Each artifact can carry a limited "reward budget" split across contributing nodes.
+For example:
+	•	sender funds a tiny voluntary reward
+	•	recipient or community fund can add more
+	•	network grants emergency bonus in outage mode
+
+Credit is split by actual contribution:
+	•	hub that stored it for 6 days during outage
+	•	courier phone that carried it into village
+	•	local handset that delivered to recipient
+
+This prevents infinite minting.
+
+⸻
+
+System modes
+
+The system should adapt behavior based on observed conditions.
+
+1. Optimistic mode
+
+Assume internet mostly works.
+	•	low redundancy
+	•	prefer direct routes
+	•	use hubs for efficiency
+	•	smaller cache windows
+	•	quick pruning
+
+2. Partition mode
+
+Assume clusters may be cut off for hours or days.
+	•	higher redundancy
+	•	retain address/routing summaries longer
+	•	preload locality mail
+	•	encourage multi-hop custody copies
+
+3. Crisis mode
+
+Assume regional outage or intentional shutdown.
+	•	maximum store-and-forward
+	•	prioritize family, emergency, and directory messages
+	•	compress aggressively
+	•	preserve power
+	•	allow delayed batched sync
+	•	reward bridging strongly
+
+⸻
+
+UX example 1: "Post office" setup
+
+This is the optimistic, internet-mostly-up case.
+
+A person in a town has a mini PC, router-attached box, old laptop, or always-on desktop. They open Beast and set up a Post Office.
+
+What they see
+
+Screen: Create Local Post Office
+
+"Turn this device into a trusted mail hub for your home, block, building, or village."
+
+Options:
+	•	Hub name: Oak Street Post Office
+	•	Service area: Oak Street / nearby homes
+	•	Reliability mode: Optimistic
+	•	Reserve storage for mail: 200 GB
+	•	Keep local directory cache: On
+	•	Serve public artifact cache: Optional
+	•	Allow NAT assist for trusted contacts: On
+	•	Backup power available: No
+	•	Reward type shown publicly: Postmaster Wings
+
+Then Beast gives a plain-language summary:
+
+This hub will store mail for nearby people, help devices find each other, and keep delivery moving when someone is temporarily offline.
+
+User taps Start Post Office.
+
+What happens under the hood
+
+The hub:
+	•	gets a stable Beast node id
+	•	publishes signed reachability summaries
+	•	maintains local trust and directory shards
+	•	acts as introducer for direct p2p attempts
+	•	caches local outbound and inbound mail
+	•	keeps minimal route summaries for known localities
+	•	optionally mirrors public Beast artifacts
+
+UX flow in practice
+
+A granddaughter sends:
+	•	text
+	•	photo
+	•	short voice note
+
+Recipient grandparents are offline.
+
+The system UI for sender says:
+
+Sending to Grandparents
+	•	Sent to Oak Street Post Office
+	•	Waiting for village delivery window
+	•	2 trusted routes available
+
+Later, someone travels through village or a handset comes online there.
+Hub sync occurs. Grandparents’ handhelds light up:
+
+New Beast Comms
+	•	Message and photo from your granddaughter
+	•	Delivered via Oak Street Post Office and 1 local courier
+
+That last line quietly teaches the user how resilience works.
+
+Why this mode is efficient
+
+Because internet mostly stays up:
+	•	one or two hubs can handle directory, rendezvous, and buffering
+	•	redundancy stays low
+	•	bandwidth is used intelligently
+	•	smartphones don’t need giant routing state
+	•	most traffic is direct or hub-assisted
+
+Failure handling
+
+If the hub goes down:
+	•	clients fail over to cached secondary hub list
+	•	recent mail bundles remain on sender devices until custody is confirmed elsewhere
+	•	address books and trust lists are replicated in tiny signed snapshots
+	•	nearby devices can promote a temporary replacement hub
+
+That is important: a post office is a convenience, not a single point of failure.
+
+⸻
+
+UX example 2: Pure mesh village mode
+
+Now assume a town or village where there is no dependable hub.
+Smartphones are the main compute/storage.
+Each phone may contribute up to 16 GB for routing state, mail custody, caches, and address/directory data.
+
+This is harsher, but very possible if you design for it.
+
+What users see
+
+A person opens Beast Comms and sees:
+
+Village Mesh Active
+	•	Internet: unstable
+	•	Nearby Beast devices: 11
+	•	Local couriers available: 4
+	•	Mail queue health: good
+	•	Your phone is carrying 23 undelivered items for nearby households
+
+There is a button:
+
+Review Carried Mail
+
+Tapping it does not reveal contents. It shows only categories:
+	•	5 family messages
+	•	2 photos
+	•	11 public directory updates
+	•	5 encyclopedia fragments
+
+And:
+	•	Estimated storage used: 1.8 GB
+	•	Your current courier status: Bridge Wings I
+
+This keeps the user aware without compromising privacy.
+
+Pure mesh routing behavior
+
+Phones exchange:
+	•	signed neighborhood summaries
+	•	recent custody receipts
+	•	compressed "who can reach whom" bloom filters or shard summaries
+	•	local address books for trusted communities
+	•	chunk availability maps
+	•	battery / willingness / storage contribution state
+
+When two phones meet:
+	1.	authenticate as Beast nodes
+	2.	compare missing summaries
+	3.	exchange higher-priority undelivered mail
+	4.	transfer chunks opportunistically
+	5.	update custody and reward logs
+	6.	part ways
+
+No central server required.
+
+Storage budget within 16 GB
+
+A rough conceptual split on a 512 GB phone that donates up to 16 GB:
+	•	2 GB routing and directory summaries
+	•	6 GB private and local-forwarded message bundles
+	•	4 GB chunk cache for large payloads
+	•	2 GB public emergency / encyclopedia shards
+	•	2 GB redundancy / overflow / delayed cleanup
+
+In practice, routing summaries should be much smaller than raw "all IPs and MACs."
+You do not want one global flat table.
+You want compressed locality-aware summaries and trust-scoped directories.
+
+That means:
+	•	village clusters
+	•	route likelihoods
+	•	last-seen windows
+	•	custody maps
+	•	contact group summaries
+	•	optional DHT-like shard indices where needed
+
+UX flow in practice
+
+A man bicycles back from the city.
+
+While near a better-connected zone, his phone picks up:
+	•	family mail for his village
+	•	pending public notices
+	•	a few artifact chunks requested by local devices
+
+He does not do anything manually.
+
+When he nears the village:
+	•	his phone detects familiar Beast identities nearby
+	•	sync windows open automatically
+	•	grandparents’ devices light up
+	•	several other homes get queued deliveries
+
+His UI says:
+
+Courier Run Complete
+	•	14 items reached your village
+	•	9 delivered
+	•	5 handed to nearby couriers
+	•	You earned 31 Wings
+	•	Storm multiplier applied: intermittent partition
+
+That is a good Beast moment. The system is legible, rewarding, and alive.
+
+Why this mode is fault tolerant
+
+Because delivery does not depend on:
+	•	one ISP
+	•	one SIM
+	•	one server
+	•	one national backbone
+	•	one always-on household hub
+
+It depends on the continued existence of people, devices, and movement.
+
+That is much harder to kill completely.
+
+⸻
+
+Architecture sketch
+
+Node roles
+
+A node can be one or more of:
+
+Client
+Mostly sends and receives its own mail.
+
+Courier
+Carries mail for others.
+
+Post Office
+Stable hub. Directory, caching, rendezvous, route summaries.
+
+Bridge
+Frequently moves between clusters or networks.
+
+Archive
+Preserves public artifacts, directory shards, encyclopedia data.
+
+These are roles, not separate apps.
+
+Core components per node
+
+Identity engine
+	•	keys
+	•	trust graph
+	•	device membership
+
+Bundle store
+	•	content-addressed chunks
+	•	encrypted payload blobs
+	•	retention policies
+
+Routing engine
+	•	locality graph
+	•	delivery likelihood estimates
+	•	path history
+	•	custody records
+
+Transport manager
+	•	internet direct
+	•	relay
+	•	LAN
+	•	Wi-Fi direct
+	•	Bluetooth
+	•	manual export/import if needed
+
+Reward engine
+	•	verified contribution records
+	•	wing minting rules
+	•	anti-loop accounting
+
+Policy engine
+	•	storage donation cap
+	•	battery thresholds
+	•	family-first priority
+	•	emergency mode
+
+⸻
+
+How routing should think
+
+Do not model routes too literally, like a fragile internet router table.
+For Beast Comms, routing is probabilistic and social.
+
+A node should ask:
+	•	Is recipient directly reachable now?
+	•	If not, which trusted node is most likely to encounter them or their locality?
+	•	Which nearby node has best history delivering to that cluster?
+	•	Is this worth replicating to 1 node or 3?
+	•	Is this emergency traffic?
+	•	Is battery or storage scarce?
+
+So route knowledge is more like:
+	•	"this courier often reaches village X by evening"
+than
+	•	"destination IP should go to next hop Y forever."
+
+That is a better fit for intermittent networks.
+
+⸻
+
+Security model
+
+This matters a lot.
+
+Private messages
+	•	end-to-end encrypted
+	•	relays store ciphertext only
+	•	metadata minimized where possible
+	•	recipient set may still leak some routing information, so use recipient-group envelopes carefully
+
+Public artifacts
+	•	signed
+	•	hash-addressed
+	•	openly mirrored if user chooses
+
+Trust scopes
+
+Not every node should carry everything.
+
+Users should be able to choose:
+	•	family-only forwarding
+	•	trusted-community forwarding
+	•	public network participation
+	•	emergency-only carrying for strangers
+
+That keeps the system socially survivable.
+
+⸻
+
+What can fail without collapse
+
+A good Beast comms design should survive loss of:
+	•	one hub
+	•	all hubs in a locality
+	•	direct internet
+	•	DNS
+	•	one ISP
+	•	SIM service on one carrier
+	•	temporary total partition between regions
+	•	many devices going offline
+	•	duplicate or delayed packets
+	•	partially corrupted local caches
+
+If a message exists on several trusted nodes and is content-addressed with signed custody logs, the network can heal.
+
+⸻
+
+Design caution
+
+There are two big traps.
+
+Trap 1: making the routing state too global
+
+A smartphone should not try to know the whole world.
+It should know:
+	•	itself
+	•	its people
+	•	its localities
+	•	a compressed summary of adjacent route opportunities
+	•	a few trusted bridges / hubs
+	•	optional DHT shard responsibility if participating deeply
+
+Think federated postal districts, not "global routing table on every phone."
+
+Trap 2: rewarding spam instead of service
+
+If rewards are too naive, people will bounce junk around to farm Wings.
+
+So only reward:
+	•	useful delivery
+	•	successful custody across meaningful boundaries
+	•	participation validated by recipient-side or destination-side evidence
+	•	long-duration storage when truly needed
+	•	bridge value during real partitions
+
+⸻
+
+One possible Beast wording
+
+You could present the two modes like this:
+
+Post Office mode
+
+Run a steady local hub.
+Best when internet usually works.
+Fast, efficient, low redundancy, easy on phones.
+
+Village Mesh mode
+
+Turn every device into a courier.
+Best when infrastructure is weak or unreliable.
+Higher redundancy, slower delivery, much harder to silence.
+
+⸻
+
+Candidate comms axioms
+
+You already have one strong one. Here are a few in Beast style:
+
+#axiom: if you can’t talk, fighting becomes inevitable
+
+#axiom: every device is a possible courier
+
+#axiom: the message matters more than the route
+
+#axiom: delivery is not failure because it was delayed
+
+#axiom: beastly couriers do not stop because the map broke
+
+#axiom: what survives outage becomes civilization memory
+
+And your postal one, adapted:
+
+#axiom: neither wind nor rain nor dark of night will stop these beastly couriers from their heroic volunteer rounds
+
+That line is theatrical, but correctly so.
+
+⸻
+
+Recommendation
+
+For Beast2, I would design this in order:
+	1.	Artifact format
+	2.	Identity / trust / encrypted bundle format
+	3.	Single-hub post office mode
+	4.	Custody receipts and delayed delivery UI
+	5.	Locality preload logic
+	6.	Two-phone opportunistic sync
+	7.	Pure mesh village mode
+	8.	Wings accounting
+	9.	Emergency / partition mode
+
+That path gets you something real sooner, without trying to solve the hardest mesh problems first.
+
+Next, I can turn this into a more formal Beast2 design doc with sections like:
+"Goals," "Threat Model," "Routing Model," "Reward Model," "Storage Budget," and "UX Flows."
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,104 @@
+######$$$beast-looping-pixel-art-generator-start
+#intent: the start and end bumpers help when copying entire file into ai, easy to look for whats between the bumpers and copy paste after ai modification.
+#note: 6 # chosen because 6 is a beastly number and # looks like a beast with 2 heads 2 legs and 4 arms, and 3 $ looks like 3 cute snakes around 3 cute poles, and 3 is the cutest number :3
+#created: 2026-04-14
+#updated: n/a
+#author: beast1 (Michael Asad Manesh)
+#intent: provide a gold master example for the beast2 command document interface (CDI). command line interfaces (CLIs) are limited in scope and readability, as well as reusability. CDI is the core command interfcae of beast2 interaction, with CLI only being used for extremely basic, short commands, like voice commands for non-ai augmented beast2 system subroutines.
+
+#note: $$$$ indicates a pipeline, $$$ a generator, $$ a generator subsection, and $ a single setting or variant spread. can add $$$$$ or more if needed
+#note: pixel art pipeline is a short easy name to open by voice command, deliberately not optimized for "unique name when shared"
+$$$$pixel-art-pipeline
+
+
+#intent: generate a character sprite in a neutral pose (solid background, character fully in frame facing camera)
+#note: again a short memorable name, ideal for local reuse via voice command
+$$$generate-sprite
+
+
+#note: one option from each prompt section is concatenated together for a single automated generation. 
+$$positive-prompt
+
+#intent: first option ~6 colors 32*32px, second option ~14 colors 64*64px
+$prefix
+pixel art in 8 bit retro style
+pixel art in 16 bit modern style
+
+#note: reserved keywords for prompt building
++beast-concatenate-comma
++beast-concatenate-newline
++beast-concatenate-newline
+
+
+$character
+a smiling brown haired girl wearing a red hoodie and carrying a basket filled with sandwiches
+a snarling gray haired beastly werewolf standing on his rear paws and wearing an old lady costume
+a very short green goblin with a greedy smile and large black eyes wearing a loincloth
+
++beast-concatenate-comma
+
+
+$pose
+facing the camera in a neutral pose with full body in frame
+
++beast-concatenate-comma
+
+
+#note: +beast-null-option means do not append/concat this snippet or its post-concatenate special character when null is selected. so the 3 variants generated will be one with no additional style text, one with "...ugly" followed by a comma and one with "...beauty" followed by a comma
+$style
++beast-null-option
+blocky and slightly ugly
+high quality illustrated beauty
+
++beast-concatenate-comma
+
+
+$postfix
+on a featureless gray background
+on a black background with nothing other than the character in frame
+empty dark gray scene
+
+
+$$model
+
+$checkpoint
+sdxl-beast#apr2026
+
+#note: width is always first, size is always in pixels
+$resolution
+256*256
+1024*1024
+
+#note: seeds can be seed images or numbers for generating noise
+$seed
+e:/seeds/silhouette1.png
+e:/seeds/silhouette2.png
+13
+666
+
+
+#intent: describe where output data/metadata will be stored. database required, filepaths optional. also becomes input for next pipeline step.
+#note: to get total number of sprites generated, multiply number of variants at each step
+-> spirtes.db ->
+
+
+#intent: reduce color palette to 6 or 14 colors
+$$$spirteify-colors
+
+#note: built in to ffmpeg, will include ffmpeg as dependency due to large number of useful functions out of the box
+$$beast-posterize-9
+
+
+#comma separated colors in (r,g,b) format (0-9, 9 maps to 255, 8 maps to ~ (8*255)/9)
+#6 colors: red, gray, green, pink, black, cerulean
+$palette
+(9,0,0), (6,6,6), (0,9,2), (9,6,2), (0,0,0), (0,3,9)
+
+
+
+$$$generate-poses
+
+
+######$$$beast-looping-pixel-art-generator-end
+
+
