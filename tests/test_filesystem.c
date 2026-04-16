@@ -93,12 +93,77 @@ static int test_layout_and_scan(void) {
     return 0;
 }
 
+static int test_list_regular_files(void) {
+    const char *workspace_root = BEAST2_TEST_BINARY_DIR "/test-workspaces/list-regular";
+    char error_message[512];
+    char path[BEAST2_MAX_PATH_LENGTH];
+    char names[16][BEAST2_MAX_PATH_LENGTH];
+    size_t count = 0;
+    size_t i;
+    int saw_a = 0;
+    int saw_b = 0;
+    int saw_c = 0;
+
+    BEAST2_TEST_ASSERT(beast2_test_prepare_clean_directory(workspace_root) == 0);
+
+    BEAST2_TEST_ASSERT(
+        beast2_fs_join_path(path, sizeof(path), workspace_root, "a.txt") == 0
+    );
+    BEAST2_TEST_ASSERT(beast2_test_write_text_file(path, "a") == 0);
+
+    BEAST2_TEST_ASSERT(
+        beast2_fs_join_path(path, sizeof(path), workspace_root, "b.txt") == 0
+    );
+    BEAST2_TEST_ASSERT(beast2_test_write_text_file(path, "b") == 0);
+
+    BEAST2_TEST_ASSERT(
+        beast2_fs_join_path(path, sizeof(path), workspace_root, "c.txt") == 0
+    );
+    BEAST2_TEST_ASSERT(beast2_test_write_text_file(path, "c") == 0);
+
+    BEAST2_TEST_ASSERT(
+        beast2_fs_list_regular_files(
+            workspace_root,
+            names,
+            16,
+            &count,
+            error_message,
+            sizeof(error_message)
+        ) == 0
+    );
+    BEAST2_TEST_ASSERT(count == 3);
+
+    for (i = 0; i < count; i++) {
+        if (strcmp(names[i], "a.txt") == 0) {
+            saw_a = 1;
+        }
+        if (strcmp(names[i], "b.txt") == 0) {
+            saw_b = 1;
+        }
+        if (strcmp(names[i], "c.txt") == 0) {
+            saw_c = 1;
+        }
+    }
+
+    BEAST2_TEST_ASSERT(saw_a == 1);
+    BEAST2_TEST_ASSERT(saw_b == 1);
+    BEAST2_TEST_ASSERT(saw_c == 1);
+
+    BEAST2_TEST_ASSERT(beast2_test_remove_tree(workspace_root) == 0);
+
+    return 0;
+}
+
 int main(void) {
     if (test_path_helpers() != 0) {
         return 1;
     }
 
     if (test_layout_and_scan() != 0) {
+        return 1;
+    }
+
+    if (test_list_regular_files() != 0) {
         return 1;
     }
 

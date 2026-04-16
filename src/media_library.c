@@ -1,5 +1,6 @@
 #include "beast2/media_library.h"
 
+#include <ctype.h>
 #include <errno.h>
 #include <sqlite3.h>
 #include <stdint.h>
@@ -9,6 +10,11 @@
 #include <sys/stat.h>
 #include <time.h>
 
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
+
+#include "beast2/c_compat.h"
 #include "beast2/filesystem.h"
 
 static void beast2_media_set_error(
@@ -537,6 +543,425 @@ static int beast2_media_insert_generator_history(
     return 0;
 }
 
+#if defined(_WIN32)
+static int beast2_media_canonical_path(const char *input_path, char *out_path, size_t out_size) {
+    if (_fullpath(out_path, input_path, (int) out_size) == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+#else
+static int beast2_media_canonical_path(const char *input_path, char *out_path, size_t out_size) {
+    if (realpath(input_path, out_path) == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+#endif
+
+static void beast2_media_strip_trailing_separators(char *path) {
+    size_t n;
+
+    if (path == NULL) {
+        return;
+    }
+
+    n = strlen(path);
+    while (n > 0 && (path[n - 1] == '/' || path[n - 1] == '\\')) {
+        path[--n] = '\0';
+    }
+}
+
+static int beast2_media_relative_under_workspace(
+    const char *workspace_canonical,
+    const char *file_canonical,
+    char *out_relative,
+    size_t out_size
+) {
+    char workspace_copy[BEAST2_MAX_PATH_LENGTH];
+    size_t prefix_len;
+
+    snprintf(workspace_copy, sizeof(workspace_copy), "%s", workspace_canonical);
+    beast2_media_strip_trailing_separators(workspace_copy);
+    prefix_len = strlen(workspace_copy);
+
+#if defined(_WIN32)
+    if (_strnicmp(file_canonical, workspace_copy, prefix_len) != 0) {
+        return -1;
+    }
+#else
+    if (strncmp(file_canonical, workspace_copy, prefix_len) != 0) {
+        return -1;
+    }
+#endif
+
+    if (file_canonical[prefix_len] != '\0' && file_canonical[prefix_len] != '/' && file_canonical[prefix_len] != '\\') {
+        return -1;
+    }
+
+    {
+        size_t i = prefix_len;
+        while (file_canonical[i] == '/' || file_canonical[i] == '\\') {
+            i++;
+        }
+
+        if (snprintf(out_relative, out_size, "%s", file_canonical + i) >= (int) out_size) {
+            return -1;
+        }
+    }
+
+    for (; *out_relative != '\0'; out_relative++) {
+        if (*out_relative == '\\') {
+            *out_relative = '/';
+        }
+    }
+
+    return 0;
+}
+
+static long long beast2_media_query_media_id_if_exists(sqlite3 *db, const char *relative_path) {
+    sqlite3_stmt *statement = NULL;
+    long long media_id = 0;
+
+    if (sqlite3_prepare_v2(db, "SELECT media_id FROM media WHERE path = ?;", -1, &statement, NULL) != SQLITE_OK) {
+        return 0;
+    }
+
+    sqlite3_bind_text(statement, 1, relative_path, -1, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(statement) == SQLITE_ROW) {
+        media_id = sqlite3_column_int64(statement, 0);
+    }
+
+    sqlite3_finalize(statement);
+    return media_id;
+}
+
+static int beast2_media_ext_equals_icase(const char *name, const char *ext_with_dot) {
+    const size_t nl = strlen(name);
+    const size_t el = strlen(ext_with_dot);
+    size_t i;
+
+    if (nl < el) {
+        return 0;
+    }
+
+    name += nl - el;
+    for (i = 0; i < el; i++) {
+        if (
+            (unsigned char) tolower((unsigned char) name[i]) !=
+            (unsigned char) tolower((unsigned char) ext_with_dot[i])
+        ) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static const char *beast2_media_guess_type_from_basename(const char *basename) {
+    static const char *const video_exts[] = {
+        ".mp4", ".webm", ".mov", ".mkv", ".avi", ".m4v", ".wmv",
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(video_exts) / sizeof(video_exts[0]); i++) {
+        if (beast2_media_ext_equals_icase(basename, video_exts[i])) {
+            return "video_manifest";
+        }
+    }
+
+    return "image";
+}
+
+static int beast2_media_link_tag_to_media(
+    sqlite3 *db,
+    long long media_id,
+    const char *tag_name,
+    char *error_message,
+    size_t error_message_size
+) {
+    sqlite3_stmt *statement = NULL;
+    long long tag_id = 0;
+
+    if (beast2_media_upsert_tag(db, tag_name, error_message, error_message_size) != 0) {
+        return -1;
+    }
+
+    tag_id = beast2_media_lookup_tag_id(db, tag_name, error_message, error_message_size);
+    if (tag_id == 0) {
+        return -1;
+    }
+
+    if (
+        beast2_media_prepare_statement(
+            db,
+            &statement,
+            "INSERT INTO media_tags (media_id, tag_id, confidence) VALUES (?, ?, ?) "
+            "ON CONFLICT(media_id, tag_id) DO UPDATE SET confidence = excluded.confidence;",
+            error_message,
+            error_message_size
+        ) != 0
+    ) {
+        return -1;
+    }
+
+    sqlite3_bind_int64(statement, 1, media_id);
+    sqlite3_bind_int64(statement, 2, tag_id);
+    sqlite3_bind_double(statement, 3, 1.0);
+
+    if (beast2_media_step_done(db, statement, error_message, error_message_size) != 0) {
+        sqlite3_finalize(statement);
+        return -1;
+    }
+
+    sqlite3_finalize(statement);
+    return 0;
+}
+
+int beast2_media_path_absolute_to_workspace_relative(
+    const char *workspace_root,
+    const char *absolute_file_path,
+    char *out_relative,
+    size_t out_size
+) {
+    char workspace_canonical[BEAST2_MAX_PATH_LENGTH];
+    char file_canonical[BEAST2_MAX_PATH_LENGTH];
+
+    if (workspace_root == NULL || absolute_file_path == NULL || out_relative == NULL || out_size == 0) {
+        return -1;
+    }
+
+    if (beast2_media_canonical_path(workspace_root, workspace_canonical, sizeof(workspace_canonical)) != 0) {
+        return -1;
+    }
+
+    if (beast2_media_canonical_path(absolute_file_path, file_canonical, sizeof(file_canonical)) != 0) {
+        return -1;
+    }
+
+    if (beast2_media_relative_under_workspace(workspace_canonical, file_canonical, out_relative, out_size) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int beast2_media_library_ensure_media_for_absolute_file(
+    beast2_media_library_context *context,
+    const char *absolute_file_path,
+    long long *out_media_id,
+    char *error_message,
+    size_t error_message_size
+) {
+    char relative_path[BEAST2_MAX_PATH_LENGTH];
+    char file_canonical[BEAST2_MAX_PATH_LENGTH];
+    struct stat path_stat;
+    sqlite3_stmt *statement = NULL;
+    char timestamp[64];
+    const char *slash = NULL;
+    const char *basename_ptr = NULL;
+    long long existing_id = 0;
+
+    if (out_media_id != NULL) {
+        *out_media_id = 0;
+    }
+
+    if (context == NULL || context->db == NULL || absolute_file_path == NULL || out_media_id == NULL) {
+        beast2_media_set_error(error_message, error_message_size, "invalid arguments for ensure media");
+        return -1;
+    }
+
+    if (beast2_media_canonical_path(absolute_file_path, file_canonical, sizeof(file_canonical)) != 0) {
+        beast2_media_set_error(error_message, error_message_size, "failed to resolve media file path");
+        return -1;
+    }
+
+    if (stat(file_canonical, &path_stat) != 0 || !S_ISREG(path_stat.st_mode)) {
+        beast2_media_set_error(error_message, error_message_size, "media path is not a regular file");
+        return -1;
+    }
+
+    if (beast2_media_relative_under_workspace(context->workspace_root, file_canonical, relative_path, sizeof(relative_path)) != 0) {
+        beast2_media_set_error(error_message, error_message_size, "media file is outside workspace root");
+        return -1;
+    }
+
+    existing_id = beast2_media_query_media_id_if_exists(context->db, relative_path);
+    if (existing_id != 0) {
+        *out_media_id = existing_id;
+        return 0;
+    }
+
+    slash = strrchr(relative_path, '/');
+    basename_ptr = slash != NULL ? slash + 1 : relative_path;
+
+    beast2_media_current_timestamp(timestamp, sizeof(timestamp));
+
+    if (
+        beast2_media_prepare_statement(
+            context->db,
+            &statement,
+            "INSERT INTO media (path, thumbnail_path, type, resolution, duration, size, creation_time, generator_id, checkpoint, seed, prompt_hash, prompt, backend, precision) "
+            "VALUES (?, '', ?, '', 0, ?, ?, NULL, '', '', '', '', '', '') "
+            "ON CONFLICT(path) DO UPDATE SET size = excluded.size, type = excluded.type;",
+            error_message,
+            error_message_size
+        ) != 0
+    ) {
+        return -1;
+    }
+
+    sqlite3_bind_text(statement, 1, relative_path, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(statement, 2, beast2_media_guess_type_from_basename(basename_ptr), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(statement, 3, (sqlite3_int64) path_stat.st_size);
+    sqlite3_bind_text(statement, 4, timestamp, -1, SQLITE_TRANSIENT);
+
+    if (beast2_media_step_done(context->db, statement, error_message, error_message_size) != 0) {
+        sqlite3_finalize(statement);
+        return -1;
+    }
+
+    sqlite3_finalize(statement);
+
+    existing_id = beast2_media_query_media_id_if_exists(context->db, relative_path);
+    if (existing_id == 0) {
+        beast2_media_set_error(error_message, error_message_size, "failed to read media id after insert");
+        return -1;
+    }
+
+    *out_media_id = existing_id;
+    return 0;
+}
+
+int beast2_media_library_list_tags(
+    beast2_media_library_context *context,
+    char (*out_tags)[BEAST2_MEDIA_MAX_TAG_NAME],
+    size_t max_tags,
+    size_t *out_count,
+    char *error_message,
+    size_t error_message_size
+) {
+    sqlite3_stmt *statement = NULL;
+    size_t n = 0;
+
+    if (out_count != NULL) {
+        *out_count = 0;
+    }
+
+    if (context == NULL || context->db == NULL || out_tags == NULL || out_count == NULL || max_tags == 0) {
+        beast2_media_set_error(error_message, error_message_size, "invalid arguments for list tags");
+        return -1;
+    }
+
+    if (
+        beast2_media_prepare_statement(
+            context->db,
+            &statement,
+            "SELECT tag_name FROM tags ORDER BY tag_name COLLATE NOCASE;",
+            error_message,
+            error_message_size
+        ) != 0
+    ) {
+        return -1;
+    }
+
+    while (sqlite3_step(statement) == SQLITE_ROW) {
+        const unsigned char *text = sqlite3_column_text(statement, 0);
+
+        if (text == NULL) {
+            continue;
+        }
+
+        if (n >= max_tags) {
+            break;
+        }
+
+        snprintf(out_tags[n], BEAST2_MEDIA_MAX_TAG_NAME, "%s", (const char *) text);
+        n++;
+    }
+
+    sqlite3_finalize(statement);
+    *out_count = n;
+    return 0;
+}
+
+int beast2_media_library_add_tag_for_media_id(
+    beast2_media_library_context *context,
+    long long media_id,
+    const char *tag_name,
+    char *error_message,
+    size_t error_message_size
+) {
+    if (context == NULL || context->db == NULL || tag_name == NULL || tag_name[0] == '\0') {
+        beast2_media_set_error(error_message, error_message_size, "invalid arguments for add tag");
+        return -1;
+    }
+
+    return beast2_media_link_tag_to_media(context->db, media_id, tag_name, error_message, error_message_size);
+}
+
+int beast2_media_library_list_relative_paths_for_tag(
+    beast2_media_library_context *context,
+    const char *tag_name,
+    char (*out_paths)[BEAST2_MAX_PATH_LENGTH],
+    size_t max_paths,
+    size_t *out_count,
+    char *error_message,
+    size_t error_message_size
+) {
+    sqlite3_stmt *statement = NULL;
+    size_t n = 0;
+
+    if (out_count != NULL) {
+        *out_count = 0;
+    }
+
+    if (context == NULL || context->db == NULL || tag_name == NULL || tag_name[0] == '\0' || out_paths == NULL || out_count == NULL || max_paths == 0) {
+        beast2_media_set_error(error_message, error_message_size, "invalid arguments for list paths for tag");
+        return -1;
+    }
+
+    if (
+        beast2_media_prepare_statement(
+            context->db,
+            &statement,
+            "SELECT m.path FROM media m "
+            "INNER JOIN media_tags mt ON m.media_id = mt.media_id "
+            "INNER JOIN tags t ON t.tag_id = mt.tag_id "
+            "WHERE t.tag_name = ? "
+            "ORDER BY m.path COLLATE NOCASE;",
+            error_message,
+            error_message_size
+        ) != 0
+    ) {
+        return -1;
+    }
+
+    sqlite3_bind_text(statement, 1, tag_name, -1, SQLITE_TRANSIENT);
+
+    while (sqlite3_step(statement) == SQLITE_ROW) {
+        const unsigned char *text = sqlite3_column_text(statement, 0);
+
+        if (text == NULL) {
+            continue;
+        }
+
+        if (n >= max_paths) {
+            break;
+        }
+
+        snprintf(out_paths[n], BEAST2_MAX_PATH_LENGTH, "%s", (const char *) text);
+        n++;
+    }
+
+    sqlite3_finalize(statement);
+    *out_count = n;
+    return 0;
+}
+
 int beast2_media_library_init(
     beast2_media_library_context *context,
     const char *workspace_root,
@@ -602,13 +1027,21 @@ int beast2_media_library_init(
         "CREATE INDEX IF NOT EXISTS idx_media_tags_tag_id ON media_tags(tag_id);";
 
     memset(context, 0, sizeof(*context));
-    snprintf(context->workspace_root, sizeof(context->workspace_root), "%s", workspace_root);
+    {
+        char canonical_workspace[BEAST2_MAX_PATH_LENGTH];
+
+        if (beast2_media_canonical_path(workspace_root, canonical_workspace, sizeof(canonical_workspace)) == 0) {
+            snprintf(context->workspace_root, sizeof(context->workspace_root), "%s", canonical_workspace);
+        } else {
+            snprintf(context->workspace_root, sizeof(context->workspace_root), "%s", workspace_root);
+        }
+    }
 
     if (
         beast2_fs_join_path(
             context->db_path,
             sizeof(context->db_path),
-            workspace_root,
+            context->workspace_root,
             "db/beast2.sqlite"
         ) != 0
     ) {

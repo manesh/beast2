@@ -49,4 +49,17 @@ int beast2_fs_scan_directories(
     size_t error_message_size
 );
 
+/*
+ * List regular files in a directory (non-recursive). Basenames only, unsorted.
+ * On success, *out_count <= max_entries.
+ */
+int beast2_fs_list_regular_files(
+    const char *directory_path,
+    char (*out_basenames)[BEAST2_MAX_PATH_LENGTH],
+    size_t max_entries,
+    size_t *out_count,
+    char *error_message,
+    size_t error_message_size
+);
+
 #endif

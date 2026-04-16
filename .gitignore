@@ -1,2 +1,7 @@
 build/
 runtime/
+
+# Local / generated — keep out of version control (explicit untrack)
+prototype/
+docs/beast-axioms-extracted.md
+docs/beast-principles-extracted.md

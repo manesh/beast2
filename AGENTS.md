@@ -2,11 +2,15 @@
 
 ## Cursor Cloud specific instructions
 
-Beast2 is a single-binary C project (no external services, no Docker, no web server). The only external library dependency is SQLite3.
+Beast2 is a single-binary C project (no external services, no Docker, no web server). The primary external library dependency is **SQLite3**.
 
 ### System dependency
 
-`libsqlite3-dev` must be installed (`sudo apt-get install -y libsqlite3-dev`). CMake (>= 3.20) and a C11 compiler (gcc or clang) are expected to be present on the VM image.
+On **Linux** (Cursor Cloud / typical dev VM): `libsqlite3-dev` must be installed (`sudo apt-get install -y libsqlite3-dev`) so CMake’s `find_package(SQLite3)` succeeds.
+
+On **Windows** (and whenever no system SQLite is found): CMake **downloads and compiles** the official SQLite amalgamation on first configure (see `cmake/Beast2Sqlite.cmake`).
+
+CMake (>= 3.20) and a C11 compiler are expected.
 
 ### Build / Test / Run
 

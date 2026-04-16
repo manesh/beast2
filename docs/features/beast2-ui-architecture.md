@@ -22,6 +22,14 @@ The interface should remain responsive even while the system is generating media
   
 ⸻  
   
+**Desktop implementation dependencies**  
+  
+The native Beast2 desktop shell (windowing, input, 2D drawing, image thumbnails as GPU textures) is built with **raylib** (C API, cross-platform: Windows, Linux, macOS, and others raylib supports). Gallery grids, sidebars, and dialogs are **custom-drawn** on top of raylib—layout, scrolling, and hit-testing are implemented in Beast2, not by a separate widget toolkit.  
+  
+Other third-party runtime pieces used together with the UI process follow the same dependency story as the backend (see **Beast2 Backend Architecture**): notably **ONNX Runtime** for model inference and **FFmpeg** for media decode/encode and metadata; **SQLite** remains the media-library database inside `beast2_core`. Link **raylib** via CMake (`BEAST2_BUILD_RAYLIB_UI`); pin a **raylib release tag** in CMake for reproducible builds.  
+  
+⸻  
+  
 **Core UI Modules**  
   
 The Beast2 UI is composed of several major components:  
