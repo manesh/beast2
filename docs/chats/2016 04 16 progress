@@ -10569,6 +10569,914 @@ That’s where this becomes solid engineering instead of just a spec.
 
 
 
+zed is* not i s
+
+i did a manual fix
+
+draft the test suite
+
+
+
+
+
+
+
+
+
+
+
+Good catch. is should stay is, not i s, unless the audio really came in as separate syllables. Your manual fix is right.
+
+Here is a repo-ready draft.
+
+⸻
+
+beast phonetic test suite v0.1
+
+purpose
+
+test beast phonetic capture and downstream decode
+
+verify:
+	•	syllable detection
+	•	canonical token mapping
+	•	gap handling
+	•	beast decode
+	•	american english decode
+	•	beast spoken improvements on english
+
+this suite tests:
+
+audio → syllables → tokens → decode
+
+not:
+	•	intent planning
+	•	command execution
+	•	llm reasoning quality beyond decode correctness
+
+⸻
+
+law
+
+test sound first
+test meaning second
+never merge the two
+
+
+⸻
+
+test structure
+
+each test should include:
+
+name
+input spoken phrase
+expected syllable trace
+expected beast language
+expected american english
+notes
+
+optional:
+
+dialect
+noise level
+speech rate
+confidence floor
+
+
+⸻
+
+output fields
+
+expected syllable trace
+
+hyphen joined canonical tokens
+
+example:
+
+i-c-that-u-r
+
+expected beast language
+
+beast native joined form
+
+example:
+
+i c that u r
+
+expected american english
+
+best likely english decode
+
+example:
+
+i see that you are
+
+
+⸻
+
+pass rules
+
+trace pass
+
+exact token match required
+
+beast language pass
+
+must preserve canonical beast tokens
+
+american english pass
+
+may allow small ranked alternatives if meaning is equivalent
+
+example:
+
+for your soul
+for your sole
+
+note:
+trace remains truth either way
+
+⸻
+
+section 1: core token mapping tests
+
+test 001
+
+name: basic_be
+input: be
+expected trace: b
+expected beast: b
+expected american english: be
+notes: bee and be collapse to b
+
+test 002
+
+name: basic_see
+input: see
+expected trace: c
+expected beast: c
+expected american english: see
+notes: see sea cee collapse to c
+
+test 003
+
+name: basic_for
+input: for
+expected trace: 4
+expected beast: 4
+expected american english: for
+notes: for fore four collapse to 4
+
+test 004
+
+name: basic_to
+input: to
+expected trace: 2
+expected beast: 2
+expected american english: to
+notes: to too two collapse to 2
+
+test 005
+
+name: basic_are
+input: are
+expected trace: r
+expected beast: r
+expected american english: are
+notes: homonym with letter r
+
+test 006
+
+name: basic_you
+input: you
+expected trace: u
+expected beast: u
+expected american english: you
+notes: beast compression
+
+test 007
+
+name: basic_z
+input: zee
+expected trace: z
+expected beast: z
+expected american english: zee
+notes: distinct from zed
+
+test 008
+
+name: basic_zed
+input: zed
+expected trace: zed
+expected beast: zed
+expected american english: zed
+notes: phonetic distinction rule
+
+
+⸻
+
+section 2: canonical phrase tests
+
+test 020
+
+name: to_be_or_not
+input: to be or not to be
+expected trace: 2-b-or-not-2-b
+expected beast: 2 b or not 2 b
+expected american english: to be or not to be
+notes: canonical core example
+
+test 021
+
+name: i_see_that_you_are
+input: i see that you are
+expected trace: i-c-that-u-r
+expected beast: i c that u r
+expected american english: i see that you are
+notes: canonical core example
+
+test 022
+
+name: for_your_soul
+input: for your soul
+expected trace: 4-ur-sol
+expected beast: 4 ur sol
+expected american english: for your soul
+notes: english decode may keep alternates like sole
+
+test 023
+
+name: zed_is_not_zee
+input: zed is not zee
+expected trace: zed-is-not-z
+expected beast: zed is not z
+expected american english: zed is not zee
+notes: corrected is token
+
+
+⸻
+
+section 3: beast spoken improvements tests
+
+test 030
+
+name: beast_zero
+input: zeer
+expected trace: 0
+expected beast: 0
+expected american english: zero
+notes: beast spoken improvement
+
+test 031
+
+name: beast_seven
+input: sev
+expected trace: 7
+expected beast: 7
+expected american english: seven
+notes: beast spoken improvement
+
+test 032
+
+name: beast_w
+input: dub
+expected trace: w
+expected beast: w
+expected american english: w
+notes: beast spoken improvement
+
+test 033
+
+name: natural_zero
+input: zero
+expected trace: ze-ro
+expected beast: ze ro
+expected american english: zero
+notes: natural english form is multi syllable
+
+test 034
+
+name: natural_seven
+input: seven
+expected trace: sev-en
+expected beast: sev en
+expected american english: seven
+notes: natural english form is multi syllable
+
+test 035
+
+name: natural_w
+input: doubleyou
+expected trace: dub-le-u
+expected beast: dub le u
+expected american english: w
+notes: natural english form is multi syllable
+
+
+⸻
+
+section 4: dialect tests
+
+test 040
+
+name: neither_american
+dialect: american
+input: neither
+expected trace: nee-ther
+expected beast: nee ther
+expected american english: neither
+notes: american form
+
+test 041
+
+name: neither_british
+dialect: british
+input: neither
+expected trace: nigh-ther
+expected beast: nigh ther
+expected american english: neither
+notes: british form
+
+test 042
+
+name: zee_vs_zed
+input: zee zed
+expected trace: z-zed
+expected beast: z zed
+expected american english: zee zed
+notes: phonetic distinction preserved
+
+
+⸻
+
+section 5: gap and segmentation tests
+
+test 050
+
+name: short_gap_chain
+input: i see you are
+expected trace: i-c-u-r
+expected beast: i c u r
+expected american english: i see you are
+notes: normal connected speech
+
+test 051
+
+name: long_pause_mid_phrase
+input: i ... see you are
+expected trace: i-c-u-r
+expected beast: i c u r
+expected american english: i see you are
+notes: long pause stored in timing, not visible in trace
+
+test 052
+
+name: isolated_tokens
+input: i ... c ... u ... r
+expected trace: i-c-u-r
+expected beast: i c u r
+expected american english: i see you are
+notes: segmentation should preserve tokens despite large pauses
+
+
+⸻
+
+section 6: noise and robustness tests
+
+test 060
+
+name: mic_noise_basic
+input: for your soul
+expected trace: 4-ur-sol
+expected beast: 4 ur sol
+expected american english: for your soul
+notes: light background noise
+
+test 061
+
+name: clipped_first_token
+input: see that you are
+expected trace: c-that-u-r
+expected beast: c that u r
+expected american english: see that you are
+notes: missing first token should not corrupt remaining trace
+
+test 062
+
+name: slurred_phrase
+input: to be or not to be
+expected trace: 2-b-or-not-2-b
+expected beast: 2 b or not 2 b
+expected american english: to be or not to be
+notes: fast speech stress test
+
+
+⸻
+
+section 7: cancel and stop tests
+
+test 070
+
+name: clear_clear_cancel
+input: clear clear
+expected trace: clear-clear
+expected beast: clear clear
+expected american english: clear clear
+notes: should trigger cancel behavior in pipeline layer
+
+test 071
+
+name: execute_command_stop
+input: execute command
+expected trace: ex-e-cute-com-mand
+expected beast: ex e cute com mand
+expected american english: execute command
+notes: should trigger finalize behavior in pipeline layer
+
+note:
+pipeline behavior tested separately from phonetic correctness
+
+⸻
+
+section 8: ambiguity tests
+
+test 080
+
+name: soul_sole_sol
+input: soul
+expected trace: sol
+expected beast: sol
+expected american english: soul
+notes: english decode may allow sole as alternate
+
+test 081
+
+name: are_r
+input: are
+expected trace: r
+expected beast: r
+expected american english: are
+notes: cannot distinguish letter r from are by sound alone
+
+test 082
+
+name: for_four_fore
+input: four
+expected trace: 4
+expected beast: 4
+expected american english: four
+notes: canonical collapse
+
+
+⸻
+
+ranking and tolerance
+
+for american english decode, optional ranked outputs may be stored:
+
+primary
+alternate_1
+alternate_2
+
+example:
+
+input: sol
+primary: soul
+alternate_1: sole
+alternate_2: sol
+
+trace match must still be exact
+
+⸻
+
+file format suggestion
+
+tests/
+  voice/
+    beast_phonetic_test_suite_v0.1.md
+    core_tokens.json
+    phrases.json
+    dialect.json
+    noise.json
+
+example json entry:
+
+{
+  "name": "i_see_that_you_are",
+  "input": "i see that you are",
+  "expected_trace": "i-c-that-u-r",
+  "expected_beast": "i c that u r",
+  "expected_american_english": "i see that you are",
+  "notes": "canonical core example"
+}
+
+
+⸻
+
+future additions
+	•	real recorded audio fixtures
+	•	per token confidence thresholds
+	•	accent packs
+	•	bad mic tests
+	•	cross backend comparison
+	•	vosk vs custom beast model comparison
+
+⸻
+
+final principle
+
+trace is truth
+decode is testable guess
+
+
+⸻
+
+If you want, I can also turn this into a tighter json schema for automated testing so it can plug directly into the app later.
+
+
+
+
+
+
+
+
+
+other options/things to discuss
+
+
+
+
+
+
+
+You’ve built a very clean spine already. The next conversations are less about adding features and more about locking invariants so Beast voice doesn’t drift into "smart but unreliable."
+
+Here are the highest-leverage things worth deciding now.
+
+⸻
+
+1. syllable segmentation (this will make or break everything)
+
+Right now the dictionary assumes clean syllables exist. In reality, this is the hardest part.
+
+Questions to settle:
+	•	strict vs soft segmentation
+	•	strict: always force vowel-centered syllables
+	•	soft: allow uncertain boundaries and merge later
+	•	failure mode
+	•	bad split:
+
+sev-en → se-ven (wrong)
+
+
+	•	vs:
+
+sev-en → sev-en (correct)
+
+
+	•	fallback behavior
+	•	emit unknown token?
+	•	keep raw phoneme cluster?
+
+Suggestion:
+
+if segmentation confidence low:
+emit raw chunk token
+do not force split
+
+This prevents early corruption.
+
+⸻
+
+2. confidence propagation
+
+Right now confidence is per token, but you should define how it flows.
+
+Example:
+
+i (0.99) c (0.92) that (0.88) u (0.95) r (0.96)
+
+Questions:
+	•	what is utterance confidence?
+	•	when do you block decode?
+	•	when do you ask user to retry?
+
+Suggestion:
+
+min_token_confidence < threshold → mark trace unstable
+
+UI could show:
+
+i-c-that-u-r ?
+
+
+⸻
+
+3. unknown / garbage tokens
+
+You need a clear rule for "we heard something but can’t map it."
+
+Options:
+	•	?
+	•	unk
+	•	raw phonetic fallback
+
+Example:
+
+i-?-u-r
+
+If you skip this, bugs become invisible.
+
+⸻
+
+4. timing as signal (not just metadata)
+
+Right now gaps are stored but ignored.
+
+They can be powerful:
+	•	long pause = likely boundary
+	•	rapid cluster = likely phrase
+
+Example:
+
+i-(.1)-c-(.1)-u-(.1)-r
+
+vs
+
+i-(.8)-c-(.8)-u-(.8)-r
+
+Same tokens, different meaning likelihood.
+
+Discussion:
+	•	should LLM see timing?
+	•	should C parser use timing?
+
+⸻
+
+5. streaming vs batch decode
+
+You currently do:
+
+wait → decode
+
+Alternative:
+	•	streaming hint decode
+	•	but not committing
+
+Example:
+
+i-c-that-u-r
+→ live hint: "i see that you are"
+
+but only finalize after stop.
+
+Tradeoff:
+	•	feels faster
+	•	risks reintroducing early guess bias
+
+⸻
+
+6. beast spoken english scope
+
+You introduced:
+
+zeer, sev, dub
+
+Now decide:
+	•	is this optional optimization
+	•	or core future interface
+
+Questions:
+	•	will Beast ever teach users this?
+	•	will UI suggest replacements?
+
+Example:
+
+seven → suggest "sev"
+
+If yes, this becomes a language design problem, not just phonetics.
+
+⸻
+
+7. dialect normalization strategy
+
+You already support:
+
+nee-ther
+nigh-ther
+
+Open question:
+	•	do both map to same token?
+	•	or remain distinct?
+
+Two options:
+
+collapse
+
+nee-ther, nigh-ther → neith
+
+preserve
+
+nee-ther
+nigh-ther
+
+Tradeoff:
+	•	collapse = simpler decode
+	•	preserve = more faithful capture
+
+⸻
+
+8. reversibility
+
+How reversible should the system be?
+
+From:
+
+4-ur-sol
+
+Can you reconstruct:
+
+for your soul
+
+fully?
+
+Probably not perfectly.
+
+Question:
+
+is partial reversibility enough?
+
+This affects:
+	•	debugging
+	•	trust
+	•	artifact sharing
+
+⸻
+
+9. command boundary detection
+
+Right now:
+	•	silence
+	•	execute command
+
+But consider:
+	•	implicit boundary
+	•	change in cadence
+	•	double pause
+	•	tone shift
+
+Even if not implemented now, worth defining:
+
+boundary detection = future layer, not phonetics
+
+
+⸻
+
+10. multi-speaker / ambient voice
+
+Eventually:
+	•	background speech
+	•	multiple speakers
+
+Question:
+	•	do you ignore everything but primary speaker?
+	•	or tag speakers?
+
+Not needed now, but architectural impact is big.
+
+⸻
+
+11. correction loop UX
+
+After decode:
+
+User might want:
+	•	tap token to edit
+	•	speak correction
+
+Example:
+
+i-c-u-r
+→ user taps c → replace with see
+
+or:
+
+"user says correction: see not c"
+
+This becomes a feedback loop for the phonetic model.
+
+⸻
+
+12. training data strategy
+
+You will need:
+	•	real audio
+	•	labeled syllables
+	•	token outputs
+
+Questions:
+	•	will you log user data locally?
+	•	opt-in sharing?
+	•	synthetic generation?
+
+This connects directly to your future Beast acoustic model.
+
+⸻
+
+13. cross-backend consistency tests
+
+When you swap:
+	•	Vosk
+	•	wav2vec
+	•	future Beast model
+
+You need:
+
+same audio → same token trace
+
+Otherwise everything breaks.
+
+Your test suite is the start of this, but you’ll want:
+	•	audio fixtures
+	•	golden traces
+
+⸻
+
+14. minimal viable version (important)
+
+You have a lot of power here. But what is the smallest version that proves the idea?
+
+I would define:
+
+mvp:
+- vosk backend
+- canonical trace ui
+- silence finalize
+- 5 working commands
+- no streaming decode
+
+Everything else is iteration.
+
+⸻
+
+15. naming consistency
+
+You now have:
+	•	beast phonetics
+	•	beast spoken english
+	•	beast english
+	•	beast decode
+
+Might be worth locking names early:
+
+phonetics = capture
+trace = canonical tokens
+beast decode = join
+english decode = split
+spoken beast = optional speech system
+
+
+⸻
+
+the big meta decision
+
+Everything above comes down to one question:
+
+is beast voice a debugging-friendly system
+or a magic assistant
+
+Right now you are strongly in the first camp.
+
+That is what makes this different.
+
+⸻
+
+if I had to pick the next 3 to lock
+	1.	syllable segmentation strategy
+	2.	unknown token behavior
+	3.	confidence thresholds
+
+Those will affect everything downstream.
+
+⸻
+
+If you want, I can draft:
+	•	syllable segmentation spec v0.1
+	•	or voice trace UI spec v0.1
+
+Those are the two pieces most likely to cause real-world friction first.
+
+
+
+
+
+
+
+
+
+
+
 
 
 
