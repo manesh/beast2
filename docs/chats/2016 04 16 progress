@@ -1,0 +1,1656 @@
+beast2 current: working on converting desktop prototype from python to c. working on implementing image gen first. thinking of implementing docs (beast academy) next. beast language next, thinking to do ui at least in beast language. also thinking about an ios version as priority after those.
+
+
+
+
+
+
+
+
+
+
+That sequencing makes sense, and it fits the arc your docs have already been pointing toward.
+
+Right now the shape I see is:
+
+1. Python → C conversion first
+That is the right foundation if Beast2 is meant to feel fast, durable, and local-first. It also matches your DSL direction: simple enough to parse in C, transparent enough to stay understandable, and closer to "command resolves to execution" than "prompt disappears into a black box."  ￼  ￼
+
+2. Image gen first
+Also right. Image generation is the best beachhead because it gives you visible artifacts quickly, lets you prove the generator/artifact/archive model, and keeps the system grounded in something users can immediately feel. That lines up with Beast2’s original strength as a generator-centered environment rather than a pile of disconnected outputs.  ￼  ￼
+
+3. Beast Academy after that
+Strong move. Once image gen exists in C well enough to demonstrate the architecture, docs stop being "extra" and become part of the product. Your own philosophy already points there: the manual should be living, not separate from the system. Academy can become both onboarding and the first serious test of Beast as a language interface for teaching.  ￼  ￼
+
+4. Beast language next, with UI at least partly in Beast language
+This feels like the real hinge. Once the UI is partly expressed in Beast language, the product starts becoming itself. That is where Beast stops being "a desktop app with AI features" and starts becoming a command-and-creation system whose interface is language-backed all the way down. Your Beast3 and interface-language docs clearly point in that direction already.  ￼  ￼
+
+5. iOS after those
+That priority also tracks. iOS makes most sense once the command model, docs, and language layer are solid, because the phone version should probably not be a full clone of the desktop UI. It should be a command console, artifact browser, academy reader, and remote control surface first. If you do iOS too early, you risk building UI twice before the language layer is mature.
+
+My honest read: this is a good order, but the highest-risk boundary is between docs and language. Beast Academy should not become a side project or static documentation pile. It should be written so it directly feeds the Beast language effort. In other words: every important Academy concept should be phrased the way the system itself will eventually speak.
+
+So the clean version of your roadmap looks like this:
+
+engine → generator → academy → language → iOS
+
+And under that:
+
+C runtime → image artifacts → living manual → language UI primitives → mobile command surface
+
+That feels coherent.
+
+The main thing I would guard against is letting iOS become "a second frontend." It should probably be framed more narrowly at first:
+a Beast terminal, Beast Academy reader, artifact viewer, and simple remote execution surface. That would preserve momentum and avoid dragging the whole desktop UI problem onto a phone too early.
+
+You’ve got a very believable progression here. It feels like Beast2 becoming more executable, and Beast3 becoming more legible.
+
+If you want, I’ll turn this into a sharper internal roadmap doc with phases, risks, and exit criteria.
+
+
+
+
+
+
+
+
+
+
+lets explore the hardest / most ambitious aim first: ios phone as beast2 workstation via the app. users without desktop can still do local gen, new iphones have 12gb ram i think and decent gpus. speed and vram perhaps comparable to desktops of 6 years ago
+
+
+
+
+
+
+
+
+
+Yes -- and I think this is exactly the right "hardest first" target.
+
+A Beast2 phone workstation is ambitious, but no longer crazy. Apple’s current stack already supports serious on-device ML on iPhone: Apple positions Core ML, Vision, Speech, and its Foundation Models framework as on-device developer primitives, and Apple’s own Stable Diffusion work shows text-to-image pipelines running locally on iOS with a Swift package for deployment. Apple also now exposes background-task mechanisms for longer-running work, which matters if Beast is going to feel like a workstation instead of a toy.  ￼
+
+I would frame the goal like this:
+
+not "put the desktop app on the phone"
+but "make the phone a real Beast node that can create, cache, study, and command."
+
+That distinction matters. On iPhone, the winning design is not a shrunk desktop UI. It is a language-first workstation with a few deep visual surfaces. That is very aligned with where Beast has been heading anyway.
+
+The first hard truth is about hardware. Apple’s current public pages make clear that modern iPhones can run Apple Intelligence-class on-device features, and the supported range now includes iPhone 15 Pro, all iPhone 16 models, and the iPhone 17 family. Apple’s public compatibility pages emphasize chip class and device support, but they do not present iPhone RAM as a first-class published spec the way desktop buyers might expect. So I would not anchor the Beast mobile architecture around a specific marketing number like "12 GB"; I would anchor it around measured runtime budgets on target devices.  ￼
+
+The second hard truth is that the phone is strong, but narrow. Apple’s own Stable Diffusion materials emphasize that on-device generation is viable and privacy-preserving, but also note the pipeline complexity: several neural networks totaling roughly 1.275 billion parameters, with performance work needed to make results compelling on device. In other words, yes, the phone can do real local generation -- but only when the stack is aggressively optimized around mobile constraints.  ￼
+
+That is why I think the Beast2 iPhone workstation should start with a very specific identity:
+
+Beast Mobile = a local generation lab for optimized models, plus a command console, plus an artifact archive.
+
+If you try to make it a general-purpose ComfyUI-on-a-phone clone, it will probably disappoint. If you make it a Beast-native mobile workstation, it could be excellent.
+
+The strongest evidence that this is now plausible is that there are already concrete iOS examples of local model execution beyond text chat. Apple’s MLX Swift examples include iOS/macOS examples for both LLM evaluation and Stable Diffusion image generation, and recent open-source work like Mobile-O claims an all-on-device iOS app with image generation, visual understanding, and a memory footprint under 2 GB on iPhone 15 Pro, 16 Pro, and 17 Pro. I would treat that last number as a research/demo datapoint rather than a guaranteed product baseline, but it is still a strong sign that "real mobile local gen" has crossed from fantasy into engineering.  ￼
+
+So the real question is not can an iPhone be a Beast2 workstation.
+
+It is: what kind of workstation should it be?
+
+My answer:
+
+The phone version should optimize for six things.
+
+1. Single-artifact image generation first
+Fast, local, opinionated. One prompt, one generator, one output, one lineage record. Apple’s tooling around Core ML and Stable Diffusion already makes this the most proven path.  ￼
+
+2. Generator execution, not generator authoring, at first
+Authoring full complex workflows on a phone is painful. Executing well-packaged Beast generators on a phone is much more believable. The mobile app should consume compact Beast generators, expose a few safe controls, and archive results.
+
+3. Language-first control surface
+This is where your broader Beast3 direction becomes a weapon. Apple now explicitly supports system integration through App Intents, Siri/Shortcuts surfaces, and on-device model-adjacent frameworks. A phone is the natural place to let the user say or type "create image variants," "run last generator," "teach me what this control does," and let Beast resolve that into commands.  ￼
+
+4. Artifact-centric UX
+A phone is perfect for browse, rate, compare, rerun, and share. It is much less perfect for dense node graph editing. So the mobile UI should probably revolve around artifacts, presets, commands, and lineage views -- not a full node-canvas desktop metaphor.
+
+5. Backgroundable long jobs where iOS allows it
+This has gotten better, not worse. Apple documents Background Tasks and specifically Continuous Background Task support for jobs that can take minutes, but you still have to design within iOS rules rather than assuming desktop-style free execution forever. So "overnight exploration while the phone is idle and charging" is conceivable in a narrow, Apple-compliant form; "run arbitrary GPU compute all day in the background like a daemon" is much shakier.  ￼
+
+6. Beast Academy on device
+This may sound secondary, but on mobile it is central. A phone workstation without a strong teaching layer will feel opaque and cramped. A phone workstation with Beast Academy becomes self-explanatory: command, result, explain, rerun, improve.
+
+Here is the deeper design insight:
+
+On desktop, Beast can be an exploration environment.
+On phone, Beast should be an artifact-and-command environment.
+
+That still counts as a workstation -- just a different species of workstation.
+
+About your "comparable to desktops of 6 years ago" instinct: I think that is directionally plausible for some carefully optimized local-generation workloads, but I would treat it as an analogy, not a planning assumption. The reason is that Apple’s current software stack clearly supports substantial on-device inference, but sustained thermals, sandboxing, background rules, storage pressure, and UI-responsiveness constraints make an iPhone behave very differently from even an older desktop. So I would plan around mobile-specific throughput classes, not desktop comparisons. That is partly inference, but it follows from Apple’s mobile deployment model and execution constraints.  ￼
+
+If I were turning this into a ruthless Beast plan, I would set the ambition like this:
+
+Phase 1: Beast Pocket Lab
+Local image gen, artifact browser, rerun/variant controls, Beast Academy, command input, lineage view.
+
+Phase 2: Beast Pocket Workstation
+Import/export generators, lightweight edits, queued jobs, charging-only background processing, local model management, remote handoff to other Beast nodes.
+
+Phase 3: Beast Phone as Primary Computer
+Phone can create locally when possible, and orchestrate other Beast nodes when not. The user without a desktop still has a complete Beast experience; the user with a desktop gets a fleet architecture.
+
+That last line is the key. The best version of this idea is probably not "the iPhone replaces the workstation in every case." It is "the iPhone is always a Beast workstation, and sometimes also the strongest node you own."
+
+That is much more achievable.
+
+The biggest product risk, in my view, is not model speed. It is trying to make the mobile app too general too early. The winning move is to make the iPhone Beast app feel like an impossibly elegant local spellbook: fast command entry, very strong defaults, beautiful artifact history, transparent lineage, and a small number of generators that really sing.
+
+That would be genuinely new.
+
+I can turn this into a concrete Beast iOS architecture next: runtime stack, model formats, storage/caching plan, UI surfaces, and which parts should be native Swift versus Beast language.
+
+
+
+
+
+
+
+
+
+google pixel as first phone for beast3 os
+
+
+
+
+
+
+
+
+
+
+That’s a bold pivot, and in some ways it’s the more coherent path if your long-term goal is Beast as an operating system, not just an app.
+
+But I’m going to be direct with you:
+"Pixel first" is powerful for control, but harder for polish and adoption than iOS-first.
+
+So the real question isn’t which is better, it’s:
+
+Which gets Beast to real users fastest without breaking the vision?
+
+Let’s break it cleanly.
+
+⸻
+
+Why Pixel (Android) actually fits Beast3 deeply
+
+If Beast3 is:
+
+command → creation → artifact → archive → system memory
+
+Then Android gives you things iOS simply won’t:
+
+1. Real system-level control
+	•	background services that can actually run
+	•	filesystem access without fighting sandbox rules
+	•	GPU / NNAPI / Vulkan / custom runtimes
+	•	ability to run your own schedulers and daemons
+
+This matters because Beast is not just:
+	•	UI
+	•	inference
+
+It’s:
+	•	pipeline orchestration
+	•	artifact database
+	•	continuous exploration
+
+On iOS, the OS is always in charge.
+On Android, you can start becoming the OS.
+
+⸻
+
+2. "Phone as a node" becomes real
+
+Your earlier idea:
+
+phone = workstation
+
+On Pixel, it can evolve into:
+
+phone = autonomous Beast node
+
+Meaning:
+	•	runs generators overnight
+	•	participates in fleet compute
+	•	manages artifact DB locally
+	•	syncs selectively
+
+That aligns almost perfectly with your Beast3 / fleet thinking.
+
+⸻
+
+3. LLM-as-interface works better
+
+Android lets you:
+	•	intercept intents
+	•	build deeper voice pipelines
+	•	run persistent assistants
+
+That maps directly to your pipeline:
+
+voice → intent → context db → command → execution
+
+On iOS, you’re negotiating with Siri.
+On Android, you can be the assistant.
+
+⸻
+
+But here’s the tradeoff (and it’s real)
+
+iOS strengths you lose (at least initially):
+	•	better GPU optimization (Metal is very strong)
+	•	tighter ML frameworks (Core ML ecosystem is mature)
+	•	higher-end users willing to try creative tools
+	•	smoother UX baseline
+
+Android means:
+	•	more fragmentation
+	•	more performance variability
+	•	more engineering work to hit "it just works"
+
+⸻
+
+The deeper architectural decision
+
+You’re really choosing between two starting points:
+
+Path A -- iOS-first
+	•	Beast = app
+	•	optimized, polished
+	•	constrained but smooth
+	•	easier to demo and impress
+
+Path B -- Pixel-first
+	•	Beast = system
+	•	powerful, flexible
+	•	rougher early experience
+	•	harder technically, but closer to final vision
+
+⸻
+
+My honest recommendation (based on your direction)
+
+Given everything you’ve built so far:
+
+Pixel as first "Beast3 OS node" is actually the more aligned choice.
+
+But only if you scope it correctly.
+
+⸻
+
+The correct framing (this matters a lot)
+
+Do NOT try to build:
+
+a full Beast OS replacement
+
+Instead build:
+
+Beast Runtime for Android (Node v1)
+
+Think:
+
+Beast Node (Android)
+= runtime + scheduler + artifact DB + generators
+
+Not:
+
+Beast OS (full Android replacement)
+
+
+⸻
+
+Minimal viable "Beast Node Phone"
+
+If you strip it down to essentials, the first version should do:
+
+1. Command execution
+
+beast generate image
+beast explore variants
+
+2. Local generators (optimized)
+	•	1–2 strong image pipelines
+	•	maybe one lightweight LLM
+
+3. Artifact system
+	•	store results
+	•	lineage tracking
+	•	basic rating (diamond / ok / trash)
+
+4. Background compute (Android advantage)
+	•	queued jobs
+	•	charging-only execution
+	•	simple scheduler
+
+5. Command interface (text first, voice later)
+
+⸻
+
+What makes this Beast3, not just another app
+
+Two things:
+
+1. Everything is a command
+
+Not buttons.
+
+beast generate portrait
+beast rerun last
+beast explore motion
+
+2. Everything becomes an artifact
+
+Not ephemeral outputs.
+
+This is where your philosophy becomes real:
+
+archive → memory → intelligence
+
+⸻
+
+Long-term advantage of Pixel-first
+
+If this works, you unlock something iOS can’t easily do:
+
+distributed Beast network without servers
+
+Phones become:
+	•	compute nodes
+	•	storage nodes
+	•	experiment nodes
+
+That’s your "fleet" idea, but grounded.
+
+⸻
+
+Hybrid strategy (this might be the sweet spot)
+
+You don’t actually have to fully choose.
+
+You can do:
+
+Phase 1
+	•	Desktop (C) → stable core
+	•	Pixel → Beast Node (power + background + system control)
+
+Phase 2
+	•	iOS → Beast Interface (polished, constrained, beautiful)
+
+So:
+	•	Android = engine + autonomy
+	•	iOS = interface + accessibility
+
+That’s a very strong split.
+
+⸻
+
+Final reality check
+
+Your instinct:
+
+phone ≈ old desktop
+
+That’s sometimes true for bursty inference, but not for:
+	•	sustained compute
+	•	thermal limits
+	•	long-running jobs
+
+So design for:
+
+short bursts locally
+long jobs queued / distributed
+
+That aligns with Beast anyway.
+
+⸻
+
+The real question you’re asking (underneath)
+
+You’re not just picking a phone.
+
+You’re deciding:
+
+Is Beast an app… or a new layer of computing?
+
+If it’s just an app → iOS first.
+If it’s a system → Pixel first.
+
+And everything you’ve written so far points clearly to:
+
+Beast is a system.
+
+⸻
+
+If you want next, I can sketch:
+	•	exact Android architecture (NDK + Vulkan + schedulers)
+	•	model stack (what actually runs on Pixel realistically)
+	•	how Beast language integrates into Android runtime
+
+That’s where this becomes very real, very fast.
+
+
+
+
+
+
+
+do you still have the beast language spec?
+
+
+
+
+
+
+
+
+Yes -- and more importantly, I have a clean mental model of it, not just the raw text.
+
+You’ve actually defined it across a few layers, not one single doc. The core pieces are:
+
+⸻
+
+1. The Prompt DSL (Beast2) -- current concrete spec
+
+This is the most implemented-ready part.
+
+From your spec:
+	•	Line-oriented
+	•	No ambiguous syntax
+	•	LLM-safe mutations
+	•	C-parsable in a few hundred lines
+
+Core rules:
+
+$   section
+#   comment
+b2_ instruction
+
+Everything else is invalid.
+
+Key primitives:
+
+b2_section
+b2_snippet
+b2_concat_comma
+b2_concat_space
+b2_concat_newline
+
+Example:
+
+$b2_positive_prompt
+
+b2_section character
+b2_snippet female warrior
+b2_snippet male knight
+
+b2_concat_comma
+
+b2_section style
+b2_snippet cinematic lighting
+b2_snippet pixel art
+
+This is already very strong.
+
+It’s basically:
+
+deterministic prompt combinator language
+
+And it directly supports:
+	•	generator reproducibility
+	•	variant explosion
+	•	safe LLM editing
+
+￼
+
+⸻
+
+2. The Command Language (Beast layer)
+
+This is your "spell system" / Starfleet interface.
+
+Structure:
+
+<target> <action> <object> [parameters]
+
+Examples:
+
+beast explore images
+beast generate image
+beast verify artifact_123
+fleet broadcast update
+
+Core verbs:
+
+explore
+generate
+verify
+improve
+explain
+archive
+broadcast
+
+Philosophy:
+
+short commands → complex execution
+
+This is the control surface.
+
+⸻
+
+3. The missing piece (you were starting to invent it)
+
+What you recently started sketching is actually the next layer:
+
+→ Beast Language (true DSL for the system)
+
+You started writing things like:
+
+intent: create angel soul
+morality_level 1.0
+
+intent: create llm optimized for Starfleet operations
+verify_though_fleet_human_intelligence ...
+
+That’s not the prompt DSL.
+
+That’s something else.
+
+That’s:
+
+a declarative system language for goals, constraints, and execution
+
+⸻
+
+Let me unify this (this is the important part)
+
+Right now Beast has three languages emerging:
+
+1. Prompt DSL
+
+b2_section
+b2_snippet
+
+→ builds prompts
+
+⸻
+
+2. Command Language
+
+beast generate image
+
+→ triggers generators
+
+⸻
+
+3. Intent / System DSL (early)
+
+intent
+constraints
+verification
+
+→ defines what should happen and how safely
+
+⸻
+
+The real Beast Language (clean unified version)
+
+If you merge these properly, you get something very powerful:
+
+Example:
+
+# intent layer
+
+intent create_image_variants
+constraints:
+  reproducible = true
+  max_compute_time = 60s
+
+# command resolution
+
+command beast generate image_variants
+
+# generator binding
+
+generator image_variation_v1
+
+# prompt layer
+
+$b2_positive_prompt
+
+b2_section subject
+b2_snippet female warrior
+b2_snippet cyberpunk mercenary
+
+b2_concat_comma
+
+b2_section style
+b2_snippet cinematic lighting
+b2_snippet neon cyberpunk
+
+
+⸻
+
+Why this matters
+
+This gives you a full stack:
+
+intent → command → generator → prompt → artifact
+
+Which matches your pipeline:
+
+input → interpretation → context → command → execution → artifact
+
+
+⸻
+
+The key insight (this is the "Beast language")
+
+The real Beast language is not one thing.
+
+It is a layered language system:
+
+Layer 1 -- Intent
+
+What do we want?
+
+Layer 2 -- Command
+
+What action do we take?
+
+Layer 3 -- Generator
+
+What system executes?
+
+Layer 4 -- Prompt DSL
+
+What content is produced?
+
+⸻
+
+What you have vs what’s missing
+
+Already strong:
+	•	Prompt DSL (very solid, C-friendly)
+	•	Command model (clean, minimal, memorable)
+
+Partially formed:
+	•	Intent DSL (needs tightening)
+
+Not yet formalized:
+	•	How all layers connect in one file / runtime
+
+⸻
+
+If I compress your design into one sentence
+
+Beast language is:
+
+a composable, layered DSL where intent resolves into commands, commands resolve into generators, and generators resolve into reproducible artifact pipelines
+
+⸻
+
+If you want the next step
+
+The highest leverage thing you can do right now is:
+
+Define a single file format
+
+Something like:
+
+.beast
+
+With sections:
+
+intent
+command
+generator
+prompt
+execution
+
+Once that exists:
+	•	C runtime becomes trivial
+	•	mobile becomes feasible
+	•	LLM integration becomes clean
+	•	sharing becomes powerful
+
+⸻
+
+One honest critique (important)
+
+Right now your instinct sometimes drifts into:
+	•	metaphors (angel, soul, etc.)
+
+Those are powerful for vision,
+but dangerous for execution.
+
+You already started correcting this yourself.
+
+The winning move is:
+
+keep metaphors for branding
+use measurable variables for the language
+
+⸻
+
+Final state (what you’re actually building)
+
+You’re not just making a DSL.
+
+You’re making:
+
+a language that turns thought into reproducible computation
+
+That’s why everything is converging toward language.
+
+￼
+
+⸻
+
+If you want next, I can:
+	•	formalize Beast Language v1 spec (clean, minimal, implementable in C)
+	•	define exact grammar
+	•	show how it runs in your pipeline
+	•	and map it directly to your iOS / Android plans
+
+That’s the step where Beast stops being conceptual and becomes a real runtime.
+
+
+
+
+
+
+beast english language with 666 words, no apostrophes, no caps (or only on proper names). short simple easy to write and read, optimized for phone entry
+
+
+
+
+
+
+
+Yes. This can work.
+
+The right way to think about it is not as a full natural language, but as a controlled english for command, notes, docs, and phone use.
+
+I would define it like this:
+
+beast english
+
+a small written language for beast
+666 words total
+easy to type on phone
+easy to parse in c
+easy for llms to read and write
+short, plain, low punctuation
+no apostrophes
+no caps except names if wanted
+
+core rules
+
+1. no apostrophes
+use:
+	•	do not
+	•	can not
+	•	is not
+	•	i am
+	•	we are
+
+2. no caps
+except maybe:
+	•	names
+	•	file ids
+	•	product names
+
+default is all lower case.
+
+3. short words win
+prefer:
+	•	use
+	•	make
+	•	run
+	•	find
+	•	show
+	•	save
+	•	load
+
+over:
+	•	utilize
+	•	generate
+	•	retrieve
+	•	display
+	•	persist
+
+4. one meaning per common word
+try to avoid words with many meanings.
+
+Example:
+	•	run = execute
+	•	make = create
+	•	show = display
+	•	ask = request info
+	•	rate = score artifact
+
+5. grammar should be loose for humans, strict for tools
+human can type:
+
+make 4 image test
+
+system can normalize to:
+
+make image count 4 mode test
+
+6. noun first or verb first both allowed, but prefer verb first
+phone entry works best with:
+
+make image
+run last gen
+show best art
+find red elf loop
+
+7. no hidden tense complexity
+prefer time words:
+	•	now
+	•	next
+	•	last
+	•	soon
+	•	later
+	•	day
+	•	week
+
+instead of tense-heavy forms.
+
+Use:
+	•	i run test now
+	•	i run test last night
+	•	we make new build tomorrow
+
+8. plural can stay simple
+normal english plurals are fine.
+
+9. very low punctuation
+mainly:
+	•	newline
+	•	colon
+	•	slash
+	•	dash
+	•	number
+
+sentence shapes
+
+These should cover most use:
+
+verb object
+verb object more
+verb target with tool
+show thing
+find thing
+make thing
+run gen
+save art
+rate this good
+teach me beast
+why slow
+what failed
+fix build
+
+preferred grammar
+
+command form
+
+verb object [mods]
+
+Examples:
+
+make image
+run last gen
+show best video
+find red loop
+save this art
+rate this diamond
+explain fail
+teach beast prompt
+
+note form
+
+topic: value
+
+Examples:
+
+goal: fast local image gen
+risk: low ram
+state: works on desktop
+next: move parser to c
+
+doc form
+
+title line
+short lines
+one idea per line
+
+Example:
+
+beast academy image gen
+
+goal
+make one good image fast
+
+use
+pick gen
+set prompt
+run test
+save best
+
+the six word classes
+
+To keep it learnable, I would divide the 666 words like this:
+
+1. base verbs
+
+high frequency action words
+
+Examples:
+make, run, use, save, load, find, show, ask, tell, rate, sort, move, copy, cut, join, split, test, fix, build, teach
+
+2. base nouns
+
+system objects
+
+Examples:
+art, image, video, gen, model, file, doc, note, tag, db, tool, app, phone, node, task, queue, log, user, voice, text
+
+3. qualities
+
+simple adjectives
+
+Examples:
+fast, slow, good, bad, new, old, big, small, clear, dark, light, safe, local, shared, live, raw
+
+4. links
+
+tiny grammar words
+
+Examples:
+a, an, the, and, or, but, if, then, so, with, from, to, for, in, on, by, as, not
+
+5. time and count
+
+Examples:
+now, next, last, soon, later, day, week, month, year, one, two, three, more, less, all, some, many, few
+
+6. beast core words
+
+domain terms
+
+Examples:
+beast, academy, art, gen, archive, lineage, diamond, landfill, prompt, command, intent, fleet, node, cache, variant, loop, latent
+
+style laws
+
+law 1
+
+one thought per line
+
+law 2
+
+prefer one or two syllables
+
+law 3
+
+drop filler words
+
+instead of:
+
+i would like to make a new image with this style
+
+use:
+
+make new image with this style
+
+law 4
+
+prefer stable beast words over synonyms
+
+pick one:
+	•	make, not create and produce and generate all mixed
+	•	run, not execute and launch and trigger all mixed
+	•	save, not store and persist all mixed
+
+law 5
+
+phone first
+every common action should fit in 2 to 5 taps plus autocomplete.
+
+a strong 64-word core
+
+Here is the kind of seed set I would start with:
+
+beast
+make
+run
+use
+show
+find
+save
+load
+rate
+sort
+move
+copy
+cut
+join
+split
+test
+fix
+build
+teach
+ask
+tell
+image
+video
+art
+gen
+model
+file
+doc
+note
+tag
+db
+tool
+app
+phone
+node
+task
+queue
+log
+user
+voice
+text
+fast
+slow
+good
+bad
+new
+old
+big
+small
+clear
+dark
+light
+safe
+local
+share
+live
+raw
+now
+next
+last
+more
+less
+with
+from
+to
+not
+
+That already feels like beast.
+
+sample beast english
+
+command use
+
+make image with red sky
+run last gen 4 more
+show best art from today
+rate this diamond
+save to beast db
+find loop with cat walk
+teach me image gen
+why did run fail
+fix slow load
+
+docs use
+
+beast academy image gen
+
+goal
+make good art fast on phone
+
+steps
+pick gen
+set prompt
+run 4 test
+rate best
+save art
+rerun with small change
+
+tips
+use short prompt
+save good seeds
+watch heat
+
+note use
+
+state: parser works
+next: move prompt dsl to c
+risk: phone ram low
+idea: use small image gen first
+plan: academy before full ui
+
+how to reach 666 words well
+
+Do not invent all 666 at once.
+
+Use staged growth:
+
+set 1: 64 words
+
+core phone command set
+
+set 2: 128 words
+
+enough for notes and academy docs
+
+set 3: 256 words
+
+enough for daily beast use
+
+set 4: 512 words
+
+enough for serious system work
+
+set 5: 666 words
+
+full canonical beast english
+
+This matters because a fixed 666-word language should feel designed, not random.
+
+what the final 666 should cover
+
+A good final distribution might be:
+	•	120 verbs
+	•	220 nouns
+	•	110 adjectives
+	•	60 glue words
+	•	50 time and count words
+	•	106 beast-specific technical words
+
+total: 666
+
+critical design choice
+
+I would keep normal english word order, not invent strange grammar.
+
+That means beast english feels like:
+	•	reduced english
+	•	strict english
+	•	command english
+
+not a fake alien language.
+
+That is better for:
+	•	phone typing
+	•	llm use
+	•	c parsing
+	•	docs
+	•	onboarding
+
+my blunt recommendation
+
+Make beast english three layers:
+
+layer 1: plain beast english
+
+for users
+
+make image of red ship
+show best from last week
+teach me beast prompt
+
+layer 2: normalized beast english
+
+for parser
+
+make image subject red ship
+show best source last week
+teach me topic beast prompt
+
+layer 3: beast dsl
+
+for runtime
+
+intent make_image
+time_range last_week
+topic beast_prompt
+
+That gives you human ease and machine precision.
+
+The best next step is to define the first canonical 128 words and freeze them. After that, the rest of the 666 can grow around a stable core.
+
+
+
+
+
+
+
+
+
+
+draft v0.1 beast english doc with following changes:
+
+conjugations ok with no apostrophes (dont cant wont).
+
+"ok" is quality (diamond/ok/landfill)
+
+no under scores, because no beast is under and beast dont keep score, beasts give halos and hateos.
+
+canonical beast words
+
+wtf = im shocked, saw unexpected something
+lgtm = looks good to me, single quick pass check looking for errors revealed no errors
+glitch = verb form of software bug but can apply more generally (beast1 think capitalizing first word of each sentence glitch. only should capitalize names like Michael)
+
+66 core words to start, include words listed here
+
+preferred symbols:
+a-z 0-9 -.#$,"?!()<>
+
+
+
+
+
+
+
+
+This is a strong direction. I will keep it tight, usable, and aligned with your constraints.
+
+⸻
+
+beast english v0.1
+
+a small written language for beast
+phone first
+fast to type
+easy to read
+easy to parse
+stable words
+clear meaning
+
+target: 666 words total
+this doc defines the first 66 core words
+
+⸻
+
+core rules
+
+1. lower case
+use lower case for all words
+names may use caps
+
+example:
+
+michael runs test
+beast runs gen
+
+
+⸻
+
+2. no apostrophes
+use plain forms:
+
+dont cant wont im its
+
+
+⸻
+
+3. short words win
+prefer short common words
+
+make image
+run test
+show best art
+
+
+⸻
+
+4. one meaning per word
+each core word should have one main meaning
+
+⸻
+
+5. verb first preferred
+best for phone entry
+
+make image
+run last gen
+show best art
+
+
+⸻
+
+6. simple grammar
+no strict tense rules
+use time words
+
+run test now
+run test last day
+run test next week
+
+
+⸻
+
+7. low punctuation
+allowed symbols:
+
+a-z 0-9 - . # $ , " ? ! ( ) < >
+
+use newline over commas when possible
+
+⸻
+
+special canonical words
+
+these have fixed meaning in beast
+
+ok
+quality level between diamond and landfill
+
+rate this ok
+
+
+⸻
+
+wtf
+im shocked
+saw unexpected something
+
+wtf result is blank
+
+
+⸻
+
+lgtm
+looks good to me
+quick pass found no errors
+
+build lgtm
+
+
+⸻
+
+glitch
+verb
+means bug or unexpected behavior
+can apply to system or general use
+
+parser glitch on long line
+ui glitch when scroll fast
+
+
+⸻
+
+quality scale
+
+diamond  ok  landfill
+
+used for artifact rating
+
+⸻
+
+word classes
+
+the 66 core words are grouped but used freely
+
+⸻
+
+66 core words v0.1
+
+beast
+make
+run
+use
+show
+find
+save
+load
+rate
+sort
+move
+copy
+cut
+join
+split
+test
+fix
+build
+teach
+ask
+tell
+image
+video
+art
+gen
+model
+file
+doc
+note
+tag
+db
+tool
+app
+phone
+node
+task
+queue
+log
+user
+voice
+text
+fast
+slow
+good
+bad
+new
+old
+big
+small
+clear
+dark
+light
+safe
+local
+share
+live
+raw
+now
+next
+last
+more
+less
+with
+from
+to
+not
+ok
+wtf
+lgtm
+glitch
+
+
+⸻
+
+command patterns
+
+basic
+
+verb object
+
+examples:
+
+make image
+run gen
+show art
+find file
+
+
+⸻
+
+with detail
+
+verb object with detail
+
+make image with red sky
+run gen with new model
+show art from last day
+
+
+⸻
+
+modify count
+
+run gen 4 more
+make 2 image
+
+
+⸻
+
+quality use
+
+rate this diamond
+rate this ok
+rate this landfill
+
+
+⸻
+
+note format
+
+use simple key value
+
+goal: fast local image gen
+state: parser works
+next: move to c
+risk: low ram on phone
+
+
+⸻
+
+doc format
+
+short lines
+one idea per line
+
+example:
+
+beast academy image gen
+
+goal
+make good image fast
+
+steps
+pick gen
+set prompt
+run 4 test
+rate best
+save art
+
+tips
+use short text
+save good seed
+watch heat
+
+
+⸻
+
+examples
+
+basic use
+
+make image with blue sky
+run last gen 4 more
+show best art
+find red loop
+save this art
+rate this ok
+
+
+⸻
+
+debug use
+
+wtf output blank
+gen glitch on step 3
+fix load slow
+test model now
+
+
+⸻
+
+review use
+
+build lgtm
+this looks good
+no error found
+
+
+⸻
+
+design notes
+	•	no under score
+	•	no complex grammar
+	•	no hidden meaning
+	•	stable small vocabulary
+	•	phone typing first
+
+⸻
+
+next steps
+	•	expand to 128 words
+	•	define strict parser form
+	•	map to beast command system
+	•	link to prompt dsl
+
+⸻
+
+beast english v0.1
+simple words
+clear meaning
+fast input
+build system language
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
