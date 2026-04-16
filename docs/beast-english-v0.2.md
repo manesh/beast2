@@ -1,4 +1,4 @@
-beast english v0.1
+beast english v0.2
 
 a small written language for beast
 phone first
@@ -9,7 +9,7 @@ stable words
 clear meaning
 
 target: 666 words total
-this doc defines the first 66 core words
+this doc defines the first 66 core words and structure rules
 
 ⸻
 
@@ -28,7 +28,7 @@ beast runs gen
 ⸻
 
 2. no apostrophes
-use plain forms:
+use plain forms
 
 dont cant wont im its
 
@@ -46,7 +46,7 @@ show best art
 ⸻
 
 4. one meaning per word
-each core word should have one main meaning
+each core word has one main meaning
 
 ⸻
 
@@ -61,7 +61,7 @@ show best art
 ⸻
 
 6. simple grammar
-no strict tense rules
+no strict tense
 use time words
 
 run test now
@@ -74,15 +74,50 @@ run test next week
 7. low punctuation
 allowed symbols:
 
-a-z 0-9 - . # $ , " ? ! ( ) < >
+a-z 0-9 - . # $ , " ? ! ( ) < > :
 
 use newline over commas when possible
 
 ⸻
 
-special canonical words
+colon rule
 
-these have fixed meaning in beast
+colon : is for key value clarity
+	•	optional
+	•	not required for commands
+	•	used in notes and docs
+	•	improves readability
+
+valid forms:
+
+goal fast gen
+goal: fast gen
+
+rule:
+
+do not mix styles in one block
+
+good:
+
+goal: fast gen
+state: parser works
+next: move to c
+
+good:
+
+goal fast gen
+state parser works
+next move c
+
+bad:
+
+goal: fast gen
+next move c
+
+
+⸻
+
+special canonical words
 
 ok
 quality level between diamond and landfill
@@ -96,14 +131,14 @@ wtf
 im shocked
 saw unexpected something
 
-wtf result is blank
+wtf output blank
 
 
 ⸻
 
 lgtm
 looks good to me
-quick pass found no errors
+quick pass no error
 
 build lgtm
 
@@ -113,7 +148,6 @@ build lgtm
 glitch
 verb
 means bug or unexpected behavior
-can apply to system or general use
 
 parser glitch on long line
 ui glitch when scroll fast
@@ -123,19 +157,12 @@ ui glitch when scroll fast
 
 quality scale
 
-diamond  ok  landfill
+diamond ok landfill
 
-used for artifact rating
-
-⸻
-
-word classes
-
-the 66 core words are grouped but used freely
 
 ⸻
 
-66 core words v0.1
+66 core words v0.2
 
 beast
 make
@@ -213,7 +240,7 @@ glitch
 
 command patterns
 
-basic
+basic:
 
 verb object
 
@@ -227,7 +254,7 @@ find file
 
 ⸻
 
-with detail
+with detail:
 
 verb object with detail
 
@@ -238,7 +265,7 @@ show art from last day
 
 ⸻
 
-modify count
+count:
 
 run gen 4 more
 make 2 image
@@ -246,7 +273,7 @@ make 2 image
 
 ⸻
 
-quality use
+quality:
 
 rate this diamond
 rate this ok
@@ -257,7 +284,8 @@ rate this landfill
 
 note format
 
-use simple key value
+key value pairs
+colon optional
 
 goal: fast local image gen
 state: parser works
@@ -271,8 +299,6 @@ doc format
 
 short lines
 one idea per line
-
-example:
 
 beast academy image gen
 
@@ -296,7 +322,7 @@ watch heat
 
 examples
 
-basic use
+basic:
 
 make image with blue sky
 run last gen 4 more
@@ -308,7 +334,7 @@ rate this ok
 
 ⸻
 
-debug use
+debug:
 
 wtf output blank
 gen glitch on step 3
@@ -318,7 +344,7 @@ test model now
 
 ⸻
 
-review use
+review:
 
 build lgtm
 this looks good
@@ -328,24 +354,27 @@ no error found
 ⸻
 
 design notes
-	•	no under score
-	•	no complex grammar
-	•	no hidden meaning
-	•	stable small vocabulary
-	•	phone typing first
+
+no under score
+no complex grammar
+no hidden meaning
+stable small vocabulary
+phone typing first
+colon allowed for clarity
 
 ⸻
 
 next steps
-	•	expand to 128 words
-	•	define strict parser form
-	•	map to beast command system
-	•	link to prompt dsl
+
+expand to 128 words
+define strict parser form
+map to command system
+link to prompt dsl
 
 ⸻
 
-beast english v0.1
+beast english v0.2
 simple words
 clear meaning
 fast input
-build system language
+language for command and system

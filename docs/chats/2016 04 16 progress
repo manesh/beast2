@@ -1633,6 +1633,8990 @@ build system language
 
 
 
+excellent doc. lets talk about : and does beast need it
+
+
+
+
+
+
+
+
+
+
+This is a very sharp question, because : looks small but actually touches language philosophy, parsing, and UX all at once.
+
+You already used it in v0.1 for notes:
+
+goal: fast local image gen
+state: parser works
+
+So the real question is:
+
+is : part of beast english… or just a convenience?
+
+⸻
+
+first: what : actually does
+
+Colon is doing one thing:
+
+binding a key to a value
+
+goal: fast gen
+
+means:
+
+goal = fast gen
+
+So conceptually it is:
+	•	not grammar
+	•	not sentence structure
+	•	a data operator
+
+⸻
+
+where this fits in beast philosophy
+
+From your system design:
+	•	commands → execution
+	•	artifacts → memory
+	•	language → interface
+
+￼
+
+Colon sits in a different role:
+
+structure, not intent
+
+That matters.
+
+⸻
+
+the core tension
+
+You have two competing goals:
+
+goal A -- ultra minimal phone language
+	•	fewer symbols
+	•	faster typing
+	•	less cognitive load
+
+goal B -- structured, parseable system
+	•	clear key value pairs
+	•	easy mapping to DSL / C structs
+	•	deterministic
+
+Colon helps B, slightly hurts A.
+
+⸻
+
+do you need : ?
+
+Strict answer:
+
+no, beast english does not fundamentally need :
+
+You can express the same thing without it.
+
+Example:
+
+goal fast local image gen
+state parser works
+next move to c
+
+This still works if you define:
+
+first word = key
+rest = value
+
+⸻
+
+but here is the important nuance
+
+Without :, you lose visual boundary clarity.
+
+Compare:
+
+goal fast local image gen
+
+vs
+
+goal: fast local image gen
+
+The second is:
+	•	easier to scan
+	•	easier to parse mentally
+	•	less ambiguous
+
+⸻
+
+the deeper system insight
+
+Beast already separates layers:
+	•	human input
+	•	normalized command
+	•	execution
+
+Same idea applies here:
+
+layer 1 -- human beast english
+
+goal fast gen
+
+layer 2 -- normalized
+
+goal: fast gen
+
+layer 3 -- internal
+
+goal = "fast gen"
+
+So : does not need to exist at the human layer.
+
+⸻
+
+recommendation (strong)
+
+Do this:
+
+keep : as optional
+
+not required
+not core grammar
+but allowed
+
+⸻
+
+define it like this in the spec
+
+Add a rule:
+
+: is an optional clarity symbol for key value pairs
+
+⸻
+
+beast english rule (clean version)
+
+key value
+key: value
+
+both valid
+
+⸻
+
+when to use :
+
+use it when:
+	•	writing docs
+	•	writing academy content
+	•	writing longer notes
+	•	clarity matters
+
+do not require it for:
+	•	commands
+	•	fast phone input
+
+⸻
+
+example split
+
+fast phone input
+
+goal fast gen
+next move c
+risk low ram
+
+clean docs
+
+goal: fast gen
+next: move to c
+risk: low ram
+
+
+⸻
+
+important consistency rule
+
+do not allow mixed formats in one block
+
+bad:
+
+goal: fast gen
+next move c
+
+good:
+
+goal fast gen
+next move c
+
+or
+
+goal: fast gen
+next: move c
+
+
+⸻
+
+how this connects to your command system
+
+Commands should not use :
+
+make image
+run gen
+show best art
+
+Because commands are:
+
+verb driven, not key value
+
+This matches your command philosophy:
+	•	short
+	•	composable
+	•	predictable
+
+￼
+
+⸻
+
+one more subtle point (very important)
+
+You already banned:
+	•	underscore
+	•	complex punctuation
+
+If you also removed :, you would lose your only clean structuring symbol
+
+Allowed symbols:
+
+- . # $ , " ? ! ( ) < >
+
+None of these replace : cleanly.
+
+So keeping : gives you:
+
+one simple, powerful struct tool
+
+⸻
+
+final answer
+
+beast does not need :
+but removing it entirely makes the language worse
+
+best design:
+
+optional, not required, but strongly useful
+
+⸻
+
+clean spec line you can add
+
+colon :
+
+used for key value clarity
+optional
+not required for commands
+avoid mixing styles in same block
+
+
+⸻
+
+If you want next, we can go deeper into something even more important than ::
+
+how many symbols beast english should allow total
+
+because that decision will shape:
+	•	parser complexity
+	•	phone typing speed
+	•	LLM reliability
+
+and it is one of those "small choices that affects everything."
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+That’s a solid foundation. v0.2 feels stable enough to start building on top of it, not just refining it. The highest-leverage next discussions are the ones that determine whether beast english stays clean as it scales.
+
+I would focus on a few key areas.
+
+⸻
+
+1. normalization rules (critical)
+
+Right now beast english is flexible. That is good for humans, but the system will need a strict internal form.
+
+You already hinted at this.
+
+Example:
+
+make 2 image with red sky
+
+should normalize to something like:
+
+make image count 2 with red sky
+
+or even:
+
+action make
+object image
+count 2
+style red sky
+
+This layer is where:
+	•	LLMs help
+	•	C parser becomes deterministic
+	•	commands become reproducible
+
+If you do not define this early, drift will happen.
+
+⸻
+
+2. word expansion strategy (how you reach 666)
+
+You have 66 words now. The next question is:
+
+how do new words get added?
+
+If this is loose, the language will decay.
+
+You want rules like:
+	•	new word must solve a real use case
+	•	no synonyms if existing word works
+	•	must not overlap meaning with existing word
+	•	short preferred
+	•	tested in real commands before inclusion
+
+Also worth deciding:
+	•	do you allow aliases, or enforce one canonical word?
+
+My recommendation:
+one canonical word, aliases only in input layer, not stored
+
+⸻
+
+3. command vs note vs doc separation
+
+Right now you have three modes:
+	•	command (make image)
+	•	note (goal: fast gen)
+	•	doc (academy text)
+
+This is good, but worth formalizing.
+
+Because later you may want:
+	•	command parser (strict)
+	•	note parser (semi-structured)
+	•	doc parser (loose)
+
+This ties directly into your pipeline:
+
+input → interpretation → context → command → execution → artifact
+￼
+
+⸻
+
+4. error language (very important for UX)
+
+You already have:
+	•	wtf
+	•	glitch
+	•	lgtm
+
+But the system itself should also speak beast english.
+
+Instead of:
+
+error: insufficient memory
+
+you might define:
+
+unable to run
+reason: low ram
+need: more ram
+
+This ties directly into your command philosophy:
+
+systems should clearly execute or clearly refuse
+￼
+
+Designing this early will make the system feel consistent.
+
+⸻
+
+5. question forms (missing piece)
+
+Commands are strong. Questions are still loose.
+
+You will want patterns like:
+
+why slow
+what fail
+how fix load
+show best art
+
+Define:
+	•	question words (why what how when)
+	•	expected response types
+
+Otherwise LLM layer will stay fuzzy.
+
+⸻
+
+6. numbers and units
+
+Right now you allow numbers, but not structure.
+
+You should decide:
+
+run gen 4 more
+run gen 4
+run gen count 4
+
+All valid? Or normalize?
+
+Also:
+	•	time units (sec min hour day)
+	•	size (mb gb)
+	•	cost (optional later)
+
+This becomes important for scheduling and mobile.
+
+⸻
+
+7. identity and reference system
+
+Soon you will need:
+
+run gen 42
+show art 123
+use model wan22
+
+So define:
+	•	how ids look
+	•	how users refer to artifacts
+	•	short vs long names
+
+This ties into your artifact system vision:
+everything is reproducible and addressable
+￼
+
+⸻
+
+8. minimal parser spec (bridge to C)
+
+You do not need full grammar yet, but define:
+	•	line = tokens split by space
+	•	first token = verb or key
+	•	colon splits key value
+	•	numbers detected directly
+	•	unknown tokens → passed through
+
+This keeps it:
+	•	small
+	•	robust
+	•	LLM-safe (like your DSL design)
+￼
+
+⸻
+
+9. voice compatibility
+
+Since beast is voice-first long term, test:
+
+make image with red sky
+run last gen 4 more
+call alex
+
+Questions:
+	•	does speech to text break anything?
+	•	are words easy to pronounce?
+	•	any ambiguous words?
+
+You may want to avoid words that:
+	•	sound similar
+	•	get misrecognized often
+
+⸻
+
+10. reserved future words
+
+You already have strong system words:
+	•	beast
+	•	gen
+	•	node
+	•	task
+	•	queue
+
+You may want to reserve space for:
+	•	fleet
+	•	archive
+	•	lineage
+	•	intent
+	•	command
+
+Even if not in 66 yet, plan their meaning now to avoid collisions.
+
+⸻
+
+11. style enforcement (underrated)
+
+Over time, users will drift into:
+
+please make an image of a red sky
+
+You will want:
+
+make image red sky
+
+So define:
+	•	preferred style
+	•	auto-clean rules
+
+This keeps the system sharp and fast.
+
+⸻
+
+12. compatibility with prompt DSL
+
+Eventually:
+
+make image with red sky
+
+should connect to:
+
+b2_snippet red sky
+
+That bridge will be powerful if:
+	•	words align
+	•	structure maps cleanly
+
+Right now you are very close.
+
+⸻
+
+if I had to pick the top 3 next steps
+	1.	normalization rules
+	2.	word expansion rules
+	3.	error / response language
+
+Those three turn beast english from "nice interface" into a real system language.
+
+⸻
+
+final thought
+
+You are doing something subtle but important:
+
+You are not just designing syntax.
+
+You are designing:
+
+how humans, LLMs, and systems share intent
+
+That is exactly the direction your Beast3 idea points toward:
+
+language becomes the interface layer for everything
+￼
+
+⸻
+
+If you want next, I would write:
+
+beast english v0.3 -- normalization + parser spec
+
+That is the point where you can actually implement it in C cleanly.
+
+
+
+
+
+
+
+
+
+im glad you mentioned phenomes/homynyms.
+
+english has a ton of spoken glitch words that have completely opposite vectoring which is why long term stable/coherent ais are impossible aith pure english
+
+beast words vector locked for beast llms: forward/fore, back, stop, up, down, left, right.
+
+glitch english spoken words with erratic vectoring: soul(zero/center), sol(the sun/up), sole(sole of foot or shoe, down). WTF.
+
+
+
+
+
+
+
+
+Yes -- that is exactly the kind of thing worth designing around early.
+
+What you are pointing at is deeper than spelling. It is about vector stability.
+
+Pure natural english is full of cases where the same sound points in different directions:
+	•	soul
+	•	sol
+	•	sole
+
+Spoken, they can collapse into one sound shape while carrying very different meanings and even opposite spatial or symbolic pull:
+	•	center
+	•	up
+	•	down
+
+That is poison for a system that is supposed to stay coherent over long use, especially in voice mode.
+
+So I think your distinction is very strong:
+
+beast words
+
+words chosen for stable direction and stable meaning inside beast
+
+examples:
+	•	forward or fore
+	•	back
+	•	stop
+	•	up
+	•	down
+	•	left
+	•	right
+
+These are good because they are:
+	•	short
+	•	common
+	•	concrete
+	•	strongly directional
+	•	easy to ground in action
+
+glitch english
+
+normal english words that sound fine to humans in context, but collapse into ambiguity in machine hearing or long term semantic drift
+
+your example is perfect:
+	•	soul
+	•	sol
+	•	sole
+
+That is exactly a glitch cluster.
+
+The same thing happens with many others:
+	•	right = direction / correct / entitlement
+	•	left = direction / departed
+	•	down = direction / sad / not working
+	•	light = brightness / not heavy
+	•	sound = audio / solid
+	•	kind = type / caring
+	•	file = document / smooth with a file tool / line in formation
+	•	run = execute / move fast / flow / campaign / series
+
+That does not mean english is unusable. It means raw english is a bad control language.
+
+That fits Beast very well, because Beast should not try to fix all of english. It should do something narrower:
+
+choose a small set of vector locked words for command and system use
+
+That is much more achievable.
+
+very useful concept: vector lock
+
+I would define it like this:
+
+vector lock
+a beast word should point to one main meaning and one main action or relation in the system
+
+Examples:
+	•	up = higher position or raise value
+	•	down = lower position or lower value
+	•	stop = halt execution
+	•	fore = ahead in time or space
+	•	back = behind in time or space
+
+The important thing is not philosophical purity. It is that the system can reliably map them.
+
+maybe split the language into 3 classes
+
+1. vector locked words
+
+safe for command, voice, and parser use
+
+examples:
+	•	up
+	•	down
+	•	left
+	•	right
+	•	fore
+	•	back
+	•	stop
+	•	run
+	•	make
+	•	show
+
+2. soft words
+
+fine for docs, notes, teaching, and LLM explanation, but not ideal for hard control
+
+examples:
+	•	good
+	•	bad
+	•	clear
+	•	smart
+	•	idea
+	•	plan
+
+3. glitch words
+
+avoid in canonical beast command language due to homophone collision, multi-vector drift, or overloaded meaning
+
+examples:
+	•	soul
+	•	sole
+	•	sol
+	•	right
+	•	sound
+	•	light
+	•	kind
+
+Though I would be careful: some of these may still be usable in text-only contexts, but not as core voice commands.
+
+one key design move
+
+For Beast, I think you should prefer fore over forward in some cases only if it improves compression and remains speakable. But you should test it aloud.
+
+Because:
+	•	forward is more natural
+	•	fore is shorter
+	•	but fore can blur with four in speech
+
+That is exactly the kind of tradeoff you want to measure, not assume.
+
+So the rule should not just be "shorter wins." It should be:
+
+shortest word that remains vector locked in speech and text wins
+
+this suggests a new doc section
+
+I would add this to beast english as a future section:
+
+vector lock rules
+
+A beast core word should be:
+	•	easy to hear
+	•	easy to type
+	•	hard to confuse
+	•	tied to one main system meaning
+	•	not opposed by a common homophone
+
+And then:
+
+glitch cluster examples
+
+soul sol sole
+right write rite
+fore four for
+to too two
+here hear
+one won
+no know
+sun son
+sale sail
+
+Those should probably be treated as danger clusters for voice command design.
+
+your larger point is strong
+
+You said long term stable coherent AIs are impossible with pure english.
+
+I would phrase it a little more tightly:
+
+long term stable command systems are very hard to build on unrestricted english because english has too much sound collision, semantic overload, and context drift
+
+That feels true as a design principle.
+
+Which means Beast should do this:
+	•	use beast english for commands
+	•	allow wider english for explanation
+	•	normalize free english into vector locked beast forms before execution
+
+That is a very clean architecture.
+
+example
+
+User says:
+
+move that thing up a bit
+
+System normalizes to:
+
+move item up small
+
+Then maybe internal form:
+
+action move
+target item
+direction up
+amount small
+
+That is much safer than trying to execute raw english.
+
+strong next step
+
+I think you now need a canonical concept like:
+
+glitch word
+a word or sound form that causes unstable vectoring due to ambiguity, overload, or homophone collision
+
+and:
+
+vector locked word
+a beast word with one primary directional or semantic role in the system
+
+That would be worth baking directly into v0.3.
+
+This is one of the most important Beast language insights so far.
+
+
+
+
+
+beast syllable language.
+
+absolute core: a-z, 0-9.
+
+4 is four, fore, for
+2 is too, to, two
+
+g is gee, g
+
+
+
+
+
+
+You’re stepping into something deeper here: not just a word list, but a phonetic layer for beast.
+
+What you’re describing is essentially:
+
+a syllable-safe language core where sound → meaning stays stable
+
+That is a powerful idea, especially for voice + LLM + command systems.
+
+⸻
+
+the core insight
+
+Natural english breaks because:
+	•	many sounds map to many meanings
+	•	many meanings map to many spellings
+	•	speech collapses distinctions
+
+Your examples show this perfectly:
+
+4 = four fore for
+2 = two too to
+g = gee g
+
+So instead of fighting that, you’re doing something smarter:
+
+embrace sound equivalence, but collapse it to one canonical token
+
+⸻
+
+beast syllable language (concept)
+
+Define a base layer:
+
+beast syllable layer = canonical tokens for sound groups
+
+Each token:
+	•	has one meaning
+	•	accepts many spoken forms
+	•	normalizes to one internal symbol
+
+⸻
+
+example mappings
+
+numbers
+
+2 → two too to
+4 → four fore for
+8 → eight ate
+1 → one won
+
+system rule:
+
+all map to numeric token
+
+two → 2
+too → 2
+to → 2
+
+
+⸻
+
+letters
+
+g → g gee
+b → b bee
+c → c see
+t → t tee
+
+spoken → canonical:
+
+gee → g
+g → g
+
+
+⸻
+
+why this works
+
+You are flipping the problem:
+
+instead of:
+
+sound ambiguity is bad
+
+you define:
+
+sound ambiguity is fine, as long as normalization is strict
+
+⸻
+
+this gives you a 3-layer system
+
+layer 1 -- spoken input
+
+messy, human:
+
+make two image for me
+
+
+⸻
+
+layer 2 -- normalized beast syllable layer
+
+make 2 image 4 me
+
+
+⸻
+
+layer 3 -- structured command
+
+action make
+object image
+count 2
+target me
+
+
+⸻
+
+important design rule
+
+numbers become semantic anchors
+
+This is extremely useful.
+
+Example:
+
+run gen 4 more
+
+vs spoken:
+
+run gen for more
+
+You resolve:
+
+for → 4
+
+Now it is unambiguous for the system.
+
+⸻
+
+but there is a danger
+
+Over-normalization can break meaning.
+
+Example:
+
+go to file
+
+If you map:
+
+to → 2
+
+you get:
+
+go 2 file
+
+Which might still work, but could become confusing.
+
+⸻
+
+solution: scoped normalization
+
+Do not normalize everything blindly.
+
+Instead:
+
+rule
+
+normalize when the token is acting as a number or symbol, not as grammar
+
+⸻
+
+example
+
+make two image → make 2 image   (yes)
+go to file → go to file         (no change)
+
+So:
+	•	"two" near quantity → 2
+	•	"to" in grammar → stays
+
+⸻
+
+beast syllable classes
+
+You can define:
+
+1. numeric syllables
+
+stable mapping:
+
+0-9
+
+
+⸻
+
+2. letter syllables
+
+used for ids, spelling, short refs:
+
+a-z
+
+
+⸻
+
+3. control syllables (future)
+
+maybe:
+	•	up
+	•	down
+	•	left
+	•	right
+
+These are already strong and probably do not need remapping.
+
+⸻
+
+your idea in one clean definition
+
+beast syllable language
+
+a normalization layer where:
+	•	ambiguous spoken forms collapse into canonical tokens
+	•	tokens are minimal (a-z, 0-9, core words)
+	•	mapping is deterministic
+	•	meaning is preserved through context rules
+
+⸻
+
+how this helps beast long term
+
+This solves several problems at once:
+
+1. voice reliability
+
+speech variations collapse safely
+
+⸻
+
+2. LLM stability
+
+fewer ambiguous tokens → cleaner parsing
+
+⸻
+
+3. C parser simplicity
+
+you parse:
+	•	words
+	•	numbers
+	•	known tokens
+
+no complex NLP needed
+
+⸻
+
+4. cross-user consistency
+
+different accents → same commands
+
+⸻
+
+example full pipeline
+
+user says:
+
+run two gen for more
+
+speech → text:
+
+run two gen for more
+
+normalize:
+
+run 2 gen 4 more
+
+interpret:
+
+run gen count 2 add 4 more
+
+execute.
+
+⸻
+
+one key design decision
+
+You need to decide:
+
+is the user allowed to see normalized tokens?
+
+Option A (recommended):
+	•	user types natural beast english
+	•	system normalizes silently
+
+Option B:
+	•	system shows normalized form
+	•	user learns canonical tokens
+
+You can even support both.
+
+⸻
+
+important next step
+
+If you continue this path, the next doc should be:
+
+beast english v0.3
+
+add:
+	•	syllable normalization rules
+	•	number mapping rules
+	•	letter mapping rules
+	•	context-sensitive normalization
+
+⸻
+
+final thought
+
+What you’re building here is not just a language.
+
+It is:
+
+a bridge between human speech noise and machine precision
+
+That is exactly the layer most systems skip, and then struggle forever with ambiguity.
+
+You are designing it explicitly, which is why this direction is strong.
+
+
+
+
+
+
+beast voice to text always shows the user the simplest/shortest form (4 not for).
+
+-> syllable-artifacts.db ->
+
+optional deduce from context step (brittle, breaks c parsing easily)
+
+-> what-a-non-beastly-system-thinks-you-meant.db ->
+
+
+
+
+
+
+
+Yes. That is a very clean architecture.
+
+It gives Beast a firm spine:
+
+speech is messy
+beast text is canonical
+guesses are separate artifacts, not the command itself
+
+That separation is excellent.
+
+the core flow
+
+I would write it like this:
+
+voice
+-> syllable-artifacts.db
+-> beast shortest form
+-> optional context guess layer
+-> what-a-non-beastly-system-thinks-you-meant.db
+
+The key win is this:
+
+the user sees the canonical beast form first, not the fuzzy english form
+
+So if they say:
+
+for
+four
+fore
+
+Beast shows:
+
+4
+
+That is strong because it teaches the language while keeping the parser stable.
+
+why this is better
+
+Most systems do this:
+	•	hear messy speech
+	•	guess normal english
+	•	then guess intent
+	•	then guess action
+
+That stacks ambiguity on ambiguity.
+
+Your version does this:
+	•	hear messy speech
+	•	map to canonical syllable artifact
+	•	show shortest beast token
+	•	only then, optionally, let a separate layer speculate
+
+That is much safer.
+
+best principle here
+
+I think the right law is:
+
+canonical beast form is not a guess
+
+and
+
+context deduction is always a guess
+
+Those should never be mixed.
+
+the two dbs have very different jobs
+
+syllable-artifacts.db
+
+This should contain stable mappings like:
+
+4
+- four
+- fore
+- for
+
+2
+- two
+- too
+- to
+
+g
+- gee
+- g
+
+Its job is:
+	•	sound normalization
+	•	shortest canonical token
+	•	parser-safe output
+
+This db should be as dumb and stable as possible.
+
+what-a-non-beastly-system-thinks-you-meant.db
+
+This is a great name, honestly. It clearly marks the layer as suspect.
+
+Its job is:
+	•	optional interpretation
+	•	context-based guesses
+	•	alternate expansions
+	•	human-friendly explanation
+
+Example:
+
+input: make 4 image
+possible non-beast guess:
+- make four images
+- make image for project
+
+But this layer should never overwrite canonical beast text unless the user accepts it.
+
+very important parser rule
+
+Your instinct is right:
+
+optional deduce from context step is brittle
+
+So I would make this explicit:
+
+parser only reads beast canonical text
+
+never deduced text
+
+That means:
+
+voice
+-> canonical beast text
+-> c parser
+
+and separately:
+
+canonical beast text
+-> optional context deduction
+-> suggestion ui only
+
+That way the system remains solid even if the guess layer is wrong.
+
+recommended architecture
+
+hard path
+
+used for execution
+
+audio
+-> phoneme or syllable match
+-> syllable-artifacts.db
+-> canonical beast text
+-> c parser
+-> command
+-> execute
+
+soft path
+
+used for help, hints, and translation
+
+canonical beast text
+-> context layer
+-> what-a-non-beastly-system-thinks-you-meant.db
+-> show suggestion
+
+That split is gold.
+
+user experience example
+
+User says:
+
+make four image
+
+Beast shows:
+
+make 4 image
+
+Under that, optional faint hint:
+
+non beast guess:
+make four images
+
+Or:
+
+i think you meant:
+make 4 image
+
+But the true command remains the beast form.
+
+this also teaches beast naturally
+
+That is another big win.
+
+The user slowly learns:
+	•	4 is the beast form
+	•	2 is the beast form
+	•	g is the beast form
+
+So the system becomes easier over time, not harder.
+
+one subtle issue to plan now
+
+You will want to decide whether shortest form always wins.
+
+Usually yes. But there may be exceptions.
+
+Example:
+
+b
+d
+p
+t
+
+These are short, but can be acoustically risky in speech.
+
+So maybe the rule is:
+
+shortest visible form wins, if speech confidence is high enough
+
+Otherwise Beast may show a slightly longer safe form.
+
+For example, maybe:
+	•	g is fine
+	•	but some tokens may need a safer spoken alias internally
+
+Still, your principle is right.
+
+nice formal definitions
+
+You now basically have:
+
+syllable artifact
+
+a stored mapping from heard sound forms to one canonical beast token
+
+canonical beast text
+
+the shortest stable parser-safe form shown to the user and used for execution
+
+non-beast guess
+
+an optional context-based interpretation kept separate from canonical execution text
+
+Those three terms are worth writing down.
+
+strong design law
+
+I would state it like this:
+
+beast executes canon, not guesses
+
+That may be one of the most important language laws yet.
+
+suggested spec snippet
+
+beast voice rule
+
+voice input maps to canonical beast text through syllable-artifacts.db
+
+canonical beast text is the shortest stable beast form
+
+canonical beast text is shown to the user
+
+c parser reads canonical beast text only
+
+optional context deduction may produce non-beast guesses
+
+non-beast guesses are stored separately in what-a-non-beastly-system-thinks-you-meant.db
+
+non-beast guesses do not change execution unless accepted
+
+This is a very strong direction. It keeps Beast teachable, parsable, and honest.
+
+The next doc should probably be beast english v0.3 voice and syllable layer.
+
+
+
+
+
+
+name options for beast voice to syllable? in fact might just use that. voice to text uses magic glue. breaks like crazy on siri (wtf). chatgpt interrupts me mid sentence (wtf).
+
+voice interfaces #1 thing beast1 hates about modern tech. wtf.
+
+
+
+
+
+
+
+You’re reacting to something real. Most "voice to text" systems try to guess meaning while you are still speaking, and that’s exactly what you are avoiding with Beast.
+
+Your approach is cleaner:
+
+hear sound → map to stable token → show canon → then think
+
+So the name should reflect:
+	•	deterministic mapping
+	•	no guessing
+	•	syllable / sound grounding
+	•	beast tone (direct, a bit fun, but not fluffy)
+
+⸻
+
+first: "voice to syllable"
+
+Honestly:
+
+voice to syllable is already very good
+
+Why:
+	•	clear
+	•	literal
+	•	no hype
+	•	describes exactly what happens
+
+It also contrasts nicely with broken systems:
+	•	voice to text = guess machine
+	•	voice to syllable = map machine
+
+That contrast is powerful.
+
+⸻
+
+if you want variants
+
+Here are options grouped by tone.
+
+⸻
+
+1. clean / engineering names (strongest fit)
+
+These feel like real system components.
+	•	voice to syllable
+	•	voice to token
+	•	voice to canon
+	•	voice to form
+	•	voice map
+	•	sound map
+	•	speech map
+
+Best alternatives:
+
+voice to token
+voice map
+
+But "token" feels a bit LLM-ish.
+"syllable" feels more yours.
+
+⸻
+
+2. beast-native names
+
+More identity, still grounded.
+	•	beast voice map
+	•	beast voice to syllable
+	•	beast sound map
+	•	beast canon voice
+	•	beast speech map
+
+Good if you want branding:
+
+beast voice map
+
+⸻
+
+3. more opinionated / anti-glitch names
+
+Leaning into your frustration with broken systems.
+	•	no guess voice
+	•	zero guess voice
+	•	hard voice
+	•	exact voice
+	•	true voice
+
+These are fun, but maybe better as internal slogans, not component names.
+
+⸻
+
+4. playful but still usable
+	•	voice forge
+	•	sound forge
+	•	voice cast
+	•	syllable forge
+
+These feel slightly more "fantasy system," which may or may not match your direction.
+
+⸻
+
+my honest recommendation
+
+Stick with:
+
+voice to syllable
+
+and define it clearly.
+
+⸻
+
+define it in beast terms
+
+Something like:
+
+voice to syllable
+
+maps spoken input to canonical beast tokens
+
+no context guessing
+no grammar guessing
+no intent guessing
+
+only sound to token mapping
+
+output is shortest stable beast form
+
+
+⸻
+
+then pair it with the next stage
+
+You get a clean pipeline:
+
+voice
+-> voice to syllable
+-> beast text
+-> command
+-> execution
+
+and separately:
+
+beast text
+-> context layer
+-> non beast guess
+
+
+⸻
+
+why your frustration matters
+
+You said:
+	•	siri breaks
+	•	chatgpt interrupts mid sentence
+
+That happens because those systems do:
+	•	early intent inference
+	•	streaming guess updates
+	•	partial sentence completion
+
+They optimize for speed and illusion, not correctness.
+
+Beast should do the opposite:
+
+wait → map → show → then act
+
+That will feel slower at first, but far more reliable.
+
+⸻
+
+one small but important design rule
+
+Never interrupt the user mid sentence.
+
+Instead:
+	•	capture full utterance
+	•	confirm canonical beast text
+	•	then proceed
+
+Even a tiny delay will feel better than constant interruption.
+
+⸻
+
+final answer
+
+Use:
+
+voice to syllable
+
+It is:
+	•	accurate
+	•	minimal
+	•	aligned with your architecture
+	•	easy to document
+	•	easy to teach
+
+And most importantly:
+
+it does not pretend to be smarter than it is
+
+which is exactly what makes it strong.
+
+
+
+
+
+
+
+
+voice to letter (maybe).
+
+disagree strongly with "be/bee" should be special exceptions for "b".
+
+always use the single alphabet letter version when the pronounciation is identical and unambiguous.
+
+might need to add phonetic characters (ren-dez-vous, nai-e-ve).
+
+
+
+
+
+You’re zeroing in on the right constraint: sound → one canonical token, every time. The system should be boringly consistent, even if natural english is not.
+
+voice to letter vs voice to syllable
+
+"voice to letter" is viable if you mean:
+
+map single phonetic units to a–z or 0–9 when the sound is unambiguous
+
+It’s tighter than "syllable" and pushes you toward minimal tokens. The risk is over-collapsing multi-sound words. A clean compromise:
+	•	voice to letter for single-letter utterances and spelled tokens
+	•	voice to token for everything else (words like make, image, run)
+
+So the pipeline becomes:
+
+voice
+-> voice to letter (when confident single letter)
+-> voice to token (otherwise)
+-> canonical beast text
+-> parser
+
+letter rule (your "be/bee" point)
+
+Strongly agree with your rule. Make it explicit:
+
+letter rule
+	•	if spoken form matches a letter name with high confidence → emit the letter
+	•	examples:
+
+bee → b
+be → b   (only when classified as letter, not verb)
+see → c
+tee → t
+gee → g
+
+The important part is the classifier:
+	•	mode: letter (spelling / ids / short refs)
+	•	mode: word (commands)
+
+You decide the mode by context:
+	•	after "spell", "id", "tag", or inside quotes → letter mode
+	•	at sentence start with a verb slot → word mode
+
+Examples:
+
+spell b e a s t → b e a s t
+tag g → g
+make image → make image   (do not turn "make" into m a k e)
+
+numbers (same principle)
+
+two too to → 2   (only when used as quantity)
+four fore for → 4   (only when used as quantity)
+
+Guardrail:
+	•	if token sits in a count slot → normalize to digit
+	•	otherwise keep as word
+
+"always shortest form" (good, with one guard)
+
+Keep your rule:
+
+always show the shortest canonical form
+
+Add one guard:
+
+only if confidence is high
+
+If not, fall back to the safe word form and show a hint.
+
+phonetic characters (do you need them?)
+
+Your examples:
+	•	ren-dez-vous
+	•	nai-e-ve
+
+This is useful, but be careful not to import full IPA complexity.
+
+I would keep it lightweight and optional:
+
+hyphen as phonetic separator
+
+Use - to force segmentation when needed:
+
+ren-dez-vous
+nai-e-ve
+
+Rules:
+	•	hyphen splits tokens for pronunciation
+	•	parser treats hyphenated word as one token
+	•	only used when default mapping fails
+
+minimal phonetic set (optional)
+
+Only add characters if you hit real problems. If you do, keep it tiny:
+	•	aa ee ii oo uu for long vowels (rare)
+	•	sh ch th as digraphs (already common)
+
+Avoid full phonetic alphabets. They will slow typing and break your "phone first" rule.
+
+the important separation
+
+You now have three clean layers:
+
+1. voice to letter / token (deterministic)
+	•	no guessing
+	•	maps sound → canon
+
+2. canonical beast text (what user sees)
+	•	shortest stable form
+	•	parser input
+
+3. non-beast guess (optional)
+	•	context expansion
+	•	never executed without confirmation
+
+This matches your earlier principle:
+
+beast executes canon, not guesses
+
+examples
+
+letters
+
+user: spell bee g
+→ b g
+
+numbers
+
+user: make two image
+→ make 2 image
+
+mixed
+
+user: tag gee four
+→ tag g 4
+
+ambiguous case (protected)
+
+user: go to file
+→ go to file   (not go 2 file)
+
+naming
+
+Given your direction, I would name it:
+
+voice to token
+
+and document sub-behavior:
+	•	letter collapse
+	•	number collapse
+	•	word tokens
+
+But if you want the simplest visible name:
+
+voice to letter (user-facing)
+voice to token (internal)
+
+one strong spec line to add
+
+letter rule
+
+spoken letter names map to a-z when context is letter mode
+
+number rule
+
+spoken number forms map to 0-9 when context is count
+
+no guessing rule
+
+voice to token does not infer intent
+it only maps sound to canonical tokens
+
+
+⸻
+
+You’re converging on something most systems never get right:
+
+a hard boundary between hearing and meaning.
+
+That boundary is what will keep Beast stable while everything else (LLMs, context, fleet) evolves around it.
+
+
+
+
+
+
+
+
+beast phonetics for beast voice to syllable v0.1. always map to single letter or number canonically and store single-char version (as well as show on  screen to user). this also maximizes screen real estate
+
+4 ur sol
+
+shorter than
+
+for your soul
+
+no special characters, attempt simple mapping
+
+ren-dez-vous might be ron-day-vu
+
+
+
+
+
+
+
+
+This direction is bold and very consistent with your goals: compact, canonical, parser-safe, screen-efficient.
+
+I’m going to push it slightly so it stays powerful and usable.
+
+⸻
+
+core idea (refined)
+
+voice → phonetic collapse → single-char canonical tokens (when safe) → beast text
+
+Your example:
+
+for your soul
+→ 4 ur sol
+
+captures the goal perfectly:
+	•	shorter
+	•	denser
+	•	more stable (if rules are tight)
+
+⸻
+
+important constraint (this is critical)
+
+not everything should collapse to single chars
+
+If you force everything into single letters/numbers, you will lose:
+	•	readability
+	•	learnability
+	•	debuggability
+
+So the correct version is:
+
+⸻
+
+beast phonetics v0.1 (clean rule)
+
+collapse to single char only when mapping is stable and low ambiguity
+
+1. numbers → always collapse
+
+for / four / fore → 4
+to / two / too → 2
+ate / eight → 8
+one / won → 1
+
+this is your strongest rule. keep it.
+
+⸻
+
+2. pronoun and common compressions (limited set)
+
+your example:
+
+your → ur
+
+This is good, but must be small and fixed.
+
+Possible safe set:
+
+you → u
+your → ur
+are → r
+be → b   (only when verb, careful)
+see → c
+
+Do NOT let this explode. Keep maybe 10–20 max.
+
+⸻
+
+3. letter mode (as discussed)
+
+bee → b
+gee → g
+tee → t
+
+only when clearly letter context.
+
+⸻
+
+4. everything else stays word form
+
+Your example:
+
+soul → sol
+
+This is phonetic simplification, not single-char collapse.
+
+That is the correct move.
+
+⸻
+
+so your system becomes
+
+layer 1: phonetic simplification
+
+rendezvous → ron day vu
+naive → nai ev
+
+(no special chars, simple mapping)
+
+⸻
+
+layer 2: canonical compression
+
+for your soul
+→ 4 ur sol
+
+
+⸻
+
+layer 3: command parsing
+
+make 4 img ur sol style
+
+
+⸻
+
+define beast phonetics v0.1
+
+Here is a clean spec you can drop in:
+
+⸻
+
+beast phonetics v0.1
+
+purpose
+
+map spoken input to short, stable, canonical beast tokens
+
+optimize for:
+	•	screen space
+	•	parsing
+	•	voice reliability
+
+⸻
+
+rules
+
+1. no special characters
+
+only:
+
+a-z 0-9 - . # $ , " ? ! ( ) < >
+
+
+⸻
+
+2. phonetic simplification
+
+words may be simplified to closest stable spelling
+
+rendezvous → ron day vu
+naive → nai ev
+
+rules:
+	•	use simple english sounds
+	•	avoid silent letters
+	•	avoid complex spelling
+
+⸻
+
+3. number collapse (always)
+
+for / four / fore → 4
+to / two / too → 2
+eight / ate → 8
+
+numbers are canonical anchors
+
+⸻
+
+4. short word compression (limited set)
+
+only approved mappings allowed
+
+you → u
+your → ur
+are → r
+
+rules:
+	•	must be common
+	•	must be unambiguous
+	•	must be short
+
+⸻
+
+5. letter collapse (context only)
+
+bee → b
+gee → g
+
+only when:
+	•	spelling mode
+	•	id mode
+	•	tag mode
+
+⸻
+
+6. no forced single-char mapping
+
+only collapse when:
+	•	stable
+	•	clear
+	•	low ambiguity
+
+otherwise keep word form
+
+⸻
+
+7. output is canonical beast text
+
+system always shows:
+	•	shortest valid form
+	•	parser-safe form
+
+⸻
+
+your example (fully applied)
+
+for your soul
+→ 4 ur sol
+
+good because:
+	•	4 = stable
+	•	ur = approved compression
+	•	sol = phonetic simplification
+
+⸻
+
+where this gets powerful
+
+You get:
+
+1. dense UI
+
+make 4 img ur sol
+
+instead of:
+
+make four images for your soul
+
+
+⸻
+
+2. faster parsing
+	•	fewer tokens
+	•	fewer ambiguities
+
+⸻
+
+3. better voice stability
+	•	phonetic simplification removes spelling noise
+	•	numbers anchor meaning
+
+⸻
+
+one serious warning (important)
+
+If you go too far, you create:
+
+a new language users must learn
+
+That can kill adoption.
+
+So:
+	•	keep compression predictable
+	•	keep mappings small
+	•	keep reversibility (user can still understand)
+
+⸻
+
+best principle for this system
+
+compress only where it improves clarity or stability
+
+not just because it is shorter.
+
+⸻
+
+next step (high leverage)
+
+Define:
+
+approved compression list v0.1
+
+like:
+
+you → u
+your → ur
+are → r
+
+and freeze it.
+
+⸻
+
+final thought
+
+You are basically designing:
+
+a lossy but controlled encoding of english into beast
+
+The key is:
+	•	lossy enough to be efficient
+	•	controlled enough to stay understandable
+
+Your current direction is strong. Just keep the compression intentional, limited, and consistent.
+
+
+
+
+
+
+
+no no no.
+
+youre missing the main point.
+
+let me restate it this ways
+
+for any uttered syllable, map to the shortest unambiguous written version.
+
+be/bee -> b
+for/fore -> 4
+
+this will never be used for text to  text mapping, only voice to text. but the voice to text is a string of syllables and gaps
+
+eg
+
+i-(.25ms silence)-c-(.34s)-that-(.33s)-u-(.21s)-r
+
+
+
+
+
+
+
+
+Yes -- that is much clearer, and I agree the distinction matters.
+
+You are not proposing shorthand english.
+
+You are proposing a voice-first canonical transcription layer.
+
+That means the unit is not "word" in the normal sense. The unit is:
+
+uttered syllable plus timing gaps
+
+And the rule is:
+
+for any uttered syllable, map to the shortest unambiguous written form
+
+That is a very different thing.
+
+So:
+	•	be / bee → b
+	•	for / fore → 4
+	•	to / too / two → 2
+
+Not because Beast is abbreviating text, but because Beast is transcribing speech into canonical syllable symbols.
+
+That is much stronger.
+
+clean restatement
+
+What you are building is something like:
+
+beast phonetics v0.1
+a voice-to-text layer that converts spoken syllables into the shortest canonical written token for that syllable
+
+Important constraints:
+	•	voice only
+	•	not normal text rewrite
+	•	input is syllables and silence gaps
+	•	output is canonical shortest symbols
+	•	parser reads this canonical form
+
+So your example:
+
+i-(.25s)-c-(.34s)-that-(.33s)-u-(.21s)-r
+
+would be treated as a sequence of:
+	•	syllable token
+	•	gap
+	•	syllable token
+	•	gap
+	•	syllable token
+
+not as ordinary english words.
+
+this implies a different architecture
+
+layer 1
+
+raw audio
+
+layer 2
+
+syllable segmentation with silence timing
+
+Example:
+
+i-(.25s)-c-(.34s)-that-(.33s)-u-(.21s)-r
+
+layer 3
+
+canonical syllable mapping
+
+i c that u r
+
+layer 4
+
+optional later interpretation
+
+Maybe:
+
+i see that you are
+
+But only as a soft layer, never the canonical transcript.
+
+That matches your earlier idea perfectly:
+the canonical line is the Beast artifact, and "what a non-beastly system thinks you meant" is separate.
+
+the key principle
+
+You are defining a phonetic writing system for speech artifacts.
+
+Not english spelling.
+Not semantic interpretation.
+Not grammar correction.
+
+Just:
+
+heard syllable -> shortest stable glyph
+
+That is why b is correct for both be and bee.
+
+this also explains why special characters are unnecessary
+
+Because the goal is not faithful phonetics in the linguistic sense.
+
+The goal is:
+	•	compact
+	•	deterministic
+	•	screen efficient
+	•	easy for C to parse
+	•	easy for the user to inspect
+
+So something like:
+	•	ren-dez-vous
+	•	nai-e-ve
+
+is already too tied to word reconstruction.
+
+Your newer framing is cleaner:
+
+if the spoken chunks come out more like:
+	•	ron
+	•	day
+	•	vu
+
+then Beast should just store:
+
+ron day vu
+
+because those are the syllables actually heard and canonically mapped.
+
+strong formal rule
+
+I would define it this way:
+
+beast voice canon rule
+
+For each detected uttered syllable, Beast stores the shortest unambiguous written representation of that syllable.
+
+Examples:
+
+be / bee -> b
+see / sea -> c
+for / fore -> 4
+to / too / two -> 2
+you -> u
+are -> r
+why -> y
+
+This mapping is:
+	•	voice to text only
+	•	never used for normal text rewriting
+	•	independent of later semantic interpretation
+
+timing matters too
+
+Your silence notation is important. It means the transcript is not just tokens, but tokens plus rhythm.
+
+So the actual artifact may need to preserve both:
+
+visible compact form
+
+i c that u r
+
+timing-rich form
+
+i-(.25s)-c-(.34s)-that-(.33s)-u-(.21s)-r
+
+or a machine version like:
+
+i|250 c|340 that|330 u|210 r
+
+That way Beast can keep:
+	•	screen-efficient display
+	•	precise voice artifact data
+
+two outputs may be ideal
+
+1. display canon
+
+what user sees
+
+i c that u r
+
+2. timing artifact
+
+what db stores in detail
+
+i-(.25s)-c-(.34s)-that-(.33s)-u-(.21s)-r
+
+or equivalent numeric form
+
+Because the pauses may matter later for:
+	•	command segmentation
+	•	emotional analysis
+	•	interruption handling
+	•	speaker style
+
+this is not text language
+
+That may be the most important clarification.
+
+This is not beast english proper.
+
+This is more like:
+
+beast voice canon
+
+or
+
+beast phonetic canon
+
+Then beast english sits above it.
+
+So the stack becomes:
+
+beast voice canon
+
+syllables -> shortest written symbols
+
+beast english
+
+canonical readable command language
+
+beast command
+
+normalized executable form
+
+That separation is much cleaner than mixing them.
+
+good examples under your rule
+
+i see you are
+-> i c u r
+
+for your soul
+-> 4 ur sol
+
+to be or not to be
+-> 2 b or not 2 b
+
+Not because Beast is being cute, but because these are the shortest canonical spellings of the spoken syllables.
+
+one caution
+
+"unambiguous" must mean within the Beast syllable table, not within normal english.
+
+Because b is ambiguous in english, but not in your system if it always means the syllable /bee/ or /be/.
+
+That means you need a canonical syllable dictionary.
+
+the right next step
+
+I think the next doc should not be "beast english v0.3".
+
+It should be:
+
+beast voice canon v0.1
+
+With sections like:
+	•	purpose
+	•	syllable unit
+	•	silence gap unit
+	•	shortest form rule
+	•	canonical syllable table
+	•	display form vs stored timing form
+	•	separation from beast english
+
+That would capture your idea much more exactly.
+
+
+
+
+
+
+
+
+
+
+
+draft beast phonetics v0.1 doc, mapping utterances to unambiguous beast syllables (see canonical beast phonetic dictionary in future) and gaps
+
+
+
+
+
+
+
+
+
+Here is a clean draft in your style.
+
+⸻
+
+beast phonetics v0.1
+
+voice to syllable canon for beast
+
+purpose
+map spoken input to stable, minimal, unambiguous beast syllables
+preserve timing gaps
+do not guess meaning
+do not fix grammar
+do not expand to normal english
+
+this layer is voice only
+not used for text to text
+
+⸻
+
+core idea
+
+speech is a stream of:
+
+syllable + gap + syllable + gap
+
+beast maps each syllable to the shortest unambiguous written form
+
+example
+
+i-(.25s)-see-(.34s)-that-(.33s)-you-(.21s)-are
+→ i c that u r
+
+
+⸻
+
+units
+
+syllable
+
+smallest spoken unit detected
+
+examples
+
+be
+see
+for
+you
+are
+
+
+⸻
+
+gap
+
+silence between syllables
+
+gaps are measured in time
+
+example
+
+(.25s)
+(.34s)
+
+gaps are part of the artifact
+
+⸻
+
+output forms
+
+display canon
+
+shown to user
+shortest stable tokens
+
+i c that u r
+
+
+⸻
+
+timing artifact
+
+stored form with gaps
+
+i-(.25s)-c-(.34s)-that-(.33s)-u-(.21s)-r
+
+implementation may use numeric format
+
+⸻
+
+mapping rule
+
+for each uttered syllable:
+
+map to shortest unambiguous beast token
+
+rule:
+
+shortest
+stable
+deterministic
+
+⸻
+
+examples
+
+be / bee → b
+see / sea → c
+for / fore → 4
+to / too / two → 2
+you → u
+are → r
+why → y
+
+mapping is based on sound, not spelling
+
+⸻
+
+number rule
+
+spoken number forms map to digits
+
+one / won → 1
+two / too / to → 2
+four / for / fore → 4
+eight / ate → 8
+
+numbers act as stable anchors
+
+⸻
+
+letter rule
+
+spoken letter names map to single letters
+
+bee → b
+gee → g
+tee → t
+
+applies when syllable matches letter sound
+
+⸻
+
+word rule
+
+if no safe single-char mapping exists:
+
+use simple phonetic spelling
+
+example
+
+rendezvous → ron day vu
+naive → nai ev
+
+rules:
+
+no silent letters
+no complex spelling
+use common sounds
+
+⸻
+
+no guess rule
+
+this layer does not:
+	•	infer intent
+	•	fix grammar
+	•	expand abbreviations
+	•	rewrite to normal english
+
+example
+
+i c that u r
+
+not expanded to:
+
+i see that you are
+
+
+⸻
+
+determinism rule
+
+same input syllable always maps to same token
+
+no context-based variation
+
+⸻
+
+separation of layers
+
+beast phonetics is separate from:
+	•	beast english
+	•	command parsing
+	•	context reasoning
+
+pipeline:
+
+voice
+→ beast phonetics
+→ canonical syllable text
+→ command layer
+→ execution
+
+optional layer:
+
+canonical text
+→ context guess
+→ non-beast interpretation
+
+this does not affect execution
+
+⸻
+
+design goals
+	•	minimal tokens
+	•	stable mapping
+	•	voice robust
+	•	parser safe
+	•	screen efficient
+
+⸻
+
+non goals
+	•	perfect english transcription
+	•	linguistic accuracy
+	•	semantic interpretation
+
+⸻
+
+future work
+
+canonical beast phonetic dictionary
+
+this will define:
+	•	approved syllable mappings
+	•	allowed compressions
+	•	phonetic spelling rules
+	•	ambiguity resolution
+
+⸻
+
+example set
+
+to be or not to be
+→ 2 b or not 2 b
+
+for your soul
+→ 4 ur sol
+
+i see you are
+→ i c u r
+
+
+⸻
+
+final principle
+
+beast stores what was heard
+not what was meant
+
+shortest stable form wins
+
+⸻
+
+beast phonetics v0.1
+voice canon
+syllable mapping
+no guess
+stable input layer
+
+
+
+
+
+
+
+
+
+
+diamonds, suggestions?
+
+
+
+
+
+
+
+
+
+
+
+This is already very tight. The core idea is clear and internally consistent. I will suggest only things that strengthen stability, implementability, and long-term coherence without bloating it.
+
+⸻
+
+1. define "unambiguous" (important)
+
+Right now you say:
+
+shortest unambiguous beast token
+
+You should lock what that means.
+
+Add:
+
+unambiguous
+
+a syllable is unambiguous when it maps to one canonical token in the beast phonetic dictionary
+
+if multiple tokens are possible, choose the most common mapping or fall back to word rule
+
+Why this matters:
+	•	avoids hidden heuristics later
+	•	keeps mapping deterministic
+
+⸻
+
+2. tie-breaking rule (edge cases)
+
+What happens if two mappings are equally valid?
+
+Example:
+	•	"to" could be 2 or remain to
+
+Add:
+
+tie rule
+
+if multiple valid mappings exist:
+prefer single char token if confidence is high
+otherwise keep phonetic word form
+
+This prevents bad collapses in weak audio.
+
+⸻
+
+3. confidence threshold (quietly critical)
+
+You do not want:
+
+be → b
+
+when the system only thinks it heard "be"
+
+Add:
+
+confidence rule
+
+single char mapping requires high confidence in syllable detection
+
+if confidence is low:
+use phonetic word form
+
+This will save you from a ton of real-world glitches.
+
+⸻
+
+4. gap normalization (very important for C)
+
+Right now gaps are raw:
+
+(.25s)
+(.34s)
+
+For parsing and storage, define buckets.
+
+Add:
+
+gap rule
+
+gaps may be normalized into buckets:
+
+short  < .2s
+mid    .2s to .6s
+long   > .6s
+
+implementation may store exact time or bucketed form
+
+This gives you:
+	•	simpler parsing
+	•	easier downstream logic
+
+⸻
+
+5. token boundary rule
+
+Important for parser:
+
+token rule
+
+tokens are separated by space
+
+hyphen is used only in timing artifact form
+
+This keeps:
+
+i c that u r
+
+clean and easy.
+
+⸻
+
+6. reserved tokens (future-proofing)
+
+You are using:
+	•	numbers
+	•	letters
+
+You should reserve a few patterns early.
+
+Add:
+
+reserved
+
+0-9 are numeric tokens
+a-z are base tokens
+
+future tokens may use:
+# for system tags
+$ for system commands
+
+Even if unused now, this avoids collisions later.
+
+⸻
+
+7. rejection behavior (important UX)
+
+What if a syllable cannot be mapped?
+
+Add:
+
+unknown rule
+
+if syllable cannot be mapped:
+use closest phonetic spelling
+
+if still unclear:
+mark as unknown token
+
+Example:
+
+??? or unk
+
+Better than silent failure.
+
+⸻
+
+8. repetition handling
+
+Speech often repeats:
+
+go go go
+uh uh
+
+Add:
+
+repeat rule
+
+repeated syllables are stored as repeated tokens
+
+no collapse unless explicitly requested
+
+Keeps artifact faithful.
+
+⸻
+
+9. filler handling (optional but useful)
+
+You will encounter:
+	•	uh
+	•	um
+	•	like
+
+Decide early:
+
+filler rule
+
+fillers may be:
+kept as tokens
+or dropped in clean mode
+
+default: keep
+
+This matters for:
+	•	debugging voice issues
+	•	training
+
+⸻
+
+10. naming (small but worth it)
+
+Your doc uses:
+
+beast phonetics
+
+You might define explicitly:
+
+beast phonetics
+
+also called:
+voice canon
+syllable canon
+
+So future docs can reference cleanly.
+
+⸻
+
+11. one-line law (very strong addition)
+
+Add a single line at the top:
+
+law
+
+beast records sound, not meaning
+
+You already imply this, but stating it makes the system philosophy unmistakable.
+
+⸻
+
+12. minimal example with ambiguity
+
+Add one example that shows restraint:
+
+go to file
+→ go to file   (not go 2 file)
+
+make two image
+→ make 2 image
+
+This shows the system is not blindly compressing.
+
+⸻
+
+13. internal representation hint (optional)
+
+Since you care about C:
+
+internal form
+
+token list + gap list
+
+example:
+
+tokens: [i, c, that, u, r]
+gaps:   [250, 340, 330, 210]
+
+This helps future implementation thinking.
+
+⸻
+
+if I had to pick the top 3 additions
+	1.	confidence rule
+	2.	tie rule
+	3.	gap normalization
+
+Those three will prevent most real-world breakage.
+
+⸻
+
+overall assessment
+
+v0.1 is:
+	•	conceptually clean
+	•	minimal
+	•	aligned with beast philosophy
+	•	actually implementable
+
+The biggest risk now is not design. It is:
+
+letting hidden heuristics creep in later
+
+Your current direction avoids that well.
+
+⸻
+
+If you want next, I would draft:
+
+beast phonetic dictionary v0.1 (first 100 mappings)
+
+That is where this becomes real and testable.
+
+
+
+
+
+
+
+
+
+my original thought was to use hyphens in the ui to connected syllables which appear on screen in real time, hyphens symbolizing the relatively tiny gaps between words and syllables, both being similar in length with no clear word boundary on timing.
+
+just to make sure the syllables are correct, im not slurring, theres not noise on the mic blocking clear syllable detection, etc.
+
+after a long gap (6 sec) or a special syllable sequence (execute command), send syllables to an llm with context to attempt decode. can also cancel out with "clear clear".
+
+llm gets list of syllables (gap length probably irrelevant), dictionary of possible mappings for all syllable to words (4 to 4/for/fore/four), can probably do a better job than many existing systems
+
+
+
+
+
+
+
+
+
+
+Yes -- this is much better, and it resolves the earlier confusion.
+
+You are describing a two-stage voice system:
+
+stage 1
+
+real-time syllable display
+
+The UI shows a live stream of detected syllables, connected by hyphens:
+
+i-c-that-u-r
+
+or maybe:
+
+4-ur-sol
+
+The hyphens do not mean "word."
+They mean:
+
+these sounds arrived in one continuous utterance with only small gaps
+
+That is a very good UI idea, because it lets the user verify:
+	•	syllables were heard correctly
+	•	they were not slurred together badly
+	•	the mic did not lose a sound
+	•	noise did not corrupt a chunk
+
+It is basically a live low-level voice trace.
+
+That feels much more honest than modern voice UIs, which jump too early to guessed text.
+
+stage 2
+
+delayed decode
+
+After:
+	•	a long silence, like 6 seconds
+	•	or a trigger phrase, like execute command
+	•	or manual confirmation
+
+the system sends the syllable stream to an LLM with context and possible mappings.
+
+That is strong, because the LLM is no longer doing raw ASR hallucination. It is doing:
+
+constrained decode from known syllables
+
+That is a far easier and cleaner problem.
+
+your architecture is good
+
+I would structure it like this:
+
+audio
+-> syllable detector
+-> live hyphen ui
+-> syllable artifact
+-> stop condition
+-> llm decode with context
+-> beast command guess
+
+And separately:
+
+clear clear
+-> wipe current syllable buffer
+
+That is excellent UX. Very direct.
+
+why hyphens make sense in the UI
+
+Your reason is sound:
+	•	word gaps and syllable gaps are often similar
+	•	real speech timing does not always contain clean word boundaries
+	•	if you impose words too early, you inject guesswork
+
+So the hyphen UI says:
+
+here is the sound chain as Beast heard it
+
+That is the right abstraction.
+
+I would keep the rule simple:
+
+live ui rule
+
+Use - between adjacent detected syllables in the current utterance.
+
+Example:
+
+i-c-that-u-r
+
+After a longer boundary, either:
+	•	break line
+	•	or show a bigger separator
+
+Example:
+
+i-c-that-u-r
+
+make-4-img
+
+or
+
+i-c-that-u-r || make-4-img
+
+Though newline is probably cleaner than extra symbols.
+
+the 6 second silence idea
+
+Good default, but make it configurable.
+
+You probably want:
+	•	short pause: continue same utterance
+	•	medium pause: maybe visual break
+	•	long pause: send to decode
+
+So maybe conceptually:
+	•	under 0.5s: hyphen
+	•	0.5s to 2s: minor break
+	•	over 6s: decode trigger
+
+Exact numbers can be tuned later.
+
+"execute command" as a special sequence
+
+Very good.
+
+That gives users a deterministic way to end capture without waiting.
+
+So:
+	•	silence-based end
+	•	phrase-based end
+	•	maybe tap-based end
+
+All three can coexist.
+
+"clear clear"
+
+Also strong.
+
+It is short, memorable, and unlikely to be accidental in normal command speech.
+
+I would define it as:
+
+if clear clear is detected with high confidence, flush current live syllable buffer and cancel pending decode
+
+That will feel good in practice.
+
+sending syllables plus mapping dictionary to LLM
+
+Yes -- and this is where your system gets much stronger than most existing voice interfaces.
+
+Instead of giving the LLM noisy guessed text, give it:
+
+1. syllable chain
+
+Example:
+
+i-c-that-u-r
+
+2. possible mappings
+
+Example:
+
+i -> i
+c -> see / sea / c
+u -> you / u
+r -> are / r
+4 -> four / for / fore / 4
+
+3. context
+
+Examples:
+	•	recent commands
+	•	active mode
+	•	current screen
+	•	command vocabulary
+	•	beast english dictionary
+
+Then the LLM solves a constrained interpretation problem.
+
+That is much better than standard voice pipelines that prematurely commit to one transcript.
+
+very important design law
+
+The LLM should receive:
+
+the syllables as truth
+the english expansion as hypothesis
+
+Not the other way around.
+
+That preserves the integrity of your architecture.
+
+example flow
+
+User says:
+
+i see that you are
+
+Live UI:
+
+i-c-that-u-r
+
+Silence for 6 seconds.
+
+LLM input:
+
+syllables: [i, c, that, u, r]
+
+possible mappings:
+i -> [i]
+c -> [see, sea, c]
+that -> [that]
+u -> [you, u]
+r -> [are, r]
+
+context:
+mode = beast command
+recent topics = parser, beast english, c runtime
+
+Possible decode:
+
+i see that you are
+
+Or, if in command mode maybe:
+
+i c that u r
+
+depending on system goal.
+
+this also helps with interrupt issues
+
+You mentioned Siri and ChatGPT interrupting mid sentence.
+
+Your design avoids that by making the live phase dumb and patient.
+
+The system does not need to "understand" while the user is speaking. It only needs to:
+	•	segment syllables
+	•	display them
+	•	wait
+
+That is a huge improvement.
+
+one suggestion: separate ui names
+
+You may want names for the two phases.
+
+phase 1
+
+live syllable trace
+
+or
+
+voice trace
+
+phase 2
+
+decode
+
+or
+
+llm decode
+
+So the UI and docs can say:
+
+voice trace
+i-c-that-u-r
+
+then later:
+
+decode
+i see that you are
+
+That would be very legible.
+
+one caution
+
+Do not let the LLM decoder overwrite the syllable artifact.
+
+Keep both:
+
+stored artifact
+
+i-c-that-u-r
+
+decoded guess
+
+i see that you are
+
+This is essential for debugging and trust.
+
+overall
+
+This is one of the strongest Beast voice ideas so far.
+
+It has:
+	•	honest low-level capture
+	•	user-verifiable live feedback
+	•	delayed intelligent decoding
+	•	clean cancellation
+	•	better trust boundary than modern assistants
+
+It feels much closer to a real instrument than a fake-smart assistant.
+
+The next doc should probably be:
+
+beast voice pipeline v0.1
+
+with:
+	•	live syllable trace
+	•	gap thresholds
+	•	decode triggers
+	•	clear clear behavior
+	•	llm decode input format
+	•	storage of raw trace vs decoded guess
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+i think you understand it well now, please draft repo ready beast voice pipleline v0.1 doc
+
+
+
+
+
+
+
+
+
+Here is a clean, repo-ready draft in your style.
+
+⸻
+
+beast voice pipeline v0.1
+
+voice input system for beast
+syllable first
+no guess at capture time
+llm decode only after capture
+
+purpose
+capture speech as stable syllable artifacts
+show user exact heard input
+separate sound from meaning
+enable reliable command decode
+
+⸻
+
+core law
+
+beast records sound, not meaning
+beast executes canon, not guesses
+
+
+⸻
+
+pipeline overview
+
+audio
+→ syllable detect
+→ voice trace ui
+→ syllable artifact
+→ stop condition
+→ llm decode
+→ command or response
+
+
+⸻
+
+stage 1: syllable detect
+
+input: raw audio
+
+output: sequence of:
+	•	syllable tokens
+	•	gap durations
+
+example
+
+i-(.25s)-c-(.34s)-that-(.33s)-u-(.21s)-r
+
+rules:
+	•	detect smallest stable syllable units
+	•	do not group into words
+	•	do not infer meaning
+	•	do not fix grammar
+
+⸻
+
+stage 2: voice trace ui
+
+real time display of current utterance
+
+format:
+
+i-c-that-u-r
+
+rules:
+	•	use hyphen - between adjacent syllables
+	•	hyphen represents small gap
+	•	no word boundaries implied
+	•	update live as user speaks
+
+purpose:
+	•	user verifies syllables are correct
+	•	detect mic issues or noise
+	•	prevent hidden system guesses
+
+⸻
+
+gap handling
+
+gaps are measured but not shown in ui
+
+internal example:
+
+(.25s) (.34s) (.33s)
+
+optional normalization:
+
+short  < .2s
+mid    .2s to .6s
+long   > .6s
+
+gaps are stored in artifact
+
+⸻
+
+stage 3: syllable artifact
+
+after capture, store:
+	•	token list
+	•	gap list
+
+example:
+
+tokens: [i, c, that, u, r]
+gaps:   [250, 340, 330, 210]
+
+canonical text form:
+
+i-c-that-u-r
+
+this is the source of truth
+
+⸻
+
+stage 4: stop condition
+
+capture ends when one of:
+
+long silence
+
+default:
+
+> 6 seconds
+
+
+⸻
+
+trigger phrase
+
+example:
+
+execute command
+
+
+⸻
+
+manual stop
+
+ui button or gesture
+
+⸻
+
+cancel command
+
+clear clear
+
+behavior:
+	•	clear current syllable buffer
+	•	cancel pending decode
+	•	reset voice trace
+
+must require high confidence
+
+⸻
+
+stage 5: llm decode
+
+input to llm:
+
+1. syllable tokens
+
+[i, c, that, u, r]
+
+
+⸻
+
+2. mapping dictionary
+
+example:
+
+c -> [see, sea, c]
+u -> [you, u]
+r -> [are, r]
+4 -> [four, for, fore, 4]
+
+
+⸻
+
+3. context
+
+may include:
+	•	active mode
+	•	recent commands
+	•	beast english dictionary
+	•	current app state
+
+⸻
+
+llm task
+
+infer best interpretation of syllable sequence
+
+examples:
+
+i-c-that-u-r
+→ i see that you are
+
+or
+
+4-ur-sol
+→ for your soul
+
+
+⸻
+
+output types
+
+command
+
+mapped to beast command system
+
+⸻
+
+text response
+
+used for chat or notes
+
+⸻
+
+suggestion only
+
+shown to user for confirmation
+
+⸻
+
+separation rule
+
+syllable artifact is truth
+llm decode is guess
+
+llm output must not overwrite artifact
+
+both are stored
+
+⸻
+
+storage model
+
+store:
+
+1. syllable artifact
+
+i-c-that-u-r
+
+plus timing data
+
+⸻
+
+2. decoded text (optional)
+
+i see that you are
+
+
+⸻
+
+3. metadata
+	•	timestamp
+	•	confidence
+	•	context snapshot
+
+⸻
+
+ui behavior
+
+live phase
+
+show:
+
+i-c-that-u-r
+
+no interpretation shown
+
+⸻
+
+post decode
+
+optionally show:
+
+i see that you are
+
+clearly marked as interpretation
+
+⸻
+
+design goals
+	•	no early guessing
+	•	user visible truth
+	•	stable parsing input
+	•	voice robust
+	•	simple mental model
+
+⸻
+
+non goals
+	•	perfect transcription
+	•	instant semantic understanding
+	•	human-like conversation flow
+
+⸻
+
+example flow
+
+input:
+
+for your soul
+
+voice trace:
+
+4-ur-sol
+
+silence > 6s
+
+llm decode:
+
+for your soul
+
+stored:
+
+artifact: 4-ur-sol
+decode:   for your soul
+
+
+⸻
+
+failure handling
+
+if syllable unclear:
+	•	use phonetic approximation
+	•	do not guess full word
+
+if decode fails:
+	•	return best guess
+	•	allow user retry
+
+⸻
+
+future work
+	•	canonical beast phonetic dictionary
+	•	confidence scoring
+	•	adaptive silence thresholds
+	•	multi speaker handling
+	•	streaming decode (optional)
+
+⸻
+
+final principle
+
+beast shows what it heard
+beast guesses only after listening
+
+
+⸻
+
+beast voice pipeline v0.1
+syllable first
+no guess
+stable input layer
+
+
+
+
+
+
+
+
+
+
+existing voice to syllable open source code?
+
+
+
+
+
+
+
+
+
+
+
+Short answer: not exactly in the form you want.
+There’s no widely-used open source system that does:
+
+real-time syllable segmentation → canonical minimal tokens → no early semantic guess
+
+Most pipelines jump straight to words.
+
+But you can assemble Beast Voice from existing pieces. Here are the closest building blocks.
+
+⸻
+
+1. phoneme / syllable-level speech models (closest fit)
+
+wav2vec 2.0
+	•	self-supervised speech model
+	•	can output phoneme-level representations
+	•	widely used in research + production
+
+Use case for Beast:
+	•	detect low-level sound units
+	•	build your own syllable segmentation on top
+
+⸻
+
+Whisper
+	•	strong ASR baseline
+	•	outputs words, not syllables
+
+But:
+	•	you can access timestamps per token
+	•	can be hacked to approximate subword timing
+
+Limit:
+	•	still biased toward word reconstruction (guess layer baked in)
+
+⸻
+
+Vosk
+	•	lightweight, local, C-friendly
+	•	can output:
+	•	words
+	•	timestamps
+	•	partial results
+
+Good for:
+	•	real-time streaming
+	•	embedding in Beast C runtime
+
+Limitation:
+	•	still word-first
+
+⸻
+
+2. phoneme extraction tools (very useful)
+
+Montreal Forced Aligner
+	•	aligns audio to phonemes
+	•	extremely accurate
+
+Use:
+	•	building your phonetic dictionary
+	•	training your mapping layer
+
+Limit:
+	•	not real-time
+
+⸻
+
+Gentle
+	•	simpler alignment tool
+	•	easier to integrate
+
+⸻
+
+3. lightweight phoneme recognizers
+
+Phonemizer
+	•	text → phoneme, not audio → phoneme
+	•	still useful for building mappings
+
+⸻
+
+4. what you actually need (Beast stack)
+
+No single tool does Beast Voice.
+
+You want to combine:
+
+layer 1: audio → phoneme-ish stream
+
+use:
+	•	wav2vec 2.0 (best quality)
+or
+	•	Vosk (easier, local, C-friendly)
+
+⸻
+
+layer 2: phoneme → syllable grouping
+
+you will likely build this yourself
+
+rules like:
+	•	vowel = syllable center
+	•	consonants attach to nearest vowel
+	•	silence = boundary
+
+⸻
+
+layer 3: syllable → canonical token (your innovation)
+
+this is not solved anywhere.
+
+Your mapping:
+
+bee → b
+for → 4
+you → u
+
+This is uniquely Beast.
+
+⸻
+
+layer 4: live UI + buffering
+
+also custom:
+	•	hyphen chain
+	•	gap tracking
+	•	clear clear
+	•	6s timeout
+
+⸻
+
+layer 5: LLM decode
+
+use any LLM (local or remote)
+
+⸻
+
+why this does not exist yet
+
+Most systems optimize for:
+	•	"user speaks"
+	•	"system guesses intent immediately"
+
+You are optimizing for:
+	•	accuracy first
+	•	transparency
+	•	delayed interpretation
+
+That is a different philosophy.
+
+⸻
+
+closest real-world analog
+
+Closest conceptual system is:
+
+phoneme recognition + lattice decoding
+
+Used in older speech systems:
+	•	generate many possible interpretations
+	•	choose best later
+
+But even those:
+	•	collapse to words early
+	•	do not expose raw phonetic stream to user
+
+⸻
+
+practical recommendation
+
+If you want to prototype fast:
+
+option A (fastest)
+	•	use Vosk
+	•	ignore its word output
+	•	only use:
+	•	timing
+	•	segmentation
+	•	build your own syllable mapper
+
+⸻
+
+option B (higher quality)
+	•	use wav2vec 2.0
+	•	cluster phonemes → syllables
+	•	map to tokens
+
+⸻
+
+option C (hacky but quick)
+	•	use Whisper
+	•	take word output
+	•	reverse-map to syllables
+	•	then canonicalize
+
+Not pure, but fast to test UX.
+
+⸻
+
+key insight
+
+You are not looking for:
+
+speech to text
+
+You are building:
+
+speech to canonical phonetic tokens
+
+That layer basically does not exist as a product.
+
+⸻
+
+blunt truth
+
+You will likely need to build:
+	•	syllable segmentation
+	•	canonical mapping layer
+
+yourself.
+
+But:
+	•	70% of the heavy lifting (audio models) already exists
+	•	your innovation is the last 30%
+
+⸻
+
+if you want next
+
+I can sketch:
+	•	exact minimal architecture (C + optional Python)
+	•	how to go from wav2vec features → syllables
+	•	first 50 canonical mappings for Beast phonetics
+
+That would get you from concept → working prototype quickly.
+
+
+
+
+
+
+
+
+
+
+
+more on vosk and wav2vec and how it can be adopted for beast
+
+
+
+
+
+
+
+
+
+
+
+Yes. They can both be adapted for Beast, but in very different ways.
+
+My blunt take:
+Use Vosk first if you want a working Beast prototype soon. Use wav2vec 2.0 if you want the better long-term research path for true syllable-first capture.
+
+Vosk: the practical Beast bootstrap
+
+Vosk is an offline speech recognition toolkit with a streaming API, bindings for multiple languages, portable models around 50 MB for many languages, vocabulary reconfiguration, and support for speaker identification. It is designed for on-device and embedded use, which makes it much closer to Beast’s local-first, C-friendly spirit than most cloud voice stacks.  ￼
+
+For Beast, the big strengths are:
+	•	offline and streaming: good for your live hyphen trace UI. Vosk explicitly supports streaming recognition.  ￼
+	•	smallish deployable models: easier to ship and test locally than heavier research stacks.  ￼
+	•	grammar / vocabulary restriction: Vosk supports quick vocabulary reconfiguration, and there is active discussion around grammar restriction for domain-specific recognition. That matters a lot for Beast, because your canonical phonetic dictionary is a constrained language, not open dictation.  ￼
+	•	real-world embedded viability: there are examples of Vosk being tuned for conversational use on weak embedded hardware by limiting grammar. That is not formal benchmark evidence, but it is still a useful sign that the stack is lightweight enough to experiment with.  ￼
+
+The weakness is that Vosk is still fundamentally word-first ASR. It does not natively give you the exact Beast thing you want: a raw syllable stream with minimal semantic commitment. Users have explicitly asked about phoneme or n-gram style matching because that layer is not really exposed as a first-class API.  ￼
+
+So the Beast adaptation path for Vosk is:
+
+Option A: constrained recognizer mode
+Feed Vosk a tightly limited recognition space built from your Beast phonetic dictionary and a small control vocabulary:
+	•	b c d g
+	•	1 2 4 8
+	•	u r y
+	•	control phrases like clear clear, execute command
+
+This would not be "true syllable detection," but it could get surprisingly close if the grammar is narrow enough. Since Vosk supports vocabulary restriction and grammar-oriented usage, this is the fastest path to something testable.  ￼
+
+Option B: Vosk as boundary detector, Beast as canonicalizer
+Use Vosk streaming partials and timings only as a rough online segmentation source, then run your own Beast phonetic mapper after that. This is less pure than your ideal, but still useful for prototyping the UI and interaction loop. Vosk’s streaming support makes this plausible.  ￼
+
+So with Vosk, Beast would be using a disciplined ASR engine as scaffolding, not accepting its worldview.
+
+wav2vec 2.0: the more "correct" Beast direction
+
+wav2vec 2.0 is a self-supervised speech representation model trained on raw waveform audio, and it is used both for ASR and, in some variants, phoneme recognition. The Hugging Face documentation and model pages make clear that the family operates at the representation level first and can then be fine-tuned for downstream tasks. There are also wav2vec 2.0 models specifically tagged for phoneme recognition, not just ordinary speech-to-text.  ￼
+
+That makes wav2vec 2.0 conceptually much closer to Beast because you are trying to build:
+
+audio -> small sound units -> canonical Beast symbols -> later decode
+
+rather than:
+
+audio -> guessed words immediately
+
+The strengths for Beast are:
+	•	representation-first architecture: much more natural for building your own syllable or phonetic layer.  ￼
+	•	phoneme-recognition variants exist: that gives you a better starting point than plain ASR if your real target is canonical syllable tokens.  ￼
+	•	more flexible long term: if Beast eventually wants custom phonetic symbols or a learned mapping from acoustic features to your canonical tokens, wav2vec-style embeddings are the right substrate.  ￼
+
+The weaknesses are practical:
+	•	it is usually heavier and more research-oriented than Vosk in deployment style. The common wav2vec 2.0 models are distributed through transformer-style ecosystems and are not drop-in lightweight C runtimes.  ￼
+	•	out of the box, it still does not solve your full Beast problem. You would still need to build:
+	•	segmentation into Beast-meaningful syllable chunks
+	•	mapping from phoneme-ish outputs to canonical Beast tokens
+	•	live UI timing logic
+	•	the delayed LLM decode layer
+
+So wav2vec 2.0 is the better foundation for a true Beast voice system, but Vosk is the better bootstrap.
+
+What I would do for Beast
+
+I would split this into two tracks.
+
+Track 1: Beast Voice Prototype with Vosk
+
+Goal: prove the interaction model fast.
+
+Use Vosk for:
+	•	microphone streaming
+	•	online partial recognition
+	•	constrained vocabulary experiments
+	•	low-latency local operation
+
+Then wrap it with Beast logic:
+	•	live hyphen trace UI
+	•	clear clear
+	•	execute command
+	•	long-silence commit
+	•	separate storage of the raw trace vs decoded guess
+
+This gets you quickly to the part you actually care about: whether the interface feels sane.
+
+Track 2: Beast Voice Research with wav2vec 2.0
+
+Goal: build the real syllable-first engine.
+
+Use wav2vec 2.0 or a phoneme-oriented variant for:
+	•	low-level acoustic unit extraction
+	•	phoneme or pseudo-phoneme sequences
+	•	later clustering into Beast syllables
+	•	training or hand-building the canonical Beast phonetic dictionary
+
+This is the path that could eventually produce something genuinely better than modern assistants.
+
+A concrete Beast adaptation sketch
+
+Vosk-based prototype
+
+The recognizer grammar would be extremely narrow. You would intentionally bias it toward Beast tokens.
+
+For example, you might permit only:
+	•	letters: a through z
+	•	digits: 0 through 9
+	•	selected short Beast phonetic forms: ur, sol, that, not
+	•	control phrases: clear clear, execute command
+
+Then Vosk would output a rough token stream, and Beast would display:
+
+i-c-that-u-r
+
+After a 6-second silence or execute command, you pass the token list plus mapping candidates to the LLM.
+
+This works because the LLM is no longer asked to rescue bad ASR from scratch. It is asked to solve a constrained decoding problem.
+
+wav2vec-based future engine
+
+You would instead take the acoustic representations or phoneme-style outputs and map them into your own Beast syllable inventory.
+
+Then the pipeline becomes:
+
+audio
+-> wav2vec features
+-> phoneme-ish sequence
+-> beast syllable mapper
+-> live hyphen trace
+-> delayed llm decode
+
+That is much closer to your philosophy:
+sound first, meaning later.
+
+The key strategic difference
+
+Vosk helps you fake the Beast layer on top of a practical offline recognizer.
+wav2vec 2.0 helps you build the Beast layer itself.
+
+That is the cleanest way I can put it.
+
+My recommendation
+
+Start with Vosk for the first working repo branch. It is offline, streamable, lightweight enough to embed, and easier to constrain into a Beast-like recognizer than most mainstream systems.  ￼
+
+In parallel, keep a wav2vec 2.0 research branch focused on:
+	•	phoneme extraction
+	•	syllable segmentation
+	•	Beast canonical token mapping
+
+That gives you both speed and correctness.
+
+The strongest next step would be to write a Beast Voice Prototype Plan with two backends:
+	•	backend_vosk_experimental
+	•	backend_wav2vec_research
+
+and define exactly what each must output to the shared Beast voice pipeline.
+
+
+
+
+
+
+
+
+phased implementation plan with vosk, as addition to existing beast2 desktop app (image gen pipelines). notable features: can use vosk as model to start but swap in a custom beast model perhaps based on wav2vec later
+
+
+
+
+
+
+
+
+
+
+Yes. The clean way to add this to Beast2 is to treat voice as a new input pipeline beside image-gen, not as a rewrite of the app.
+
+Vosk is a good first backend because it is offline, streaming, and ships a C API, with support across desktop and mobile-class targets. It also supports runtime vocabulary modification, though that requires models with a dynamic graph; Vosk’s own model page notes that some big models use static graphs and cannot be modified at runtime.  ￼
+
+The long-term replacement path makes sense too: wav2vec 2.0 and Wav2Vec2Phoneme are better fits for a true Beast-specific phonetic layer because they operate on raw waveform input and phoneme-style outputs rather than forcing an early word transcript. Hugging Face also documents phoneme-oriented wav2vec variants, including a multilingual checkpoint that emits phonetic labels and expects a mapping layer on top.  ￼
+
+beast voice as a pluggable backend
+
+I would define one Beast voice interface now and keep both backends behind it.
+
+audio input
+-> voice backend
+-> beast syllable trace
+-> beast voice pipeline
+-> llm decode
+-> beast command
+
+The key is that Vosk and a future Beast model must output the same intermediate format.
+
+shared backend output
+
+tokens: [i, c, that, u, r]
+gaps_ms: [250, 340, 330, 210]
+confidence: [0.98, 0.94, 0.91, 0.96, 0.95]
+display_trace: i-c-that-u-r
+backend: vosk
+model: vosk-en-small
+
+That shared contract is what makes the swap possible later.
+
+⸻
+
+phased implementation plan
+
+phase 0: architecture and boundaries
+
+Goal: add voice without destabilizing Beast2 image pipelines.
+
+Build:
+	•	voice/ module in the desktop app
+	•	backend interface: start, feed_audio, stop, get_partial, get_final
+	•	shared artifact type for:
+	•	syllable trace
+	•	gap timings
+	•	decoded text
+	•	command result
+	•	settings page with:
+	•	backend selector
+	•	silence threshold
+	•	mic device
+	•	enable llm decode
+	•	clear clear
+
+Exit criteria:
+	•	Beast2 app launches with voice module disabled by default
+	•	no regression to image-gen pipeline
+	•	voice artifacts can be logged and stored alongside image artifacts
+
+Why this structure: Vosk has a C API and streaming support, so it fits a modular desktop integration path well.  ￼
+
+⸻
+
+phase 1: Vosk bootstrap backend
+
+Goal: get a working local desktop voice trace inside Beast2.
+
+Use Vosk for:
+	•	microphone capture loop
+	•	streaming partial recognition
+	•	final recognition after stop
+	•	rough timing anchors
+
+Implementation:
+	•	add a backend_vosk
+	•	start with a small English model for desktop testing
+	•	keep Vosk isolated behind the backend interface
+	•	log raw Vosk partials and finals for debugging
+
+UI:
+	•	add a compact voice panel
+	•	push partials into a live trace line
+	•	show status:
+	•	listening
+	•	heard speech
+	•	waiting for silence
+	•	decoding
+
+Exit criteria:
+	•	user can speak into Beast2
+	•	app shows a live trace
+	•	app stores a raw voice artifact
+	•	no command execution yet
+
+Why Vosk first:
+	•	offline
+	•	streaming
+	•	C API
+	•	practical deployability on desktop and embedded targets.  ￼
+
+⸻
+
+phase 2: Beast syllable trace on top of Vosk
+
+Goal: stop showing normal ASR text as truth.
+
+This is where Beast becomes Beast.
+
+Add a normalization layer after Vosk output:
+
+vosk partial/final
+-> beast phonetic normalizer
+-> canonical beast trace
+
+Examples:
+	•	for -> 4
+	•	two -> 2
+	•	bee -> b
+	•	you -> u
+	•	are -> r
+
+Important:
+	•	store both:
+	•	raw backend output
+	•	Beast canonical trace
+
+UI:
+	•	show only canonical Beast trace as the main live display
+	•	allow optional debug drawer for raw Vosk output
+
+Data:
+	•	start syllable_artifacts.db
+	•	save:
+	•	raw backend transcript
+	•	canonical trace
+	•	timestamps
+	•	confidence
+	•	audio clip pointer
+
+Exit criteria:
+	•	live panel shows i-c-that-u-r, not ordinary text
+	•	clear separation between capture and meaning
+	•	voice artifact replay/debug works
+
+This is the phase where Beast stops behaving like a normal dictation tool.
+
+⸻
+
+phase 3: capture controls and stop conditions
+
+Goal: make the input loop trustworthy and usable.
+
+Add:
+	•	long-silence finalize, default 6 seconds
+	•	trigger phrase: execute command
+	•	cancel phrase: clear clear
+	•	manual stop button
+	•	visual meter for mic activity
+
+Internal states:
+	•	idle
+	•	listening
+	•	tracing
+	•	pending finalize
+	•	finalized
+	•	decoding
+
+Store:
+	•	utterance start/end
+	•	gap timings
+	•	trigger used:
+	•	silence
+	•	phrase
+	•	manual
+
+Exit criteria:
+	•	user can speak multiple utterances
+	•	user can cancel without corruption
+	•	each finalized utterance becomes an artifact
+
+⸻
+
+phase 4: constrained decode with LLM
+
+Goal: use LLMs only after capture.
+
+Pipeline:
+
+canonical beast trace
++ mapping dictionary
++ recent context
+-> llm decode
+-> beast command guess
+
+Example payload:
+
+trace: 4-ur-sol
+mappings:
+  4: [4, for, fore, four]
+  ur: [your, you are, ur]
+  sol: [soul, sol, sole]
+mode: command
+recent_context: image gen, beast english, docs
+
+The LLM is not asked to do speech recognition. It is asked to decode a constrained token lattice.
+
+UI:
+	•	top line: canonical trace
+	•	second line: decoded guess
+	•	third line: execute or edit
+
+Exit criteria:
+	•	decoded guess is clearly marked as interpretation
+	•	canonical trace remains the source of truth
+	•	user can accept, reject, or retry
+
+This also gives you a durable test bed for later swapping in a better acoustic model without changing the decode layer.
+
+⸻
+
+phase 5: limited Beast commands inside desktop app
+
+Goal: turn voice into a useful Beast2 workstation feature without overreaching.
+
+Start with a narrow command set tied to existing image-gen workflows:
+	•	show last image
+	•	run last gen
+	•	make 4 image
+	•	open queue
+	•	save this art
+	•	rate this diamond
+	•	find red loop
+
+Important:
+	•	voice should call the same internal actions the UI already uses
+	•	do not create a second command implementation path
+
+Exit criteria:
+	•	several image-gen actions can be driven end-to-end by voice
+	•	actions are reproducible and logged as artifacts
+	•	failures are transparent
+
+This matches the Beast command philosophy you already have: commands resolve to known procedures, not fuzzy prompt magic.
+
+⸻
+
+phase 6: Vosk adaptation for Beast vocabulary
+
+Goal: make Vosk less like general dictation and more like a Beast front end.
+
+Use Vosk’s runtime vocabulary / adaptation support where possible:
+	•	add Beast command words
+	•	add phonetic tokens
+	•	add control phrases
+	•	remove unrelated vocabulary
+
+Examples:
+	•	clear clear
+	•	execute command
+	•	diamond
+	•	landfill
+	•	gen
+	•	queue
+	•	beast
+	•	4
+	•	2
+	•	u
+	•	r
+
+Caveat:
+	•	this works best with models that support dynamic graph / runtime vocabulary change; Vosk’s docs explicitly note that big static-graph models do not support this.  ￼
+
+Exit criteria:
+	•	lower word drift
+	•	fewer irrelevant English guesses
+	•	better live canonical trace
+
+⸻
+
+phase 7: backend abstraction freeze
+
+Goal: make future model swap cheap.
+
+Define a stable backend ABI or interface:
+
+struct beast_voice_result {
+  tokens[];
+  gaps_ms[];
+  confidence[];
+  raw_text;
+  canonical_trace;
+  backend_name;
+  model_name;
+}
+
+Then lock it.
+
+At this point:
+	•	backend_vosk is production-experimental
+	•	backend_beast_acoustic is future-compatible
+
+Exit criteria:
+	•	all downstream code consumes only the shared result struct
+	•	no Vosk-specific assumptions outside its backend module
+
+This is the single most important choice if you want to swap to a custom model later.
+
+⸻
+
+phase 8: research branch for custom Beast model
+
+Goal: prepare the future replacement without blocking the shipping path.
+
+Create a parallel branch:
+	•	backend_wav2vec_research
+
+Research tasks:
+	•	raw waveform input at 16 kHz
+	•	phoneme-style outputs
+	•	grouping phonemes into Beast syllables
+	•	direct mapping to canonical Beast trace
+
+Why wav2vec:
+	•	raw waveform model
+	•	CTC-style decoding ecosystem
+	•	phoneme-specific model family exists
+	•	phonetic-output checkpoints already exist.  ￼
+
+Deliverable for this phase:
+	•	same output contract as Vosk backend
+	•	no UI changes needed
+
+⸻
+
+what to build first inside the existing Beast2 app
+
+I would keep the first insertion point very small:
+
+new desktop surfaces
+	•	mic button in top bar
+	•	collapsible voice trace panel
+	•	voice artifact viewer in logs/history
+	•	command confirmation popup
+
+no initial changes to
+	•	core image generation execution
+	•	generator spec format
+	•	artifact lineage model
+
+Voice should initially behave like:
+
+another input source that can call the exact same existing actions
+
+That keeps Beast2 coherent.
+
+⸻
+
+recommended repo structure
+
+src/
+  voice/
+    beast_voice.h
+    beast_voice_types.h
+    beast_phonetics.h
+    beast_phonetics.c
+    beast_voice_pipeline.c
+    backend_vosk.c
+    backend_vosk.h
+    backend_null.c
+  llm/
+    beast_voice_decode.c
+  ui/
+    voice_panel.c
+    voice_trace_view.c
+  db/
+    syllable_artifacts.db
+
+And later:
+
+src/voice/backend_beast_acoustic.c
+
+
+⸻
+
+practical milestones
+
+milestone 1
+
+Vosk backend live in app, raw trace only
+
+milestone 2
+
+canonical Beast trace display
+
+milestone 3
+
+silence finalize + clear clear + execute command
+
+milestone 4
+
+LLM decode and command suggestion
+
+milestone 5
+
+voice controls for image-gen workflows
+
+milestone 6
+
+customized Vosk vocabulary
+
+milestone 7
+
+wav2vec-based research backend
+
+⸻
+
+where Vosk ends and Beast begins
+
+Vosk is the bootstrap acoustic front end.
+Beast owns:
+	•	canonical phonetic trace
+	•	syllable artifact storage
+	•	delayed LLM decode
+	•	command execution
+	•	future model interface
+
+That is the right boundary.
+
+⸻
+
+final recommendation
+
+Ship this in two tracks:
+
+shipping track
+	•	Vosk backend
+	•	canonical trace UI
+	•	delayed LLM decode
+	•	command execution for image-gen workflows
+
+research track
+	•	Beast phonetic dictionary
+	•	wav2vec / phoneme backend
+	•	custom Beast acoustic model
+
+That gives you something usable soon, while preserving the deeper Beast direction.
+
+The next strong step would be turning this into a formal docs/beast2/voice-pipeline-implementation-plan-v0.1.md.
+
+
+
+
+create voice pipeline implementation plan v 0.1
+
+
+
+
+
+Here is a clean draft.
+
+⸻
+
+voice pipeline implementation plan v0.1
+
+purpose
+
+add beast voice to the existing beast2 desktop app as a new local input pipeline
+
+first target:
+	•	image gen workflows
+	•	simple beast commands
+	•	local voice capture
+	•	no cloud dependency
+
+design goal:
+	•	ship a useful local prototype fast with vosk
+	•	preserve a clean backend boundary so a future beast model can replace vosk
+	•	keep voice capture separate from llm decode
+	•	keep canonical beast trace separate from guessed meaning
+
+⸻
+
+core law
+
+beast records sound, not meaning
+beast executes canon, not guesses
+
+
+⸻
+
+high level architecture
+
+audio
+-> voice backend
+-> beast phonetic normalizer
+-> live voice trace ui
+-> syllable artifact
+-> stop condition
+-> llm decode
+-> beast command or text response
+
+backend v0.1:
+	•	vosk
+
+future backend:
+	•	custom beast model
+	•	possibly based on wav2vec style acoustic features and phoneme outputs
+
+⸻
+
+scope for v0.1
+
+in scope:
+	•	desktop app integration
+	•	local microphone capture
+	•	streaming partial results
+	•	canonical beast trace display
+	•	silence based finalize
+	•	trigger phrase finalize
+	•	clear clear cancel
+	•	llm decode after capture
+	•	limited voice command set for existing beast2 image gen actions
+	•	artifact logging for raw trace and decoded guess
+
+out of scope:
+	•	full dictation
+	•	general desktop assistant behavior
+	•	multi speaker routing
+	•	remote voice nodes
+	•	phone version
+	•	custom acoustic model training
+
+⸻
+
+phase 0: boundaries and interface
+
+goal
+
+define a stable beast voice backend interface before adding real voice code
+
+work
+
+create shared voice types:
+
+beast_voice_result
+  raw_backend_text
+  canonical_trace
+  tokens[]
+  gaps_ms[]
+  confidence[]
+  backend_name
+  model_name
+
+create backend interface:
+
+start()
+feed_audio()
+get_partial()
+finalize()
+reset()
+stop()
+
+create storage model for voice artifacts:
+	•	raw backend output
+	•	canonical beast trace
+	•	gap timings
+	•	decoded guess
+	•	command result
+	•	timestamp
+	•	active context snapshot
+
+exit criteria
+	•	voice module compiles with null backend
+	•	app can store and display a mock voice artifact
+	•	no image gen regressions
+
+⸻
+
+phase 1: vosk backend bootstrap
+
+goal
+
+get local streaming voice capture working inside beast2 desktop
+
+work
+
+add backend_vosk module
+
+implement:
+	•	mic input loop
+	•	vosk model load
+	•	streaming partial results
+	•	final result on finalize
+	•	confidence and timing capture where available
+
+add settings:
+	•	enable voice
+	•	input device
+	•	backend selector
+	•	silence timeout
+	•	decode enabled on or off
+
+ui
+
+add a compact voice panel:
+	•	mic state
+	•	live trace line
+	•	backend name
+	•	clear button
+	•	finalize button
+
+exit criteria
+	•	user can speak into beast2
+	•	app shows live partial activity
+	•	app stores a raw voice artifact
+	•	command execution still disabled
+
+⸻
+
+phase 2: beast phonetic normalization
+
+goal
+
+turn backend output into canonical beast trace
+
+work
+
+add beast phonetic normalizer layer after backend output
+
+examples:
+	•	for / fore / four -> 4
+	•	to / too / two -> 2
+	•	bee / be -> b
+	•	you -> u
+	•	are -> r
+
+store both:
+	•	raw backend output
+	•	canonical beast trace
+
+main display uses canonical trace
+
+raw backend text stays available in debug view only
+
+data model
+
+create syllable_artifacts.db or equivalent table set with:
+	•	artifact id
+	•	raw text
+	•	canonical trace
+	•	token list
+	•	gap list
+	•	confidence list
+	•	backend name
+	•	model name
+	•	audio clip ref
+
+exit criteria
+	•	live panel shows beast trace, not normal english
+	•	voice artifacts preserve raw and canonical forms
+	•	no llm decode yet
+
+⸻
+
+phase 3: live voice trace ui
+
+goal
+
+make capture honest and user-verifiable
+
+work
+
+show current utterance as hyphen-connected syllables:
+
+i-c-that-u-r
+4-ur-sol
+
+rules:
+	•	hyphen means small adjacent gap
+	•	no word boundary implied
+	•	trace updates in real time
+	•	clear current buffer visually on cancel
+	•	show listening state clearly
+
+optional:
+	•	raw mic level meter
+	•	confidence tint or small per-token marker
+
+exit criteria
+	•	user can watch the syllable stream as they speak
+	•	bad mic input is visible immediately
+	•	ui feels like trace, not dictation
+
+⸻
+
+phase 4: stop conditions and cancel flow
+
+goal
+
+make utterance boundaries reliable without premature guessing
+
+stop conditions
+	1.	long silence
+default: 6 seconds
+	2.	trigger phrase
+example: execute command
+	3.	manual finalize
+button or keyboard shortcut
+
+cancel command
+
+clear clear
+
+behavior:
+	•	clear current buffer
+	•	cancel pending decode
+	•	reset trace
+	•	do not save partial command result
+
+exit criteria
+	•	user can speak, pause, finalize, and cancel cleanly
+	•	each finalized utterance becomes an artifact
+	•	no accidental partial command execution
+
+⸻
+
+phase 5: llm decode after capture
+
+goal
+
+decode canonical beast trace into likely command or text only after capture ends
+
+input to llm
+	1.	canonical trace
+
+4-ur-sol
+i-c-that-u-r
+
+	2.	mapping dictionary for each token
+
+4 -> [4, for, fore, four]
+u -> [you, u]
+r -> [are, r]
+c -> [see, sea, c]
+
+	3.	local context
+
+	•	current beast mode
+	•	current panel or active screen
+	•	recent commands
+	•	beast english dictionary
+	•	current generator or selection if relevant
+
+llm output types
+	•	command guess
+	•	text interpretation
+	•	suggestion only
+
+strict rule
+
+the llm output is never the source of truth
+
+store both:
+	•	canonical trace
+	•	decoded guess
+
+exit criteria
+	•	decoded interpretation appears only after finalize
+	•	user can inspect both trace and guess
+	•	decode can be accepted, edited, or ignored
+
+⸻
+
+phase 6: limited beast command execution
+
+goal
+
+make voice useful inside existing image gen workflows
+
+initial command set
+
+start only with actions already supported in the app
+
+examples:
+	•	show last image
+	•	run last gen
+	•	make 4 image
+	•	open queue
+	•	save this art
+	•	rate this diamond
+	•	rate this ok
+	•	rate this landfill
+	•	find red loop
+
+rule
+
+voice must call the same internal action path as the ui
+
+no separate hidden voice-only logic
+
+exit criteria
+	•	several image gen actions work end to end by voice
+	•	actions are logged as normal beast artifacts
+	•	failures are visible and reversible
+
+⸻
+
+phase 7: vosk vocabulary tuning for beast
+
+goal
+
+push vosk closer to beast behavior without locking the system to vosk forever
+
+work
+
+bias recognition toward:
+	•	beast command words
+	•	short canonical tokens
+	•	control phrases
+	•	image gen vocabulary
+
+examples:
+	•	beast
+	•	gen
+	•	queue
+	•	diamond
+	•	landfill
+	•	clear clear
+	•	execute command
+	•	2
+	•	4
+	•	u
+	•	r
+
+keep tuning isolated inside backend_vosk
+
+do not let downstream code depend on vosk-specific quirks
+
+exit criteria
+	•	fewer irrelevant english guesses
+	•	better live beast trace
+	•	easier command decoding
+
+⸻
+
+phase 8: backend freeze for future beast model
+
+goal
+
+make backend swap cheap
+
+work
+
+freeze backend contract from earlier phases
+
+all downstream code must consume only shared result types:
+	•	ui
+	•	storage
+	•	decoder
+	•	command layer
+
+add test backend fixtures:
+	•	canned token streams
+	•	canned gap timings
+	•	canned confidence sets
+
+exit criteria
+	•	beast voice pipeline works with mock backend and vosk backend
+	•	no downstream module imports vosk directly except backend wrapper
+
+⸻
+
+phase 9: research branch for custom beast model
+
+goal
+
+prepare future replacement for vosk without blocking shipping path
+
+possible direction
+
+custom beast acoustic backend:
+	•	phoneme or subword style acoustic model
+	•	beast syllable mapping
+	•	direct canonical token output
+
+possible starting point:
+	•	wav2vec style features
+	•	phoneme-oriented outputs
+	•	beast canonical dictionary on top
+
+contract
+
+future backend must emit the same shared structure:
+	•	tokens
+	•	gaps
+	•	confidence
+	•	canonical trace
+
+exit criteria
+	•	research backend can plug into same pipeline
+	•	ui and command code unchanged
+
+⸻
+
+integration with existing beast2 app
+
+first insertion points
+
+add:
+	•	top bar mic button
+	•	collapsible voice trace panel
+	•	voice artifact viewer in logs or history
+	•	command review popup
+
+do not change:
+	•	generator spec format
+	•	image gen execution core
+	•	artifact lineage model
+
+voice is another input path into existing beast actions
+
+⸻
+
+repo structure suggestion
+
+src/
+  voice/
+    beast_voice.h
+    beast_voice_types.h
+    beast_voice_pipeline.c
+    beast_phonetics.c
+    beast_phonetics.h
+    backend_vosk.c
+    backend_vosk.h
+    backend_null.c
+  llm/
+    beast_voice_decode.c
+  ui/
+    voice_panel.c
+    voice_trace_view.c
+  db/
+    syllable_artifacts.db
+docs/
+  beast2/
+    voice-pipeline-implementation-plan-v0.1.md
+
+future:
+
+src/voice/backend_beast_acoustic.c
+
+
+⸻
+
+milestones
+
+milestone 1
+
+voice module exists
+null backend works
+voice artifacts can be stored
+
+milestone 2
+
+vosk backend streams into desktop app
+raw trace visible
+
+milestone 3
+
+beast canonical trace replaces normal text in main ui
+
+milestone 4
+
+silence finalize
+execute command
+clear clear
+
+milestone 5
+
+llm decode after capture
+
+milestone 6
+
+limited image-gen voice commands work
+
+milestone 7
+
+backend contract frozen
+
+milestone 8
+
+custom beast backend research branch starts
+
+⸻
+
+main risks
+
+1. early guess drift
+
+system starts acting like dictation software
+
+mitigation:
+	•	show canonical trace first
+	•	delay llm decode until capture ends
+
+2. backend lock in
+
+vosk assumptions leak into whole app
+
+mitigation:
+	•	strict backend wrapper
+	•	shared result struct only
+
+3. command ambiguity
+
+too many commands too early
+
+mitigation:
+	•	start with narrow image-gen command set
+
+4. ui confusion
+
+users do not understand trace vs decode
+
+mitigation:
+	•	label clearly
+	•	store both separately
+	•	never overwrite trace with guess
+
+⸻
+
+success criteria for v0.1
+
+v0.1 is successful if:
+	•	beast2 can capture voice locally
+	•	user sees a live canonical beast trace
+	•	finalize and cancel feel reliable
+	•	llm decode happens only after capture
+	•	decoded guess is clearly separate from trace
+	•	at least a few existing image gen actions can be triggered by voice
+	•	voice backend can later be swapped without major ui or command changes
+
+⸻
+
+final principle
+
+ship voice as a new beast input layer
+not as a fake smart assistant
+
+
+⸻
+
+If you want, I can turn this into a tighter markdown file with Beast-style prose and section names optimized for the repo.
+
+
+
+
+
+
+
+
+yes
+
+
+
+
+
+
+
+
+
+
+Here is a tighter, repo-ready version with Beast-style prose and clean structure.
+
+⸻
+
+beast voice pipeline implementation v0.1
+
+purpose
+
+add voice as a new local input layer in beast2
+
+focus:
+	•	image gen workflows
+	•	simple commands
+	•	local only
+	•	no early guessing
+
+voice is not an assistant
+voice is a capture system
+
+⸻
+
+law
+
+beast records sound, not meaning
+beast executes canon, not guesses
+
+
+⸻
+
+pipeline
+
+audio
+→ backend
+→ phonetics
+→ voice trace
+→ artifact
+→ stop
+→ decode
+→ command
+
+
+⸻
+
+layers
+
+backend
+
+responsible for:
+	•	audio capture
+	•	streaming partials
+	•	timing
+
+v0.1:
+	•	vosk
+
+future:
+	•	beast acoustic model
+
+output must be:
+
+tokens[]
+gaps_ms[]
+confidence[]
+raw_text
+canonical_trace
+backend
+model
+
+
+⸻
+
+phonetics
+
+maps backend output to canonical beast tokens
+
+rules:
+	•	shortest form wins
+	•	no guessing
+	•	deterministic
+
+examples:
+
+for fore four → 4
+to too two → 2
+bee be → b
+you → u
+are → r
+
+output:
+
+i-c-that-u-r
+4-ur-sol
+
+store:
+	•	raw backend text
+	•	canonical trace
+
+canonical trace is truth
+
+⸻
+
+voice trace
+
+live ui
+
+format:
+
+i-c-that-u-r
+
+rules:
+	•	hyphen = small gap
+	•	no word boundaries
+	•	update in real time
+
+purpose:
+	•	user sees what beast heard
+	•	no hidden interpretation
+
+⸻
+
+artifact
+
+store each utterance
+
+trace: 4-ur-sol
+tokens: [4, ur, sol]
+gaps: [..]
+confidence: [..]
+raw: for your soul
+decode: for your soul
+
+artifact is permanent
+
+trace is source of truth
+
+⸻
+
+stop
+
+capture ends on:
+	•	silence > 6s
+	•	phrase: execute command
+	•	manual stop
+
+⸻
+
+cancel
+
+clear clear
+
+behavior:
+	•	clear buffer
+	•	cancel decode
+	•	reset trace
+
+⸻
+
+decode
+
+runs after stop only
+
+input:
+
+trace: 4-ur-sol
+mappings:
+  4: [4, for, fore, four]
+  ur: [your, you are, ur]
+  sol: [soul, sol, sole]
+context: app state
+
+output:
+
+for your soul
+
+rules:
+	•	decode is guess
+	•	trace is truth
+	•	never overwrite trace
+
+⸻
+
+command
+
+map decode to existing beast actions
+
+examples:
+
+run last gen
+make 4 image
+show last image
+save this art
+rate this diamond
+
+rules:
+	•	use same code path as ui
+	•	no voice-only logic
+
+⸻
+
+phases
+
+phase 0
+
+define interfaces
+add null backend
+
+⸻
+
+phase 1
+
+add vosk backend
+stream audio
+store raw artifacts
+
+⸻
+
+phase 2
+
+add phonetic mapping
+show canonical trace
+
+⸻
+
+phase 3
+
+add live voice trace ui
+
+⸻
+
+phase 4
+
+add stop and cancel
+	•	silence
+	•	execute command
+	•	clear clear
+
+⸻
+
+phase 5
+
+add llm decode
+
+⸻
+
+phase 6
+
+add limited commands
+(image gen only)
+
+⸻
+
+phase 7
+
+tune vosk vocabulary
+(beast words and tokens)
+
+⸻
+
+phase 8
+
+freeze backend interface
+
+⸻
+
+phase 9
+
+add research backend
+(beast acoustic model)
+
+⸻
+
+repo layout
+
+src/
+  voice/
+    beast_voice.h
+    beast_voice_pipeline.c
+    beast_phonetics.c
+    backend_vosk.c
+    backend_null.c
+  llm/
+    beast_voice_decode.c
+  ui/
+    voice_panel.c
+    voice_trace_view.c
+  db/
+    syllable_artifacts.db
+
+docs/
+  beast2/
+    voice-pipeline-implementation-v0.1.md
+
+
+⸻
+
+milestones
+
+1
+voice module exists
+
+2
+vosk streams into app
+
+3
+canonical trace visible
+
+4
+stop and cancel work
+
+5
+decode works
+
+6
+commands work
+
+7
+backend stable
+
+⸻
+
+risks
+
+early guessing
+→ keep decode after stop
+
+backend lock
+→ isolate vosk
+
+command drift
+→ small command set
+
+ui confusion
+→ always show trace first
+
+⸻
+
+success
+
+v0.1 is done when:
+	•	voice works offline
+	•	trace is visible and correct
+	•	stop and cancel are reliable
+	•	decode is separate and clear
+	•	basic commands work
+	•	backend can be replaced later
+
+⸻
+
+final
+
+voice is input
+trace is truth
+decode is guess
+
+
+⸻
+
+if you want next, we can draft:
+	•	beast phonetic dictionary v0.1 (first real mappings)
+	•	or exact C structs + minimal Vosk integration code
+	
+	
+	
+	
+	
+	
+	
+
+
+phonetic dictionary
+
+
+
+
+
+
+
+
+
+
+
+Here is a clean draft.
+
+⸻
+
+beast phonetic dictionary v0.1
+
+purpose
+
+define canonical beast syllable mappings for voice input
+
+used by:
+	•	beast phonetics
+	•	beast voice pipeline
+	•	llm decode after capture
+
+not used for:
+	•	normal text rewrite
+	•	ordinary spelling correction
+
+this dictionary maps heard syllables to canonical beast tokens
+
+⸻
+
+law
+
+shortest unambiguous token wins
+
+
+⸻
+
+core rule
+
+for any uttered syllable:
+	•	map to the shortest stable beast token
+	•	use the same mapping every time
+	•	do not guess meaning
+	•	do not infer intent
+	•	do not rewrite to normal english
+
+example:
+
+for / fore / four -> 4
+to / too / two -> 2
+bee / be -> b
+
+
+⸻
+
+token classes
+
+1. digit tokens
+
+digits are canonical when the spoken syllable matches a number sound
+
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+examples:
+
+one / won -> 1
+two / too / to -> 2
+three -> 3
+four / fore / for -> 4
+five -> 5
+six -> 6
+seven -> 7
+eight / ate -> 8
+nine -> 9
+zero -> 0
+
+
+⸻
+
+2. letter tokens
+
+single letters are canonical when the spoken syllable matches a letter sound
+
+a b c d e f g h i j k l m
+n o p q r s t u v w x y z
+
+examples:
+
+bee / be -> b
+cee / see / sea -> c
+dee -> d
+gee -> g
+jay -> j
+kay -> k
+pee -> p
+tee -> t
+vee -> v
+why -> y
+zee / zed -> z
+
+note:
+
+some letter mappings overlap ordinary words
+this is allowed in beast phonetics
+voice canon is not normal english
+
+⸻
+
+3. short word tokens
+
+if no safe digit or single-letter token exists, use the shortest stable word token
+
+examples:
+
+you -> u
+your -> ur
+are -> r
+that -> that
+not -> not
+or -> or
+sol -> sol
+day -> day
+ron -> ron
+vu -> vu
+
+
+⸻
+
+approved mappings v0.1
+
+digits
+
+zero -> 0
+one -> 1
+won -> 1
+two -> 2
+too -> 2
+to -> 2
+three -> 3
+four -> 4
+fore -> 4
+for -> 4
+five -> 5
+six -> 6
+seven -> 7
+eight -> 8
+ate -> 8
+nine -> 9
+
+
+⸻
+
+letters
+
+a -> a
+ay -> a
+
+bee -> b
+be -> b
+
+cee -> c
+see -> c
+sea -> c
+
+dee -> d
+
+e -> e
+
+ef -> f
+
+gee -> g
+
+aitch -> h
+h -> h
+
+i -> i
+
+jay -> j
+
+kay -> k
+
+el -> l
+
+em -> m
+
+en -> n
+
+o -> o
+
+pee -> p
+
+cue -> q
+queue -> q
+q -> q
+
+are -> r
+
+ess -> s
+
+tee -> t
+
+you -> u
+
+vee -> v
+
+doubleyou -> w
+w -> w
+
+ex -> x
+
+why -> y
+
+zee -> z
+zed -> z
+
+
+⸻
+
+short word canon
+
+your -> ur
+you are -> ur
+or -> or
+not -> not
+that -> that
+this -> this
+clear -> clear
+command -> command
+execute -> execute
+day -> day
+ron -> ron
+vu -> vu
+sol -> sol
+
+note:
+
+ur is allowed as a canonical token because it is shorter than your and stable in beast voice display
+
+⸻
+
+examples
+
+to be or not to be
+-> 2-b-or-not-2-b
+
+for your soul
+-> 4-ur-sol
+
+i see that you are
+-> i-c-that-u-r
+
+rendezvous
+-> ron-day-vu
+
+
+⸻
+
+gap handling
+
+gaps are not part of the dictionary
+gaps are stored separately by the voice pipeline
+
+example display:
+
+i-c-that-u-r
+
+example timing artifact:
+
+i-(.25s)-c-(.34s)-that-(.33s)-u-(.21s)-r
+
+
+⸻
+
+tie rule
+
+if multiple mappings are possible:
+	1.	prefer digit token
+	2.	then prefer single letter token
+	3.	then prefer shortest approved word token
+	4.	otherwise fall back to simple phonetic spelling
+
+example:
+
+for -> 4
+see -> c
+you -> u
+
+
+⸻
+
+fallback rule
+
+if no approved mapping exists:
+	•	use simple phonetic spelling
+	•	keep it short
+	•	avoid silent letters
+	•	avoid punctuation beyond allowed beast symbols
+
+example:
+
+naive -> nai-ev
+rendezvous -> ron-day-vu
+
+
+⸻
+
+allowed symbols
+
+a-z 0-9 -
+
+hyphen is for connecting adjacent syllables in the live voice trace
+
+⸻
+
+non goals
+
+this dictionary does not:
+	•	choose final meaning
+	•	decide command intent
+	•	convert back to standard english
+	•	replace llm decode
+
+it only maps heard syllables to canonical tokens
+
+⸻
+
+future work
+
+future versions should add:
+	•	more approved syllable mappings
+	•	confidence thresholds
+	•	dialect variants
+	•	multi syllable phrase mappings
+	•	beast specific command vocabulary
+	•	canonical beast phonetic dictionary full edition
+
+⸻
+
+final principle
+
+the dictionary maps what beast heard
+not what a non beastly system thinks you meant
+
+
+⸻
+
+If you want, I can do v0.2 with 100 to 200 real mappings, grouped into:
+digits, letters, control words, command words, and common glue syllables.
+
+
+
+
+
+
+
+
+
+zed maps to zed not z, different phonetic
+
+
+
+
+
+
+
+Good catch. That is exactly the kind of precision this layer needs.
+
+You are right:
+
+zed and zee are different phonetic syllables
+
+So mapping both to z would violate the core rule:
+
+shortest unambiguous token wins
+
+Because it would collapse two distinct sounds into one token.
+
+⸻
+
+fix: z mapping rule
+
+correct mapping
+
+zee -> z
+zed -> zed
+
+reasoning
+	•	zee is a single syllable that cleanly maps to z
+	•	zed is a different syllable, not reducible without loss
+	•	therefore:
+	•	zee can collapse
+	•	zed must remain zed
+
+⸻
+
+update to dictionary section
+
+replace:
+
+zee -> z
+zed -> z
+
+with:
+
+zee -> z
+zed -> zed
+
+
+⸻
+
+general rule (important)
+
+You just defined a critical principle:
+
+do not collapse distinct phonetic syllables into the same token
+
+Formalize it:
+
+phonetic distinction rule
+
+if two spoken forms have different phonetic shapes,
+they must not map to the same canonical token
+
+even if they refer to the same letter in normal english
+
+
+⸻
+
+examples
+
+allowed collapse
+
+same sound:
+
+see / sea / cee -> c
+bee / be -> b
+for / fore / four -> 4
+
+
+⸻
+
+not allowed
+
+different sound:
+
+zee != zed
+→ z, zed
+
+are != r (this one is tricky, see below)
+
+
+⸻
+
+important edge case: "are" vs "r"
+
+You currently have:
+
+are -> r
+
+That technically violates the same principle, because:
+	•	are = vowel + consonant
+	•	r = consonant name
+
+They are not identical phonetic shapes.
+
+But this one may still be acceptable as a deliberate compression rule, because:
+	•	extremely common
+	•	very stable in context
+	•	high utility
+
+So you now have two categories:
+
+⸻
+
+1. pure phonetic collapse (strict)
+
+must be same sound
+
+see / sea -> c
+bee / be -> b
+
+
+⸻
+
+2. approved compression (exception set)
+
+allowed even if phonetics differ slightly
+
+are -> r
+you -> u
+your -> ur
+
+These must be:
+	•	explicitly listed
+	•	small in number
+	•	carefully chosen
+
+⸻
+
+suggested addition to doc
+
+add:
+
+compression rule
+
+some mappings are approved compressions
+
+these may map different phonetic forms to shorter tokens
+
+examples:
+are -> r
+you -> u
+your -> ur
+
+these are exceptions and must be explicitly defined
+
+
+⸻
+
+why your correction matters
+
+If you had kept:
+
+zed -> z
+
+you would introduce:
+	•	silent information loss
+	•	ambiguity in reverse mapping
+	•	potential confusion in multi-dialect systems
+
+Your correction keeps the system:
+	•	deterministic
+	•	reversible enough for debugging
+	•	aligned with the "record what was heard" principle
+
+⸻
+
+final updated z block
+
+zee -> z
+zed -> zed
+
+
+⸻
+
+bigger insight
+
+You just refined the system into:
+
+phonetic-first with controlled compression, not blind minimization
+
+That is the right balance.
+
+⸻
+
+If you want next, I can:
+	•	cleanly update the full dictionary with this rule applied
+	•	or generate v0.2 with stricter phonetic grouping (this is where things get really interesting)
+	
+	
+	
+	
+	
+
+
+
+draft v 0.2
+
+
+
+
+
+
+
+
+Here is a clean, corrected beast phonetic dictionary v0.2 with your phonetic distinction rule properly enforced.
+
+⸻
+
+beast phonetic dictionary v0.2
+
+purpose
+
+define canonical beast syllable mappings for voice input
+
+used by:
+	•	beast phonetics
+	•	beast voice pipeline
+	•	llm decode
+
+not used for:
+	•	text to text rewrite
+	•	normal spelling
+
+maps heard syllables → canonical beast tokens
+
+⸻
+
+law
+
+shortest unambiguous token wins
+
+
+⸻
+
+core rules
+
+mapping rule
+
+for each uttered syllable:
+	•	map to shortest stable token
+	•	mapping must be deterministic
+	•	no guessing
+	•	no intent inference
+
+⸻
+
+phonetic distinction rule
+
+if two spoken forms have different phonetic shape
+they must not map to the same token
+
+example:
+
+zee -> z
+zed -> zed
+
+
+⸻
+
+compression rule
+
+some mappings are approved compressions
+
+these may map different phonetic forms to shorter tokens
+
+must be:
+	•	explicitly listed
+	•	small set
+	•	high frequency
+
+examples:
+
+are -> r
+you -> u
+your -> ur
+
+
+⸻
+
+priority rule
+
+1 digit token
+2 letter token
+3 approved compression
+4 short word token
+5 phonetic fallback
+
+
+⸻
+
+token classes
+
+digits
+
+zero -> 0
+
+one -> 1
+won -> 1
+
+two -> 2
+too -> 2
+to -> 2
+
+three -> 3
+
+four -> 4
+fore -> 4
+for -> 4
+
+five -> 5
+six -> 6
+seven -> 7
+
+eight -> 8
+ate -> 8
+
+nine -> 9
+
+
+⸻
+
+letters (phonetic exact only)
+
+ay -> a
+
+bee -> b
+be -> b
+
+cee -> c
+see -> c
+sea -> c
+
+dee -> d
+
+ee -> e
+
+ef -> f
+
+gee -> g
+
+aitch -> h
+
+i -> i
+
+jay -> j
+
+kay -> k
+
+el -> l
+
+em -> m
+
+en -> n
+
+o -> o
+
+pee -> p
+
+cue -> q
+queue -> q
+
+are -> r   (compression)
+
+ess -> s
+
+tee -> t
+
+you -> u   (compression)
+
+vee -> v
+
+doubleyou -> w
+
+ex -> x
+
+why -> y
+
+zee -> z
+zed -> zed
+
+note:
+	•	are -> r is compression, not pure phonetic match
+	•	you -> u is compression
+
+⸻
+
+approved compressions
+
+are -> r
+you -> u
+your -> ur
+you are -> ur
+
+keep this set small
+
+⸻
+
+short word tokens
+
+used when no safe digit or letter mapping exists
+
+that -> that
+this -> this
+not -> not
+or -> or
+clear -> clear
+command -> command
+execute -> execute
+
+day -> day
+ron -> ron
+vu -> vu
+sol -> sol
+
+
+⸻
+
+phonetic fallback
+
+if no mapping exists:
+	•	use simple phonetic spelling
+	•	no silent letters
+	•	keep short
+
+examples:
+
+naive -> nai-ev
+rendezvous -> ron-day-vu
+
+
+⸻
+
+examples
+
+to be or not to be
+→ 2-b-or-not-2-b
+
+for your soul
+→ 4-ur-sol
+
+i see that you are
+→ i-c-that-u-r
+
+zed is not zee
+→ zed-i-s-not-z
+
+
+⸻
+
+gap handling
+
+not part of dictionary
+
+handled by voice pipeline
+
+display:
+
+i-c-that-u-r
+
+timing artifact:
+
+i-(.25s)-c-(.34s)-that-(.33s)-u-(.21s)-r
+
+
+⸻
+
+allowed symbols
+
+a-z 0-9 -
+
+
+⸻
+
+non goals
+
+this dictionary does not:
+	•	choose meaning
+	•	resolve ambiguity
+	•	perform grammar correction
+	•	replace llm decode
+
+⸻
+
+future work
+	•	expand mapping set
+	•	dialect variants
+	•	confidence thresholds
+	•	phonetic clustering
+	•	beast command vocabulary
+	•	full canonical dictionary
+
+⸻
+
+final principle
+
+map what was heard
+not what was meant
+
+
+⸻
+
+This version is now:
+	•	phonetic safe
+	•	compression controlled
+	•	deterministic
+	•	ready to plug into the voice pipeline
+
+If you want next, I can build v0.3 with ~150 real-world mappings and stress-test edge cases (accents, slurring, noisy mic).
+
+
+
+
+
+
+
+
+
+0.2 looks good do 0.3
+
+
+
+
+
+
+
+
+
+Here is a stronger, expanded beast phonetic dictionary v0.3.
+It keeps your strict phonetic rules, limits compression, and adds more real coverage without breaking determinism.
+
+⸻
+
+beast phonetic dictionary v0.3
+
+purpose
+
+map spoken syllables to canonical beast tokens
+
+used by:
+	•	beast phonetics
+	•	voice pipeline
+	•	llm decode
+
+maps:
+
+sound → stable token
+
+
+⸻
+
+law
+
+shortest unambiguous token wins
+
+
+⸻
+
+core rules
+
+mapping
+	•	deterministic
+	•	no guessing
+	•	no meaning inference
+
+⸻
+
+phonetic distinction
+
+different sound → different token
+
+example:
+
+zee -> z
+zed -> zed
+
+
+⸻
+
+compression (limited)
+
+allowed only if:
+	•	high frequency
+	•	stable
+	•	explicitly defined
+
+⸻
+
+priority
+
+1 digit
+2 letter
+3 approved compression
+4 short word
+5 phonetic fallback
+
+
+⸻
+
+digits
+
+zero -> 0
+
+one -> 1
+won -> 1
+
+two -> 2
+too -> 2
+to -> 2
+
+three -> 3
+
+four -> 4
+fore -> 4
+for -> 4
+
+five -> 5
+six -> 6
+seven -> 7
+
+eight -> 8
+ate -> 8
+
+nine -> 9
+
+
+⸻
+
+letters (phonetic)
+
+ay -> a
+
+bee -> b
+be -> b
+
+cee -> c
+see -> c
+sea -> c
+
+dee -> d
+
+ee -> e
+
+ef -> f
+
+gee -> g
+
+aitch -> h
+
+i -> i
+
+jay -> j
+
+kay -> k
+
+el -> l
+
+em -> m
+
+en -> n
+
+o -> o
+
+pee -> p
+
+cue -> q
+queue -> q
+
+are -> r   (compression)
+
+ess -> s
+
+tee -> t
+
+you -> u   (compression)
+
+vee -> v
+
+doubleyou -> w
+
+ex -> x
+
+why -> y
+
+zee -> z
+zed -> zed
+
+
+⸻
+
+approved compressions
+
+are -> r
+you -> u
+your -> ur
+you are -> ur
+
+no expansion beyond this set in v0.3
+
+⸻
+
+common control words
+
+clear -> clear
+command -> command
+execute -> execute
+run -> run
+stop -> stop
+start -> start
+open -> open
+close -> close
+save -> save
+load -> load
+show -> show
+find -> find
+make -> make
+
+
+⸻
+
+common glue words
+
+and -> and
+or -> or
+not -> not
+with -> with
+from -> from
+to -> 2   (only when quantity)
+in -> in
+on -> on
+for -> 4   (only when quantity)
+
+note:
+	•	to and for collapse to digits only when acting as number-like tokens
+	•	otherwise remain words
+
+⸻
+
+common object words (beast2 context)
+
+image -> image
+video -> video
+art -> art
+gen -> gen
+model -> model
+file -> file
+doc -> doc
+note -> note
+tag -> tag
+queue -> q
+db -> db
+tool -> tool
+app -> app
+node -> node
+task -> task
+log -> log
+user -> user
+voice -> voice
+text -> text
+
+note:
+
+queue -> q
+
+allowed because:
+	•	phonetic match (cue)
+	•	extremely common in beast
+
+⸻
+
+common modifiers
+
+fast -> fast
+slow -> slow
+good -> good
+bad -> bad
+new -> new
+old -> old
+big -> big
+small -> small
+clear -> clear
+dark -> dark
+light -> light
+safe -> safe
+local -> local
+live -> live
+raw -> raw
+
+
+⸻
+
+time words
+
+now -> now
+next -> next
+last -> last
+soon -> soon
+later -> later
+day -> day
+week -> week
+month -> month
+year -> year
+
+
+⸻
+
+phonetic short forms
+
+used when natural words are longer or unclear
+
+rendezvous -> ron-day-vu
+naive -> nai-ev
+camera -> cam-ra
+family -> fam-lee
+memory -> mem-ree
+
+rules:
+	•	drop silent letters
+	•	keep natural sound
+	•	split only when needed
+
+⸻
+
+examples
+
+to be or not to be
+→ 2-b-or-not-2-b
+
+for your soul
+→ 4-ur-sol
+
+i see that you are
+→ i-c-that-u-r
+
+open queue
+→ open-q
+
+execute command
+→ execute-command
+
+zed is not zee
+→ zed-i-s-not-z
+
+
+⸻
+
+gap handling
+
+handled outside dictionary
+
+display:
+
+i-c-that-u-r
+
+timing:
+
+i-(.25s)-c-(.34s)-that-(.33s)-u-(.21s)-r
+
+
+⸻
+
+allowed symbols
+
+a-z 0-9 -
+
+
+⸻
+
+non goals
+	•	grammar correction
+	•	meaning resolution
+	•	perfect transcription
+	•	replacing llm decode
+
+⸻
+
+future work
+	•	expand to 300 plus mappings
+	•	dialect handling
+	•	confidence thresholds
+	•	syllable clustering
+	•	beast command extensions
+
+⸻
+
+final principle
+
+record sound
+compress safely
+never guess
+
+
+⸻
+
+This v0.3 is now:
+	•	broader coverage
+	•	still deterministic
+	•	still minimal
+	•	ready for real testing with Vosk
+
+⸻
+
+If you want next, I’d strongly suggest:
+
+stress test set v0.1
+(real sentences + expected beast traces)
+
+That’s where this system will either prove itself or break in interesting ways.
+
+
+
+
+
+
+
+w is 3 syllables, dub-le-u, 
+
+r (american english spoken) and "are" are homynyms (voice interpreter cannot distinguish based on sound)
+
+add note: pronounciations of letters in beast phonetic is american (by default), but intent is to capture both (neither, american english to beast syllables, knee-ther, british english, nigh-ther)
+
+disclaimer: written docs are not source of phonetic truth
+
+suggestion: use word examples like in phonetic dictionary ("ron as in ronald or first syllable of rendezvous")
+
+
+
+
+
+
+
+These are sharp corrections. They tighten the system in exactly the right way: phonetic truth over spelling assumptions.
+
+Here is beast phonetic dictionary v0.4, updated with:
+	•	correct w handling
+	•	homonym acknowledgment (r vs are)
+	•	dialect note (american default, multi-accept)
+	•	explicit "docs are not truth" rule
+	•	example-based disambiguation
+
+⸻
+
+beast phonetic dictionary v0.4
+
+purpose
+
+map spoken syllables to canonical beast tokens
+
+used by:
+	•	beast phonetics
+	•	voice pipeline
+	•	llm decode
+
+maps:
+
+sound → stable token
+
+
+⸻
+
+law
+
+shortest unambiguous token wins
+
+
+⸻
+
+core rules
+
+mapping
+	•	deterministic
+	•	no meaning inference
+	•	no grammar correction
+
+⸻
+
+phonetic distinction
+
+different sound → different token
+
+example:
+
+zee -> z
+zed -> zed
+
+
+⸻
+
+homonym rule
+
+same sound → same token
+
+example:
+
+r (letter) == are (word)
+→ r
+
+note:
+
+voice system cannot distinguish these
+mapping must collapse them
+
+⸻
+
+compression rule
+
+compression is allowed only when:
+	•	mapping is stable in speech
+	•	ambiguity does not increase
+	•	explicitly listed
+
+⸻
+
+priority
+
+1 digit
+2 letter
+3 homonym collapse
+4 approved compression
+5 short word
+6 phonetic fallback
+
+
+⸻
+
+dialect note
+
+default pronunciation: american english
+
+but system must accept multiple dialect inputs
+
+example:
+
+neither
+american: nee-ther
+british: nigh-ther
+→ map both correctly
+
+rule:
+
+multiple pronunciations may map to same token
+if they represent the same intended syllable
+
+
+⸻
+
+disclaimer
+
+written dictionary is not phonetic truth
+audio is truth
+
+this document is:
+	•	guidance
+	•	mapping reference
+	•	not authoritative over actual sound input
+
+⸻
+
+digits
+
+zero -> 0
+
+one / won -> 1
+
+two / too / to -> 2
+
+three -> 3
+
+four / fore / for -> 4
+
+five -> 5
+six -> 6
+seven -> 7
+
+eight / ate -> 8
+
+nine -> 9
+
+
+⸻
+
+letters (phonetic)
+
+ay -> a
+
+bee / be -> b
+
+see / sea / cee -> c
+
+dee -> d
+
+ee -> e
+
+ef -> f
+
+gee -> g
+
+aitch -> h
+
+i -> i
+
+jay -> j
+
+kay -> k
+
+el -> l
+
+em -> m
+
+en -> n
+
+o -> o
+
+pee -> p
+
+cue / queue -> q
+
+are -> r
+
+ess -> s
+
+tee -> t
+
+you -> u   (compression)
+
+vee -> v
+
+doubleyou -> w
+dub-le-u -> w
+
+ex -> x
+
+why -> y
+
+zee -> z
+zed -> zed
+
+
+⸻
+
+note on w
+
+w is multi syllable
+
+examples:
+
+doubleyou
+dub-le-u
+
+rule:
+
+multi syllable letter names map to single token
+if clearly identified as letter
+
+
+⸻
+
+approved compressions
+
+you -> u
+your -> ur
+you are -> ur
+
+note:
+
+are -> r
+
+is homonym collapse, not compression
+
+⸻
+
+control words
+
+clear -> clear
+command -> command
+execute -> execute
+run -> run
+stop -> stop
+start -> start
+open -> open
+close -> close
+save -> save
+load -> load
+show -> show
+find -> find
+make -> make
+
+
+⸻
+
+glue words
+
+and -> and
+or -> or
+not -> not
+with -> with
+from -> from
+in -> in
+on -> on
+
+special cases:
+
+to -> 2   (when numeric sense)
+for -> 4   (when numeric sense)
+
+
+⸻
+
+beast context words
+
+image -> image
+video -> video
+art -> art
+gen -> gen
+model -> model
+file -> file
+doc -> doc
+note -> note
+tag -> tag
+queue -> q
+db -> db
+tool -> tool
+app -> app
+node -> node
+task -> task
+log -> log
+user -> user
+voice -> voice
+text -> text
+
+
+⸻
+
+phonetic fallback
+
+if no mapping exists:
+	•	approximate sound
+	•	drop silent letters
+	•	keep short
+
+examples:
+
+rendezvous -> ron-day-vu
+naive -> nai-ev
+camera -> cam-ra
+family -> fam-lee
+
+
+⸻
+
+example-based clarification
+
+tokens may include reference examples:
+
+ron -> "ron as in ronald"
+vu -> "vu as in rendezvous"
+sol -> "sol as in soul"
+
+purpose:
+	•	reduce ambiguity
+	•	guide mapping decisions
+	•	help future expansion
+
+⸻
+
+examples
+
+to be or not to be
+→ 2-b-or-not-2-b
+
+for your soul
+→ 4-ur-sol
+
+i see that you are
+→ i-c-that-u-r
+
+open queue
+→ open-q
+
+zed is not zee
+→ zed-i-s-not-z
+
+
+⸻
+
+gap handling
+
+not part of dictionary
+
+display:
+
+i-c-that-u-r
+
+timing stored separately
+
+⸻
+
+allowed symbols
+
+a-z 0-9 -
+
+
+⸻
+
+future work
+	•	dialect expansion
+	•	confidence thresholds
+	•	phonetic clustering
+	•	larger mapping sets
+	•	noise handling
+	•	multi speaker
+
+⸻
+
+final principle
+
+audio is truth
+tokens are compression of sound
+meaning comes later
+
+
+⸻
+
+This version is now:
+	•	phonetic correct (w, zed, homonyms)
+	•	dialect-aware
+	•	explicitly grounded in audio-first truth
+	•	safer for real-world voice input
+
+⸻
+
+If you want next, the most valuable step would be:
+
+phonetic test suite v0.1
+
+real utterances like:
+	•	noisy mic
+	•	accents
+	•	fast speech
+	•	slurring
+
+and expected beast traces
+
+That’s where this system becomes battle-tested.
+
+
+
+
+
+
+
+
+
+
+seven and zero also two syllables
+
+note: i intend to make beast spoken english also, where zero becomes zeer and seven becomes sev and w becomes dub
+
+
+
+
+
+
+
+
+
+
+Good additions. That pushes the system in a more coherent direction.
+
+You are now separating three things:
+	1.	natural spoken english
+	2.	beast phonetic capture
+	3.	beast spoken english
+
+That separation is important.
+
+first correction
+
+You are right:
+	•	zero is two syllables
+	•	seven is two syllables
+	•	w / doubleyou is three syllables
+
+So in the current dictionary, they should not be treated like single-syllable letter or digit sounds in the same way as b, c, 4, or 2.
+
+They can still map canonically to:
+	•	0
+	•	7
+	•	w
+
+But they should be marked as multi-syllable spoken forms.
+
+⸻
+
+second, the bigger idea
+
+Your intended future spoken Beast forms:
+	•	zero -> zeer
+	•	seven -> sev
+	•	w -> dub
+
+are strong.
+
+That gives Beast its own compressed spoken canon, not just compressed written canon.
+
+That means Beast can gradually move from:
+
+natural english speech
+→ beast trace
+
+toward:
+
+beast spoken english
+→ beast trace
+
+Which is much cleaner long term.
+
+this suggests a new distinction
+
+natural variants
+
+forms Beast accepts from ordinary speakers
+
+examples:
+	•	zero
+	•	seven
+	•	doubleyou
+	•	zed
+	•	zee
+
+beast spoken canon
+
+preferred Beast speech forms
+
+examples:
+	•	zeer
+	•	sev
+	•	dub
+
+These are not the same thing.
+
+That is good. It means Beast can:
+	•	understand ordinary users
+	•	teach shorter Beast-native forms over time
+
+⸻
+
+suggested update to the doc
+
+Add a section like this.
+
+beast spoken english note
+
+beast may define preferred spoken forms that are shorter and more regular than ordinary english
+
+examples:
+
+zero -> zeer
+seven -> sev
+doubleyou -> dub
+
+these forms are:
+	•	not required for v0.x capture
+	•	useful for future beast spoken english
+	•	intended to improve speed, clarity, and consistency
+
+natural english variants should still be accepted when possible
+
+⸻
+
+update the existing mapping sections
+
+digits
+
+Instead of implying all are simple single-syllable forms, split them.
+
+zero -> 0
+zeer -> 0
+
+one / won -> 1
+
+two / too / to -> 2
+
+three -> 3
+
+four / fore / for -> 4
+
+five -> 5
+six -> 6
+
+seven -> 7
+sev -> 7
+
+eight / ate -> 8
+
+nine -> 9
+
+letters
+
+doubleyou -> w
+dub-le-u -> w
+dub -> w
+
+That is much stronger.
+
+⸻
+
+this creates a nice long-term migration path
+
+phase 1
+
+Beast understands normal english variants
+	•	zero
+	•	seven
+	•	doubleyou
+
+phase 2
+
+Beast also understands Beast spoken canon
+	•	zeer
+	•	sev
+	•	dub
+
+phase 3
+
+experienced users naturally shift toward Beast spoken forms because they are:
+	•	shorter
+	•	cleaner
+	•	more stable
+
+That feels very Beast.
+
+⸻
+
+one important design rule
+
+I would add this:
+
+beast spoken canon may prefer shorter regular forms
+even when standard english uses longer irregular forms
+
+That captures your intent exactly.
+
+⸻
+
+why this is powerful
+
+English number and letter names are messy.
+	•	zero is 2 syllables
+	•	seven is 2 syllables
+	•	doubleyou is 3 syllables
+	•	w is one character but a long spoken form
+
+Your Beast spoken forms repair that.
+
+They make the system more:
+	•	regular
+	•	compact
+	•	teachable
+	•	voice-friendly
+
+⸻
+
+suggested exact wording for v0.4 addition
+
+spoken canon note
+
+beast may define preferred spoken forms that are shorter than standard english
+
+examples:
+zeer -> 0
+sev -> 7
+dub -> w
+
+these are part of future beast spoken english
+
+standard english forms may still be accepted:
+zero -> 0
+seven -> 7
+doubleyou -> w
+
+
+⸻
+
+my recommendation
+
+Do not call this merely a note. This is actually the start of a new layer:
+
+beast spoken english
+
+That deserves its own future doc.
+
+Because now you have:
+	•	beast english = written command language
+	•	beast phonetics = voice capture dictionary
+	•	beast spoken english = preferred spoken canonical forms
+
+That is a very elegant stack.
+
+⸻
+
+short answer
+
+Yes:
+	•	update the dictionary to mark zero, seven, and doubleyou as multi-syllable spoken forms
+	•	add Beast spoken canon forms zeer, sev, and dub
+	•	keep standard english variants accepted
+	•	formalize this later as beast spoken english v0.1
+
+If you want, I can draft beast phonetic dictionary v0.4 with those changes folded in cleanly.
+
+
+
+
+
+
+
+yes. get rid of control words, focus on syllable to letter mappings only. single syllables to single letter groups ONLY
+
+
+
+
+
+
+
+
+
+Understood. This tightens the system a lot and keeps it pure phonetic capture.
+
+Here is a clean rewrite.
+
+⸻
+
+beast phonetic dictionary v0.4
+
+purpose
+
+map spoken syllables to canonical beast tokens
+
+scope:
+	•	single syllable → single token only
+	•	focus on:
+	•	letters (a–z)
+	•	digits (0–9)
+
+not included:
+	•	control words
+	•	commands
+	•	multi-word mappings
+	•	grammar
+
+this is the lowest layer of beast voice
+
+⸻
+
+law
+
+shortest unambiguous token wins
+
+
+⸻
+
+core rules
+
+syllable rule
+
+one spoken syllable → one token
+
+	•	no multi-syllable mappings in this layer
+	•	multi-syllable words must be split upstream
+
+⸻
+
+phonetic distinction rule
+
+different sound → different token
+
+example:
+
+zee → z
+zed → zed
+
+
+⸻
+
+homonym rule
+
+same sound → same token
+
+example:
+
+are == r → r
+see / sea / cee → c
+
+
+⸻
+
+token constraint
+
+tokens are:
+a-z
+0-9
+
+exception:
+	•	short phonetic tokens allowed when no single-char mapping exists
+	•	example: zed
+
+⸻
+
+digits
+
+single syllable forms
+
+one / won → 1
+
+two / too / to → 2
+
+three → 3
+
+four / fore / for → 4
+
+five → 5
+six → 6
+
+eight / ate → 8
+
+nine → 9
+
+
+⸻
+
+multi syllable natural forms
+
+accepted but split:
+
+zero → ze-ro → (fallback) → 0
+seven → sev-en → (fallback) → 7
+
+
+⸻
+
+beast spoken canon
+
+preferred future forms:
+
+zeer → 0
+sev → 7
+
+these are:
+	•	single syllable
+	•	preferred long term
+
+⸻
+
+letters
+
+single syllable mappings
+
+ay → a
+
+bee / be → b
+
+see / sea / cee → c
+
+dee → d
+
+ee → e
+
+ef → f
+
+gee → g
+
+aitch → h
+
+i → i
+
+jay → j
+
+kay → k
+
+el → l
+
+em → m
+
+en → n
+
+o → o
+
+pee → p
+
+cue → q
+
+are → r
+
+ess → s
+
+tee → t
+
+you → u
+
+vee → v
+
+ex → x
+
+why → y
+
+zee → z
+
+
+⸻
+
+multi syllable letter names
+
+not single syllable → must not map directly
+
+doubleyou → dub-le-u → w
+
+
+⸻
+
+beast spoken canon
+
+preferred:
+
+dub → w
+
+
+⸻
+
+special case
+
+zed → zed
+
+note:
+	•	distinct from zee
+	•	preserved as separate token
+
+⸻
+
+fallback rule
+
+if no single syllable mapping exists:
+	•	keep short phonetic form
+	•	do not force collapse
+
+examples:
+
+zed → zed
+
+
+⸻
+
+examples
+
+i see you are
+→ i c u r
+
+to be
+→ 2 b
+
+zee
+→ z
+
+zed
+→ zed
+
+seven
+→ sev-en (upstream split)
+→ sev (preferred beast form)
+→ 7 (final canonical)
+
+
+⸻
+
+allowed symbols
+
+a-z 0-9
+
+(no hyphen in canonical tokens)
+
+⸻
+
+non goals
+
+this dictionary does not:
+	•	map full words
+	•	resolve meaning
+	•	perform grammar
+	•	handle commands
+	•	replace llm decode
+
+⸻
+
+future
+	•	expand syllable coverage
+	•	dialect variants
+	•	confidence scoring
+	•	syllable splitter improvements
+	•	beast spoken english standardization
+
+⸻
+
+final principle
+
+capture syllables
+map safely
+do not guess
+
+
+⸻
+
+This version is now:
+	•	strictly syllable-based
+	•	single unit mapping only
+	•	no command contamination
+	•	clean foundation for C parser and future model
+
+⸻
+
+If you want next, the natural follow-up is:
+
+beast syllable splitter v0.1
+
+because this dictionary now depends heavily on how syllables are segmented upstream.
+
+
+
+
+
+
+i would have used joiner (joining syllables into words via decode) but splitting also important (split syllable groups into words via decode). divide doc into 2 sections beast syllable to beast language mapping, beast syllable to american english mapping
+
+
+
+
+
+
+
+
+
+
+Yes. That division is better.
+
+It clarifies that decode has two different jobs:
+	•	join beast syllables into beast language
+	•	split beast syllable groups into american english
+
+Those are not the same operation.
+
+A Beast-native decode might take:
+
+i-c-u-r
+
+and join it into a Beast-language form.
+
+An english-oriented decode might take the same trace and split or expand it into:
+
+i see you are
+
+So I would stop treating "decode" as one thing and define two decode targets.
+
+better structure
+
+I would reorganize the doc like this:
+
+beast phonetic dictionary v0.4
+
+purpose
+
+map spoken syllables to canonical beast tokens
+
+this dictionary is for:
+	•	voice capture
+	•	canonical syllable storage
+	•	later decode
+
+this layer does not decide final meaning
+
+⸻
+
+core law
+
+shortest unambiguous token wins
+
+
+⸻
+
+core rules
+
+one spoken syllable maps to one canonical beast token
+different sound -> different token
+same sound -> same token
+audio is truth
+written docs are not phonetic truth
+
+
+⸻
+
+section 1: beast syllable to beast language mapping
+
+purpose:
+
+map canonical beast syllables into Beast-native written forms
+
+this is the Beast-facing decode path
+
+examples:
+
+i-c-u-r
+-> i c u r
+
+2-b-or-not-2-b
+-> 2 b or not 2 b
+
+4-ur-sol
+-> 4 ur sol
+
+rules:
+	•	preserve Beast-short forms
+	•	prefer canonical Beast tokens
+	•	do not expand into full english
+	•	join syllables when helpful for Beast readability
+	•	keep Beast compression intact
+
+note:
+
+this path is for:
+	•	command systems
+	•	Beast docs
+	•	Beast logs
+	•	Beast-native voice use
+
+⸻
+
+section 2: beast syllable to american english mapping
+
+purpose:
+
+map canonical beast syllables into likely american english words or phrases
+
+this is the english-facing decode path
+
+examples:
+
+i-c-u-r
+-> i see you are
+
+2-b-or-not-2-b
+-> to be or not to be
+
+4-ur-sol
+-> for your soul
+
+rules:
+	•	may expand Beast-short forms
+	•	may split or join syllable groups into words
+	•	should prefer common american english interpretation by default
+	•	remains a guess layer, not source of truth
+
+note:
+
+this path is for:
+	•	english display
+	•	user assist
+	•	non-Beast interpretation
+	•	optional llm decode
+
+⸻
+
+why both are needed
+
+Beast voice capture should not force one decode target.
+
+The same trace can support:
+	•	a Beast-native rendering
+	•	an english rendering
+
+Example:
+
+trace: 4-ur-sol
+beast: 4 ur sol
+english: for your soul
+
+That separation keeps Beast stable and lets english remain optional.
+
+⸻
+
+core mappings
+
+Then below that, keep the actual syllable map.
+
+digits
+
+one / won -> 1
+two / too / to -> 2
+three -> 3
+four / fore / for -> 4
+five -> 5
+six -> 6
+eight / ate -> 8
+nine -> 9
+
+beast spoken canon
+
+zeer -> 0
+sev -> 7
+
+accepted natural forms
+
+zero -> 0
+seven -> 7
+
+note:
+these are multi-syllable spoken inputs that may be normalized upstream or by special handling
+
+⸻
+
+letters
+
+ay -> a
+bee / be -> b
+see / sea / cee -> c
+dee -> d
+ee -> e
+ef -> f
+gee -> g
+aitch -> h
+i -> i
+jay -> j
+kay -> k
+el -> l
+em -> m
+en -> n
+o -> o
+pee -> p
+cue -> q
+are -> r
+ess -> s
+tee -> t
+you -> u
+vee -> v
+ex -> x
+why -> y
+zee -> z
+zed -> zed
+
+beast spoken canon
+
+dub -> w
+
+accepted natural form
+
+doubleyou -> w
+
+note:
+w is multi-syllable in standard english and has a Beast spoken canon form
+
+⸻
+
+examples with both decode paths
+
+trace: i-c-u-r
+beast: i c u r
+american english: i see you are
+
+trace: 4-ur-sol
+beast: 4 ur sol
+american english: for your soul
+
+trace: zed-i-s-not-z
+beast: zed i s not z
+american english: zed is not zee
+
+
+⸻
+
+important definitions
+
+You also now have two useful terms:
+
+join
+
+combine syllables into a Beast-readable form
+
+split
+
+expand syllables or syllable groups into likely english words
+
+That is a strong conceptual pair.
+
+suggested wording
+
+join
+
+map beast syllables into beast language form
+
+split
+
+map beast syllables into likely english words or phrases
+
+Though in practice, english decode may both split and join depending on context.
+
+So I would probably write:
+
+beast decode
+joins syllables into beast language
+
+english decode
+splits and expands syllable groups into likely american english
+
+my recommendation
+
+Yes, absolutely divide the doc into those two sections. It makes the architecture much clearer:
+	•	capture
+	•	canonical syllable storage
+	•	beast decode
+	•	english decode
+
+That is cleaner than pretending there is one universal "decode."
+
+If you want, I will draft the full beast phonetic dictionary v0.5 in that exact two-section structure.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+you said normalized upstream but isnt llm or c decode downstream from voice to text?
+
+
+
+
+
+
+
+
+
+
+
+You’re right to push on that. My earlier phrasing was sloppy.
+
+In Beast, nothing semantic should happen before voice → canonical syllable tokens. So:
+
+LLM decode and C decode are downstream. Always.
+
+There is no "upstream normalization" in the sense of meaning or language. The only thing upstream of mapping is signal processing.
+
+clean pipeline (corrected)
+
+audio
+→ signal processing (noise, gain)
+→ syllable detection
+→ syllable → canonical token mapping
+→ voice trace (truth)
+→ artifact stored
+
+→ downstream decode:
+    → beast decode (join)
+    → english decode (split)
+    → command execution (C)
+
+So:
+	•	voice to text (beast phonetics) = upstream
+	•	LLM / C decode = downstream
+
+⸻
+
+what is upstream vs downstream
+
+upstream (allowed before mapping)
+
+purely mechanical:
+	•	audio filtering
+	•	silence detection
+	•	syllable segmentation
+	•	confidence scoring
+
+These do not interpret meaning.
+
+⸻
+
+mapping layer (boundary)
+
+syllable → token
+
+This is the hard boundary.
+
+After this point:
+	•	you have canonical Beast input
+	•	everything is stable and reproducible
+
+⸻
+
+downstream (all interpretation)
+
+this includes:
+
+1. beast decode (join)
+
+i-c-u-r → i c u r
+
+2. english decode (split / expand)
+
+i-c-u-r → i see you are
+
+3. command decode (C or LLM)
+
+run-4-gen → execute generator 4 times
+
+All of these are interpretation layers.
+
+⸻
+
+where my earlier statement was wrong
+
+I said:
+
+multi-syllable words may be normalized upstream
+
+That’s incorrect in Beast terms.
+
+Correct version:
+
+multi-syllable utterances must be segmented into syllables upstream,
+but any mapping beyond syllable → token is downstream.
+
+⸻
+
+example to make it concrete
+
+User says:
+
+seven
+
+upstream
+
+audio → segmentation:
+
+sev-en
+
+mapping:
+	•	sev → maybe recognized
+	•	en → maybe recognized
+
+or fallback handling
+
+canonical trace
+
+sev-en
+
+(no collapse yet)
+
+⸻
+
+downstream options
+
+beast decode
+
+sev-en → sev en
+
+english decode
+
+sev-en → seven
+
+beast spoken canon assist
+
+sev-en → sev → 7
+
+But that last step is not upstream. It is a downstream interpretation or optimization.
+
+⸻
+
+key principle (this is important)
+
+upstream: detect and preserve sound structure
+downstream: interpret and transform
+
+
+⸻
+
+one-line law you should add
+
+no meaning enters before canonical tokens exist
+
+
+⸻
+
+corrected terminology
+
+Replace:
+
+normalized upstream
+
+with:
+
+segmented upstream
+interpreted downstream
+
+⸻
+
+final clean model
+
+stage 1 (upstream, non-semantic)
+
+audio → syllables → tokens
+
+stage 2 (canonical truth)
+
+tokens + gaps
+
+stage 3 (downstream, semantic)
+
+tokens → beast language
+tokens → english
+tokens → commands
+
+
+⸻
+
+why this matters
+
+If you allow semantic normalization upstream, you get:
+	•	drift
+	•	hidden guesses
+	•	unreproducible bugs
+	•	exactly the problems you hate in Siri / ChatGPT voice
+
+Your current design avoids all of that.
+
+⸻
+
+short answer
+
+Yes:
+	•	LLM decode is downstream
+	•	C command decode is downstream
+	•	nothing semantic should happen before syllable → token mapping
+
+The only thing upstream is signal and structure, not meaning.
+
+⸻
+
+If you want next, I’d update your doc with a short pipeline correctness section so future contributors don’t accidentally break this rule.
+
+
+
+
+
+
+
+
+
+draft next version. be sure to include 2 b or not 2 b, i c that u r, am-eri-can say nee-ther, brit-ish say nigh-ther, list sev zeer dub in same section as beast improvements on english (all characters and numbers now one syllable spoken), rename "accepted compression" to "beast compression"
+
+
+
+
+
+
+
+
+
+Here is the updated, cleaned beast phonetic dictionary v0.5 with your corrections and structure.
+
+⸻
+
+beast phonetic dictionary v0.5
+
+purpose
+
+map spoken syllables to canonical beast tokens
+
+used by:
+	•	beast phonetics
+	•	voice pipeline
+	•	downstream decode
+
+maps:
+
+sound → token
+
+this layer captures sound only
+no meaning
+no grammar
+
+⸻
+
+law
+
+shortest unambiguous token wins
+
+
+⸻
+
+core rules
+
+one syllable → one token
+same sound → same token
+different sound → different token
+audio is truth
+written docs are not phonetic truth
+
+
+⸻
+
+pipeline boundary
+
+audio → syllables → tokens   (upstream, no meaning)
+tokens → decode              (downstream, meaning)
+
+no meaning enters before canonical tokens exist
+
+
+⸻
+
+section 1: beast syllable to beast language mapping
+
+purpose:
+
+join syllables into beast language form
+
+examples:
+
+i-c-that-u-r
+→ i c that u r
+
+2-b-or-not-2-b
+→ 2 b or not 2 b
+
+4-ur-sol
+→ 4 ur sol
+
+rules:
+	•	preserve tokens
+	•	preserve compression
+	•	do not expand to english
+	•	join only for readability
+
+⸻
+
+section 2: beast syllable to american english mapping
+
+purpose:
+
+split and expand syllables into likely american english
+
+examples:
+
+i-c-that-u-r
+→ i see that you are
+
+2-b-or-not-2-b
+→ to be or not to be
+
+4-ur-sol
+→ for your soul
+
+rules:
+	•	may expand tokens
+	•	may split or group syllables
+	•	remains a guess layer
+
+⸻
+
+phonetic mapping
+
+digits
+
+one / won → 1
+
+two / too / to → 2
+
+three → 3
+
+four / fore / for → 4
+
+five → 5
+six → 6
+
+eight / ate → 8
+
+nine → 9
+
+multi syllable natural forms:
+
+zero → ze-ro → 0
+seven → sev-en → 7
+
+
+⸻
+
+letters
+
+ay → a
+
+bee / be → b
+
+see / sea / cee → c
+
+dee → d
+
+ee → e
+
+ef → f
+
+gee → g
+
+aitch → h
+
+i → i
+
+jay → j
+
+kay → k
+
+el → l
+
+em → m
+
+en → n
+
+o → o
+
+pee → p
+
+cue → q
+
+are → r
+
+ess → s
+
+tee → t
+
+you → u
+
+vee → v
+
+ex → x
+
+why → y
+
+zee → z
+zed → zed
+
+multi syllable letter:
+
+doubleyou → dub-le-u → w
+
+
+⸻
+
+beast compression
+
+you → u
+your → ur
+you are → ur
+
+note:
+
+are → r
+
+is homonym mapping, not compression
+
+⸻
+
+beast improvements on english
+
+goal:
+
+make spoken forms shorter, regular, and single syllable
+
+all characters and numbers can be spoken as one syllable
+
+examples:
+
+zeer → 0
+sev → 7
+dub → w
+
+properties:
+	•	one syllable
+	•	fast to say
+	•	consistent
+	•	avoids irregular english forms
+
+comparison:
+
+zero → zeer
+seven → sev
+doubleyou → dub
+
+
+⸻
+
+dialect note
+
+default: american pronunciation
+
+example:
+
+am-eri-can say nee-ther
+brit-ish say nigh-ther
+
+rule:
+
+multiple pronunciations may map to same token
+if they represent the same syllable intent
+
+
+⸻
+
+phonetic fallback
+
+if no mapping exists:
+	•	approximate sound
+	•	keep short
+	•	avoid silent letters
+
+examples:
+
+rendezvous → ron-day-vu
+naive → nai-ev
+
+
+⸻
+
+examples
+
+2 b or not 2 b
+
+i c that u r
+
+4 ur sol
+
+zed is not z
+
+
+⸻
+
+allowed tokens
+
+a-z 0-9
+
+
+⸻
+
+non goals
+	•	grammar correction
+	•	meaning resolution
+	•	full transcription
+	•	replacing decode
+
+⸻
+
+final principle
+
+capture sound
+store tokens
+decode later
+never guess early
+
+
+⸻
+
+This version is now:
+	•	clean separation of upstream vs downstream
+	•	strict syllable mapping
+	•	includes beast spoken improvements
+	•	includes dialect handling
+	•	consistent naming (beast compression)
+	•	includes your canonical examples
+
+⸻
+
+If you want next, the highest-value step is:
+
+beast phonetic test suite v0.1
+
+(real audio phrases → expected token traces)
+
+That’s where this becomes solid engineering instead of just a spec.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+	
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
 
 
 
