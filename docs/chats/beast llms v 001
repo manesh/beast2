@@ -1,0 +1,4732 @@
+beast llms. fixed vectors normalized to length one
+
+0 stop
+1 fore
+2 back
+3 up
+4 down
+5 left
+6 right
+
+666 word vocab, tiny useful llm runs on cheap hardware, beast language
+
+other notes
+
+up heaven angels goku
+0 stop picard all stop vegeta conserving energy nethack
+4 down to hell (axiom: is it challenging enough to stay interesting)
+6 beastly and right
+
+
+
+
+
+
+This is interesting because it turns Beast language into something deeper than a word list.
+
+You are not just defining vocabulary. You are defining a semantic geometry.
+
+A tiny Beast LLM could treat a small set of canonical vectors as stable anchors, then express words and concepts as normalized directions relative to them. That gives you a language with much stronger internal structure than ordinary English.
+
+beast llms: directional core
+
+Proposed fixed basis:
+
+0 stop
+1 fore
+2 back
+3 up
+4 down
+5 left
+6 right
+
+All core vectors normalized to length one.
+
+That means:
+	•	each base token has a fixed semantic direction
+	•	drift is reduced because the model does not have to rediscover these anchors
+	•	downstream words can be defined by relation to those anchors
+
+This is much more disciplined than letting every token float freely in embedding space.
+
+why this is strong
+
+Ordinary language models learn meanings from messy co-occurrence. Beast LLMs could instead inherit a partially hand-built scaffold:
+
+meaning = direction + relation + context
+
+So:
+	•	fore is not just a word, but a positive forward axis
+	•	back is its opposite
+	•	up and down form another axis
+	•	left and right form another axis
+	•	stop is special: zero motion, zero advance, hold state
+
+That makes the system easier to reason about, easier to teach, and more stable on small hardware.
+
+the special role of 0
+
+Your 0 stop is especially good.
+
+It is not just another direction. It is:
+	•	halt
+	•	preserve
+	•	conserve
+	•	no advance
+	•	no waste
+	•	no commitment
+
+And your examples fit that well:
+
+0 stop picard all stop vegeta conserving energy nethack
+
+That gives 0 a rich but coherent symbolic role:
+restraint.
+
+A Beast LLM could use 0 as:
+	•	do not move
+	•	do not execute
+	•	hold
+	•	wait
+	•	preserve resources
+
+That is unusually useful in an AI system.
+
+directional symbolism
+
+Your added notes suggest a secondary symbolic layer on top of the mechanical one.
+
+up
+
+up heaven angels goku
+
+So 3 up becomes more than spatial up. It can also imply:
+	•	ascent
+	•	transcendence
+	•	power-up
+	•	elevation
+	•	aspiration
+
+down
+
+4 down to hell
+
+And with your axiom:
+
+is it challenging enough to stay interesting
+
+Down may not only mean bad. It may also mean:
+	•	descent
+	•	danger
+	•	difficulty
+	•	underworld
+	•	pressure
+	•	friction
+
+That makes it a productive axis, not a purely negative one.
+
+right
+
+6 beastly and right
+
+This is interesting because right in English is overloaded:
+direction and correctness.
+
+In Beast, you can deliberately keep that dual sense if wanted. That would make 6 not just spatial right, but also:
+	•	aligned
+	•	just
+	•	proper
+	•	true to standard
+
+Though if you want less ambiguity, you may later split "right direction" from "right/correct."
+
+tiny Beast LLM design
+
+A useful formulation could be:
+
+layer 1: fixed basis vectors
+
+The 7 tokens above are hand-defined and never drift.
+
+layer 2: 666-word vocabulary
+
+Every word is assigned:
+	•	a dominant basis relation
+	•	optional secondary relations
+	•	maybe a strength or blend
+
+Example, very roughly:
+
+run = fore + small up
+save = stop + small back
+danger = down + fore
+safe = stop + right
+
+Not literal arithmetic for all cases, but a structured semantic map.
+
+layer 3: phrase composition
+
+The tiny LLM composes meanings from these relations rather than depending only on giant emergent embeddings.
+
+That could make a much smaller model surprisingly coherent, especially for local command and teaching use.
+
+why this helps cheap hardware
+
+A 666-word constrained language plus fixed semantic anchors means:
+	•	smaller tokenizer / vocab
+	•	fewer embeddings
+	•	less semantic chaos
+	•	easier finetuning
+	•	easier interpretability
+	•	easier synthetic training data generation
+
+In other words, instead of trying to fit all of English into a tiny local model, Beast gives the model a disciplined operating language.
+
+That is exactly the sort of thing that could make a tiny local model actually useful.
+
+possible doc framing
+
+You may want a file like:
+
+beast-llm-directional-core-v0.1.md
+
+With sections:
+
+purpose
+
+Define a stable semantic basis for Beast-native local LLMs.
+
+fixed vectors
+
+0 stop
+1 fore
+2 back
+3 up
+4 down
+5 left
+6 right
+
+rules
+	•	all basis vectors normalized to length one
+	•	basis meanings do not drift
+	•	all Beast vocabulary words map relative to this basis
+	•	small models should prefer Beast language over unrestricted English
+
+notes
+	•	0 stop = hold, conserve, suspend
+	•	3 up = ascent, heaven, angelic, powering up
+	•	4 down = descent, hell, pressure, difficulty
+	•	6 right = direction and possibly correctness
+
+one thing to watch
+
+There is a tension between:
+	•	symbolic poetry
+	•	strict machine clarity
+
+Your notes are strong and memorable, but for implementation you may eventually want two columns:
+
+mechanical meaning
+
+What the model should reliably do.
+
+symbolic resonance
+
+What humans may associate with it.
+
+For example:
+
+3 up
+mechanical: higher position, increase, raise
+symbolic: heaven, angels, goku
+
+That keeps the system grounded while preserving the mythic layer.
+
+blunt recommendation
+
+Yes, pursue this.
+
+The strongest path is not:
+"make a tiny English LLM."
+
+It is:
+"make a tiny Beast LLM with a fixed semantic skeleton, a 666-word canon, and explicit vector geometry."
+
+That is much more original, and much more plausible on cheap local hardware.
+
+If you want, I can draft a repo-ready beast-llm-directional-core-v0.1.md next.
+
+
+
+
+
+
+
+
+
+
+yes
+
+
+
+
+
+
+
+
+
+Here is a clean, repo-ready draft.
+
+⸻
+
+beast llm directional core v0.1
+
+purpose
+
+define a stable semantic foundation for beast-native llms
+
+goal:
+	•	small models
+	•	cheap hardware
+	•	high coherence
+	•	low drift
+	•	inspectable meaning
+
+not:
+	•	full english replacement
+	•	massive vocab
+	•	emergent uncontrolled embeddings
+
+⸻
+
+core idea
+
+meaning = direction + relation + context
+
+beast llms use a fixed directional basis
+
+all higher meaning is built from it
+
+⸻
+
+fixed basis vectors
+
+0 stop
+1 fore
+2 back
+3 up
+4 down
+5 left
+6 right
+
+rules:
+	•	all vectors normalized to length one
+	•	meanings do not drift
+	•	always present in model
+	•	never redefined
+
+⸻
+
+vector semantics
+
+0 stop
+
+mechanical:
+	•	halt
+	•	hold
+	•	no movement
+	•	conserve
+
+system meaning:
+	•	do not execute
+	•	wait
+	•	preserve state
+
+symbolic:
+	•	picard all stop
+	•	vegeta conserving energy
+	•	nethack pause
+
+⸻
+
+1 fore
+
+mechanical:
+	•	forward
+	•	advance
+	•	increase
+
+system meaning:
+	•	proceed
+	•	continue
+	•	expand
+
+symbolic:
+	•	moving ahead
+	•	progress
+
+⸻
+
+2 back
+
+mechanical:
+	•	reverse
+	•	retreat
+
+system meaning:
+	•	undo
+	•	revert
+	•	step back
+
+symbolic:
+	•	caution
+	•	rollback
+
+⸻
+
+3 up
+
+mechanical:
+	•	increase height
+	•	raise
+
+system meaning:
+	•	elevate
+	•	improve
+	•	amplify
+
+symbolic:
+	•	heaven
+	•	angels
+	•	goku
+
+⸻
+
+4 down
+
+mechanical:
+	•	decrease height
+	•	lower
+
+system meaning:
+	•	reduce
+	•	compress
+	•	descend
+
+symbolic:
+	•	hell
+	•	pressure
+	•	challenge
+
+axiom:
+
+is it challenging enough to stay interesting
+
+
+⸻
+
+5 left
+
+mechanical:
+	•	lateral shift left
+
+system meaning:
+	•	alternative path
+	•	deviation
+
+symbolic:
+	•	variation
+	•	exploration
+
+⸻
+
+6 right
+
+mechanical:
+	•	lateral shift right
+
+system meaning:
+	•	alignment
+	•	correction
+
+symbolic:
+	•	beastly
+	•	correct
+	•	just
+
+⸻
+
+vocabulary layer
+
+target:
+
+666 words total
+
+rules:
+	•	each word maps to one or more basis vectors
+	•	mappings are stable
+	•	meanings are explicit
+	•	no uncontrolled drift
+
+example mappings (conceptual):
+
+run = fore + small up
+save = stop + small back
+danger = down + fore
+safe = stop + right
+explore = left + fore
+correct = right + stop
+
+note:
+	•	not strict math requirement
+	•	but conceptual grounding
+
+⸻
+
+composition rules
+
+words combine by:
+	•	direction blending
+	•	context
+	•	sequence
+
+example:
+
+fore + up = forward progress with elevation
+down + fore = dangerous advance
+stop + right = safe stable state
+
+
+⸻
+
+model design
+
+layer 1
+
+fixed basis vectors
+	•	embedded directly
+	•	no training drift
+
+⸻
+
+layer 2
+
+beast vocabulary
+	•	666 words
+	•	mapped to basis vectors
+
+⸻
+
+layer 3
+
+sequence model
+	•	processes token sequences
+	•	predicts next tokens
+	•	uses directional structure
+
+⸻
+
+advantages
+
+1. stability
+	•	meanings anchored
+	•	less drift over time
+
+⸻
+
+2. small size
+	•	limited vocab
+	•	structured embeddings
+
+⸻
+
+3. interpretability
+	•	inspectable meaning
+	•	traceable decisions
+
+⸻
+
+4. efficiency
+	•	works on cheap hardware
+	•	faster inference
+
+⸻
+
+constraints
+
+1. limited expressiveness
+	•	not full english
+	•	requires translation layer
+
+⸻
+
+2. strict mapping required
+	•	vocab must be curated
+	•	cannot be random
+
+⸻
+
+3. discipline over flexibility
+	•	fewer synonyms
+	•	fewer ambiguous terms
+
+⸻
+
+relationship to beast language
+
+beast llm operates on:
+	•	beast english
+	•	beast phonetics (via decode)
+	•	cli / cdi commands
+
+not raw spoken english
+
+pipeline:
+
+voice → syllables → tokens → beast language → llm
+
+
+⸻
+
+non goals
+	•	replace large cloud llms
+	•	handle arbitrary natural language
+	•	learn meaning purely from data
+
+⸻
+
+future extensions
+	•	vector weighting system
+	•	multi-axis expansion
+	•	context memory layer
+	•	hybrid with larger models
+
+⸻
+
+final principle
+
+anchor meaning first
+
+then build intelligence on top
+
+
+⸻
+
+If you want next, we can define the first 66 or 666 word canonical vocabulary set, grounded in this vector system.
+
+
+
+
+
+
+
+
+
+
+i think 4/fore needs to be fore-word(beast phonetic), 3 back, and either 2/to needs to be up and 1 down, or maybe sev/(seven~~~heaven) up and 8/(ate~~~hate) down.
+
+analyze best numbers 0-9 to assign to fixed vectors
+
+i feel strongly about right/rite/write being 6/beast, everything else is in drift mode
+
+analyze at least 3 possible anchored arabic numeral to 7 axis vector mappings
+
+
+
+
+
+
+
+
+
+You are circling a real design problem: phonetic stability vs semantic clarity vs typing simplicity. You only get to optimize two fully, so the mapping has to be intentional.
+
+I’ll give you three serious candidate systems, analyze each, then give a blunt recommendation.
+
+⸻
+
+design constraints (what actually matters)
+
+A good mapping must balance:
+
+1. phonetic stability (voice)
+	•	"4" must reliably map to fore
+	•	"2" must reliably map to to/too/two
+	•	avoid collisions that break parsing
+
+2. semantic clarity (LLM / cognition)
+	•	axes should feel natural:
+	•	fore/back
+	•	up/down
+	•	left/right
+	•	opposites should feel like opposites
+
+3. typing efficiency (UI)
+	•	single digits fast on phone
+	•	minimal ambiguity in canonical form
+
+⸻
+
+candidate A: phonetic-first (your current leaning)
+
+0 stop
+4 fore
+3 back
+6 right
+
+2 up
+8 down
+
+5 left
+
+reasoning
+	•	4 = fore → extremely strong (keep this)
+	•	3 = back → weak phonetic, but acceptable as arbitrary anchor
+	•	6 = right → your strongest conviction
+	•	2 = to → "to" often implies direction (can map to up)
+	•	8 = ate → "ate/hate/down/negative" symbolic mapping
+
+pros
+	•	strong voice mapping for 4 and 2
+	•	keeps numbers short and usable
+	•	preserves your 6 = beast/right anchor
+
+cons
+	•	3 = back is arbitrary (no phonetic support)
+	•	8 = down is symbolic, not phonetic
+	•	asymmetry: fore/back not mirrored numerically
+
+verdict
+
+good pragmatic system
+but slightly "patched together"
+
+⸻
+
+candidate B: axis symmetry first (clean geometry)
+
+0 stop
+1 fore
+2 back
+3 up
+4 down
+5 left
+6 right
+
+reasoning
+	•	perfect symmetry:
+	•	1 ↔ 2 (fore/back)
+	•	3 ↔ 4 (up/down)
+	•	5 ↔ 6 (left/right)
+
+pros
+	•	mathematically clean
+	•	extremely easy for LLMs
+	•	perfect opposites
+
+cons
+	•	terrible phonetics:
+	•	1 ≠ fore
+	•	2 ≠ back
+	•	voice system suffers badly
+	•	breaks your strongest intuitions
+
+verdict
+
+best for machines
+worst for humans
+
+this is what most engineers would pick
+and it would make Beast worse
+
+⸻
+
+candidate C: phonetic + semantic hybrid (strongest overall)
+
+0 stop
+
+4 fore
+3 back
+
+7 up
+8 down
+
+5 left
+6 right
+
+reasoning
+
+fore/back
+	•	4 = fore (perfect)
+	•	3 = back (anchor, not phonetic but acceptable)
+
+up/down
+	•	7 = sev → heaven → up (your idea)
+	•	8 = ate → hate → down (your idea)
+
+left/right
+	•	5 = left (neutral)
+	•	6 = right (beast anchor)
+
+⸻
+
+pros
+
+1. strongest symbolic coherence
+
+7 up → heaven
+8 down → hell / hate
+
+this is actually powerful for:
+	•	teaching
+	•	memory
+	•	LLM semantic grounding
+
+2. preserves your strongest anchors
+	•	4 = fore
+	•	6 = right/beast
+
+3. voice friendliness
+	•	4 → fore (excellent)
+	•	7 → sev (distinct)
+	•	8 → ate (distinct)
+
+4. avoids 2/to ambiguity
+
+"to" is one of the most overloaded sounds in English
+removing it from core axes is actually smart
+
+⸻
+
+cons
+	•	less "intuitive" numerically
+	•	3 = back still arbitrary
+	•	requires learning
+
+⸻
+
+verdict
+
+this is the strongest system overall
+
+because Beast is not optimizing for:
+	•	immediate familiarity
+
+it is optimizing for:
+	•	long-term stability
+	•	symbolic clarity
+	•	voice robustness
+
+⸻
+
+candidate D (bonus): minimal phonetic purity
+
+0 stop
+4 fore
+2 back (from "to/backward"? weak)
+
+7 up
+8 down
+
+5 left
+6 right
+
+verdict
+
+worse than C
+tries too hard to force phonetics
+ends up weaker overall
+
+⸻
+
+key insight
+
+You discovered something important:
+
+some numbers should be phonetic anchors
+others should be semantic anchors
+
+Trying to make all of them phonetic is a trap.
+
+⸻
+
+final recommendation
+
+Go with candidate C, slightly formalized:
+
+0 stop
+
+4 fore
+3 back
+
+7 up
+8 down
+
+5 left
+6 right
+
+
+⸻
+
+why this wins
+
+1. strongest anchors preserved
+	•	4 = fore (critical)
+	•	6 = right/beast (critical)
+
+2. up/down become meaningful, not arbitrary
+	•	7 up = heaven
+	•	8 down = hell / pressure
+
+this aligns with your philosophy:
+
+down is not bad
+down is challenge
+
+3. avoids the biggest glitch in English
+
+2 = to/too/two
+
+this is one of the worst ambiguous phonetic clusters
+
+removing it from core axes is a huge win
+
+⸻
+
+small refinement
+
+define explicitly:
+
+mechanical vs symbolic
+
+7 up
+mechanical: increase, raise
+symbolic: heaven, goku, ascend
+
+8 down
+mechanical: decrease, lower
+symbolic: hell, pressure, challenge
+
+this keeps system grounded
+
+⸻
+
+one last thought
+
+You are not just picking numbers.
+
+You are defining:
+
+a stable coordinate system for meaning
+
+Once locked, everything builds on it:
+	•	beast language
+	•	voice mapping
+	•	tiny llm embeddings
+	•	command system
+	•	robotics directions
+
+So the right move is:
+	•	pick something memorable
+	•	pick something stable
+	•	accept small arbitrariness
+	•	avoid high-frequency ambiguity
+
+⸻
+
+If you want next, I can draft:
+
+beast-directional-numeral-standard-v1.0.md
+
+as a canonical spec that locks this forever.
+
+
+
+
+
+
+
+
+
+
+explore up to 5 more mappings, i want to explore this more.
+
+also explore 2 single letter (phonetic) to 7 axis mappings. this would let a letter + number give direction and acceleration/velocity/step size
+
+
+
+
+
+
+
+
+
+
+
+This is exactly the right place to explore deeply before locking anything. Once this is fixed, it propagates everywhere.
+
+I’ll give you:
+	1.	5 additional numeral mappings (beyond the first 3)
+	2.	2 letter-based axis systems
+	3.	then a combined insight (number + letter = direction + magnitude)
+
+⸻
+
+part 1: five more numeral mappings
+
+mapping D: pure phonetic anchors (aggressive)
+
+0 stop
+4 fore
+
+2 back (to → backward intent, weak but usable)
+
+7 up (sev → heaven)
+8 down (ate → hate)
+
+5 left
+6 right
+
+pros
+	•	maximizes phonetic mapping
+	•	very voice-friendly
+
+cons
+	•	"2 = back" is stretched
+	•	semantics weaker than C
+
+verdict
+
+useful if voice is absolute priority
+otherwise inferior to C
+
+⸻
+
+mapping E: gameplay / control scheme (wasd inspired)
+
+0 stop
+
+8 fore
+2 back
+
+4 left
+6 right
+
+7 up
+3 down
+
+reasoning
+	•	resembles numpad / movement controls
+
+pros
+	•	intuitive for gamers
+	•	spatially coherent
+
+cons
+	•	breaks phonetics completely
+	•	weak for voice system
+
+verdict
+
+great for keyboard control
+bad for beast language core
+
+⸻
+
+mapping F: symmetry with 4 as center axis
+
+0 stop
+
+4 fore
+2 back
+
+8 up
+1 down
+
+5 left
+6 right
+
+pros
+	•	semi-symmetric layout
+	•	keeps 4 = fore
+	•	separates axes cleanly
+
+cons
+	•	1 = down has no support
+	•	8 = up conflicts with your symbolic mapping
+
+verdict
+
+clean but not memorable
+
+⸻
+
+mapping G: semantic myth system (strong narrative)
+
+0 stop
+
+4 fore
+3 back
+
+7 up
+9 down
+
+5 left
+6 right
+
+reasoning
+	•	7 = heaven → up
+	•	9 = "under/9 circles hell" → down (symbolic extension)
+
+pros
+	•	strong symbolic layer
+	•	memorable
+	•	aligns with your style
+
+cons
+	•	9 is less phonetically grounded than 8
+	•	slightly less tight than 7/8 pairing
+
+verdict
+
+very interesting alternative to C
+slightly more mythic, slightly less tight
+
+⸻
+
+mapping H: minimal ambiguity (anti-english glitch)
+
+0 stop
+
+4 fore
+3 back
+
+7 up
+8 down
+
+9 left
+6 right
+
+reasoning
+	•	avoid 2 entirely (to/too/two glitch)
+	•	avoid 1 entirely (one/won ambiguity)
+
+pros
+	•	cleaner voice parsing
+	•	fewer collisions
+
+cons
+	•	loses nice "5 left" neutrality
+	•	9 left is arbitrary
+
+verdict
+
+good for robustness
+less elegant
+
+⸻
+
+mapping I: acceleration-friendly ordering
+
+0 stop
+
+4 fore
+3 back
+
+7 up
+8 down
+
+1 left
+6 right
+
+reasoning
+	•	leaves 2,5,9 free for magnitude scaling
+	•	separates axes from "intensity digits"
+
+pros
+	•	prepares for velocity system
+	•	clean extension space
+
+cons
+	•	1 left is weak mapping
+
+verdict
+
+interesting if you prioritize control system over symbolism
+
+⸻
+
+summary of best numeral candidates
+
+strongest overall
+
+C:
+0 stop
+4 fore / 3 back
+7 up / 8 down
+5 left / 6 right
+
+strongest alternative
+
+G:
+swap 8 → 9 for down
+
+
+⸻
+
+part 2: letter-based axis systems
+
+Goal:
+
+letter = direction
+number = magnitude / intensity / duration
+
+
+⸻
+
+letter mapping A: intuitive directional letters
+
+f fore
+b back
+u up
+d down
+l left
+r right
+s stop
+
+examples
+
+f4 = strong forward
+u2 = slight up
+r6 = strong right
+s0 = full stop
+
+pros
+	•	extremely readable
+	•	matches human intuition
+	•	perfect for CLI/CDI
+
+cons
+	•	less compact than numbers alone
+	•	not fully phonetic-minimized
+
+verdict
+
+best practical system
+
+⸻
+
+letter mapping B: phonetic compression system
+
+f fore
+k back   (hard k sound for "back")
+u up
+n down   (down → n tail sound)
+l left
+r right
+z stop
+
+reasoning
+	•	prioritize distinct phonetic sounds
+	•	avoid ambiguous vowels
+
+examples
+
+f4
+u2
+r6
+z0
+
+pros
+	•	highly distinct audio tokens
+	•	good for voice → syllable
+
+cons
+	•	less intuitive visually
+	•	requires learning
+
+verdict
+
+better for voice system than typing system
+
+⸻
+
+part 3: number + letter combined system
+
+This is where it gets powerful.
+
+model
+
+<letter><number>
+
+means:
+
+direction + magnitude
+
+
+⸻
+
+example system (using best mapping)
+
+axes
+
+f = fore
+b = back
+u = up
+d = down
+l = left
+r = right
+s = stop
+
+magnitude (numbers)
+
+0 = stop / none
+1 = tiny
+2 = small
+3 = medium
+4 = strong
+5 = very strong
+6 = max
+7 = extreme
+8 = dangerous
+9 = unstable
+
+
+⸻
+
+examples
+
+f3 = move forward medium
+f6 = full speed forward
+
+u2 = slight up
+d8 = aggressive descent
+
+r4 = move right strongly
+l1 = slight left
+
+s0 = stop
+
+
+⸻
+
+why this is powerful
+
+1. composability
+
+f3 u1 = forward + slight up
+
+2. robotics ready
+	•	maps directly to vectors
+	•	maps to velocity
+	•	maps to force
+
+3. llm friendly
+	•	tiny vocabulary
+	•	structured tokens
+	•	predictable meaning
+
+⸻
+
+key insight
+
+You are converging on a control language, not just a word system.
+
+direction = axis
+number = intensity
+sequence = behavior
+
+
+⸻
+
+recommendation
+
+lock this stack:
+
+numeric axes (C)
+
+0 stop
+4 fore / 3 back
+7 up / 8 down
+5 left / 6 right
+
+letter overlay (A)
+
+f b u d l r s
+
+combined form
+
+f4
+u2
+r6
+
+
+⸻
+
+final thought
+
+This gives Beast something very few systems have:
+
+a language that works equally well for:
+- humans
+- llms
+- robots
+
+That alignment is extremely rare.
+
+⸻
+
+If you want next, I can draft:
+
+beast directional control language v0.1
+
+that formalizes:
+	•	syntax
+	•	composition
+	•	parsing
+	•	robotics integration
+	
+	
+	
+	
+	
+	
+	
+
+9 symbolizes the end of one cycle and beginning of another. symbolically 9 is the landfill that goes down then 7 comes back up to be ate (consumed) then any "waste" goes back to landfill. 789 is not infinite but you can get a lot from reprocessing.
+
+so G is the strongest imo
+
+
+
+
+
+
+
+That’s a strong choice, and more importantly, it’s coherent across multiple layers: phonetic, symbolic, and system design.
+
+You’ve effectively turned the number system into a cycle, not just coordinates.
+
+Let’s formalize what you just discovered, because it’s more powerful than it looks.
+
+⸻
+
+beast directional numeral system (G)
+
+core mapping
+
+0 stop
+
+4 fore
+3 back
+
+7 up
+9 down
+
+5 left
+6 right
+
+
+⸻
+
+why G is strong
+
+1. axes still work cleanly
+
+You still preserve the core geometry:
+
+fore ↔ back
+up ↔ down
+left ↔ right
+
+Even though numbers aren’t symmetric, meaning is symmetric, which is what matters.
+
+⸻
+
+2. 7 / 9 becomes a cycle, not just an axis
+
+Your insight:
+
+9 → landfill (down)
+7 → up (heaven / return)
+8 → consumption (ate)
+
+This is not just direction. This is process.
+
+cycle:
+
+9 down → decay / landfill
+7 up → recovery / lift
+8 ate → consumption / reuse
+
+Then back to:
+
+9 → waste again
+
+
+⸻
+
+3. this encodes a system law
+
+You’ve embedded a principle into the language:
+
+nothing is final waste
+everything can be reprocessed
+
+And also:
+
+cycles are finite but productive
+
+789 is not infinite
+but yields a lot
+
+That is extremely aligned with:
+	•	artifact reuse
+	•	generator iteration
+	•	latent exploration
+	•	caching systems
+
+⸻
+
+4. 8 becomes the "transform" state
+
+This is subtle but important.
+
+In your system:
+
+7 = rise
+8 = transform (consume)
+9 = fall / discard
+
+So:
+	•	7 is potential
+	•	8 is processing
+	•	9 is output/waste
+
+That maps beautifully to:
+
+input → process → output
+
+
+⸻
+
+upgraded semantic layer
+
+7 up
+
+mechanical:
+increase
+raise
+
+system:
+improve
+recover
+elevate
+
+symbolic:
+heaven
+return
+goku
+
+
+⸻
+
+8 ate
+
+mechanical:
+consume
+transform
+
+system:
+process
+convert
+reuse
+
+symbolic:
+consumption
+fusion
+fire
+
+
+⸻
+
+9 down
+
+mechanical:
+descend
+lower
+
+system:
+discard
+store
+compress
+archive
+
+symbolic:
+landfill
+end of cycle
+decay
+
+
+⸻
+
+key insight
+
+You didn’t just pick numbers.
+
+You created:
+
+a directional system + a lifecycle system
+
+Most languages only encode direction.
+
+Beast now encodes:
+	•	direction
+	•	transformation
+	•	lifecycle
+
+⸻
+
+implications for beast
+
+1. artifact system
+
+9 = landfill artifacts
+7 = recovered / promoted artifacts
+8 = processing / transforming artifacts
+
+You already have:
+	•	diamond
+	•	ok
+	•	landfill
+
+Now you also have a cycle between them.
+
+⸻
+
+2. generators
+
+input (7)
+→ process (8)
+→ output (9)
+→ refine (7 again)
+
+This exactly matches your loop philosophy.
+
+⸻
+
+3. llm reasoning
+
+A tiny Beast LLM could use:
+
+7 → improve
+8 → transform
+9 → discard
+
+instead of vague words like:
+	•	optimize
+	•	refine
+	•	iterate
+
+That is much more structured.
+
+⸻
+
+4. voice system
+
+This mapping is also strong for phonetics:
+	•	sev → 7
+	•	ate → 8
+	•	nine → 9
+
+All distinct, low collision.
+
+Better than:
+	•	to / too / two
+	•	for / four / fore
+
+⸻
+
+small refinement (important)
+
+To keep system grounded, define:
+
+mechanical vs symbolic split
+
+7 up
+mechanical: increase, raise
+symbolic: heaven, recovery
+
+8 ate
+mechanical: transform, consume
+symbolic: processing, fusion
+
+9 down
+mechanical: decrease, lower
+symbolic: landfill, cycle end
+
+This prevents drift while preserving power.
+
+⸻
+
+final recommendation
+
+Lock G as canonical.
+
+0 stop
+
+4 fore
+3 back
+
+7 up
+9 down
+
+5 left
+6 right
+
+and define:
+
+8 = transform / consume (non-axis)
+
+
+⸻
+
+final principle
+
+What you’ve built here is:
+
+a coordinate system + a lifecycle system
+
+That combination is rare.
+
+And it aligns perfectly with:
+	•	beast generators
+	•	artifact loops
+	•	local compute reuse
+	•	system-level thinking
+
+⸻
+
+If you want next, I would formalize this as:
+
+beast directional numeral standard v1.0
+
+so it becomes permanent and everything else builds on it.
+
+
+
+
+
+
+
+yes
+
+
+
+
+
+
+
+
+
+Here is a clean, repo-ready draft.
+
+⸻
+
+beast directional numeral standard v1.0
+
+purpose
+
+define the fixed numeral basis for beast directional meaning
+
+this standard is intended to be stable
+
+used by:
+	•	beast language
+	•	beast llms
+	•	beast control systems
+	•	robotics
+	•	artifact lifecycle reasoning
+	•	future beast spoken english
+
+⸻
+
+law
+
+fixed basis
+no drift
+
+
+⸻
+
+canonical mapping
+
+0 stop
+
+4 fore
+3 back
+
+7 up
+9 down
+
+5 left
+6 right
+
+8 transform
+
+
+⸻
+
+overview
+
+this system defines:
+	•	6 directional or positional axes
+	•	1 stop state
+	•	1 transform state
+
+it is not only a coordinate system
+
+it is also a lifecycle system
+
+⸻
+
+vector set
+
+0 stop
+
+mechanical:
+	•	halt
+	•	hold
+	•	conserve
+	•	no movement
+
+system:
+	•	do not execute
+	•	wait
+	•	preserve state
+	•	suspend change
+
+symbolic:
+	•	picard all stop
+	•	vegeta conserving energy
+	•	nethack pause
+
+⸻
+
+4 fore
+
+mechanical:
+	•	forward
+	•	advance
+
+system:
+	•	proceed
+	•	continue
+	•	move into next step
+
+symbolic:
+	•	fore
+	•	ahead
+	•	progress
+
+phonetic note:
+
+4 = fore
+
+this is a core anchor
+
+⸻
+
+3 back
+
+mechanical:
+	•	reverse
+	•	retreat
+
+system:
+	•	undo
+	•	revert
+	•	step back
+
+symbolic:
+	•	rollback
+	•	caution
+	•	retreat
+
+⸻
+
+7 up
+
+mechanical:
+	•	raise
+	•	elevate
+	•	increase
+
+system:
+	•	improve
+	•	recover
+	•	promote
+
+symbolic:
+	•	heaven
+	•	return
+	•	angels
+	•	goku
+
+spoken canon note:
+
+sev -> 7
+
+
+⸻
+
+9 down
+
+mechanical:
+	•	lower
+	•	descend
+	•	decrease
+
+system:
+	•	discard
+	•	compress
+	•	archive
+	•	landfill
+
+symbolic:
+	•	end of cycle
+	•	landfill
+	•	pressure
+	•	challenge
+
+note:
+
+9 symbolizes the end of one cycle and the beginning of another
+
+
+⸻
+
+5 left
+
+mechanical:
+	•	shift left
+
+system:
+	•	alternate path
+	•	variation
+	•	branch
+
+symbolic:
+	•	deviation
+	•	exploration
+
+⸻
+
+6 right
+
+mechanical:
+	•	shift right
+
+system:
+	•	align
+	•	correct
+	•	proper direction
+
+symbolic:
+	•	beastly
+	•	right
+	•	rite
+	•	write
+
+note:
+
+6 = right is a primary beast anchor
+
+
+⸻
+
+8 transform
+
+mechanical:
+	•	consume
+	•	convert
+	•	process
+
+system:
+	•	transform input into output
+	•	reprocess
+	•	digest
+	•	refine
+
+symbolic:
+	•	ate
+	•	consumed
+	•	fusion
+	•	fire
+
+note:
+
+8 is not an axis
+8 is the transform state
+
+
+⸻
+
+lifecycle meaning
+
+the system encodes a productive cycle:
+
+9 -> 7 -> 8 -> 9
+
+expanded:
+
+9 down = landfill, decay, end of cycle
+7 up = recovery, return, lift
+8 transform = consume, process, refine
+9 down = waste or residual returns to landfill
+
+principle:
+
+789 is not infinite
+but you can get a lot from reprocessing
+
+
+⸻
+
+structure
+
+the standard contains:
+
+axis values
+
+4 fore
+3 back
+
+7 up
+9 down
+
+5 left
+6 right
+
+state values
+
+0 stop
+8 transform
+
+
+⸻
+
+design principles
+
+1. fixed meaning
+
+each numeral has one stable role
+
+no drift
+
+⸻
+
+2. mechanical first
+
+every numeral must have a usable mechanical meaning
+
+symbolic meanings may exist
+but may not replace mechanical meaning
+
+⸻
+
+3. symbolic resonance allowed
+
+symbolic layers help memory and teaching
+
+examples:
+
+7 up = heaven
+9 down = landfill
+6 right = beastly and right
+
+
+⸻
+
+4. phonetic anchors matter
+
+where possible, spoken beast forms should align with numerals
+
+examples:
+
+4 = fore
+sev = 7
+
+
+⸻
+
+examples
+
+directional use
+
+4 = move forward
+3 = move back
+7 = move up
+9 = move down
+5 = move left
+6 = move right
+0 = stop
+
+
+⸻
+
+lifecycle use
+
+artifact in landfill -> 9
+recover artifact -> 7
+transform artifact -> 8
+residual waste -> 9
+
+
+⸻
+
+language use
+
+safe = 0 + 6
+danger = 9 + 4
+improve = 7 + 4
+undo = 3 + 0
+explore = 5 + 4
+
+these are conceptual examples, not canonical equations
+
+⸻
+
+beast spoken english notes
+
+future beast spoken english may prefer:
+
+sev -> 7
+zeer -> 0
+dub -> w
+
+this standard directly supports that direction
+
+⸻
+
+usage guidance
+
+this numeral standard should be used when Beast needs:
+	•	stable direction
+	•	stable state
+	•	lifecycle semantics
+	•	tiny llm grounding
+	•	cheap local control language
+
+⸻
+
+non goals
+
+this standard does not:
+	•	replace full beast vocabulary
+	•	replace english
+	•	define full syntax
+	•	define all embeddings
+
+it defines the fixed base only
+
+⸻
+
+permanence
+
+this standard is intended to remain stable once adopted
+
+if changed carelessly, downstream systems drift
+
+therefore:
+
+change rarely
+explain fully
+
+
+⸻
+
+final principle
+
+numbers are not decoration
+
+they are anchors for meaning
+
+
+⸻
+
+closing
+
+0 stop
+
+4 fore
+3 back
+
+7 rise
+8 transform
+9 fall
+
+5 left
+6 right
+
+fixed basis
+legendary systems can be built on top
+
+
+
+
+
+
+
+
+given fixed numeral mappings, what vector mapping do 1 and 2 have? or do they vary wildly depending on context?
+
+what about single letters and the first 66 beast words? wtf, glitch, lgtm, ok?
+
+
+
+
+
+
+
+
+
+
+This is the right pressure point.
+You’ve fixed the axes (0,3,4,5,6,7,9) and the transform (8). Now the question is:
+
+what do 1 and 2 do in a system that already has a stable geometry?
+
+Short answer:
+	•	1 and 2 should not be axes
+	•	they should be operators / modifiers
+	•	their meaning should be stable but context-applied, not drifting
+
+If you treat them as directions, you dilute the clarity you just created.
+
+⸻
+
+part 1: role of 1 and 2
+
+principle
+
+axes define direction
+1 and 2 define how movement happens
+
+
+⸻
+
+recommended mapping
+
+1 = start / unit / initiate
+2 = to / toward / connect
+
+
+⸻
+
+1 = start (impulse)
+
+mechanical
+	•	first step
+	•	unit magnitude
+	•	begin action
+
+system meaning
+	•	initialize
+	•	create
+	•	spawn
+	•	activate
+
+examples
+
+f1 = small forward step
+7 + 1 = begin improvement
+0 → 1 = leave stop state
+
+intuition
+
+1 is the spark
+
+
+⸻
+
+2 = to (connection / directionality)
+
+mechanical
+	•	movement toward target
+	•	linking
+	•	mapping
+
+system meaning
+	•	route
+	•	connect
+	•	send
+	•	apply
+
+examples
+
+4 → 2 → 7
+forward toward up
+
+artifact A 2 artifact B
+map A to B
+
+f3 u2 = forward with upward bias
+
+intuition
+
+2 is the bridge
+
+
+⸻
+
+why this is better than making them axes
+
+If you made:
+	•	1 = down
+	•	2 = up
+
+you get:
+	•	conflict with 7/9 system
+	•	phonetic ambiguity (to/too/two)
+	•	loss of lifecycle meaning
+
+So instead:
+
+1 and 2 operate on axes
+they do not compete with axes
+
+
+⸻
+
+part 2: resulting system structure
+
+full numeric system
+
+0 stop
+
+4 fore / 3 back
+7 up / 9 down
+5 left / 6 right
+
+8 transform
+
+1 start
+2 to
+
+
+⸻
+
+semantic layers
+
+axes = where
+1 = begin
+2 = connect
+8 = change
+0 = hold
+
+That’s extremely clean.
+
+⸻
+
+part 3: single letter system (tight integration)
+
+You already have the best candidate:
+
+f fore
+b back
+u up
+d down
+l left
+r right
+s stop
+t transform
+
+(optional but clean)
+
+⸻
+
+extended with operators
+
+i initiate (1)
+o to (2)
+
+or simpler:
+
+1 = i (implicit)
+2 = t (to)
+
+
+⸻
+
+examples
+
+f4 = strong forward
+f1 = small forward
+f4 t u = forward toward up
+s0 = stop
+t8 = transform
+
+
+⸻
+
+part 4: first 66 beast words (structure)
+
+Do NOT pick random words.
+
+Instead:
+
+classify words into roles
+
+1. core system words (10–15)
+
+stop
+run
+make
+show
+save
+load
+rate
+clear
+undo
+redo
+
+
+⸻
+
+2. quality words
+
+diamond
+ok
+landfill
+
+you already have these
+
+⸻
+
+3. diagnostic words
+
+wtf
+glitch
+lgtm
+
+
+⸻
+
+4. structural words
+
+this
+that
+last
+next
+all
+none
+
+
+⸻
+
+5. directional words (mapped to numerals)
+
+fore back up down left right
+
+
+⸻
+
+6. transformation words
+
+transform
+convert
+merge
+split
+compress
+expand
+
+
+⸻
+
+part 5: anchor words you listed
+
+wtf
+
+wtf = unexpected state detected
+
+vector intuition:
+
+wtf = (unknown) + 9 (down) + 8 (transform needed)
+
+system meaning:
+	•	anomaly
+	•	inspection required
+
+⸻
+
+glitch
+
+glitch = system behavior deviates from expected model
+
+vector intuition:
+
+glitch = slight 9 (down) + misaligned 6 (right)
+
+system meaning:
+	•	bug
+	•	inconsistency
+
+⸻
+
+lgtm
+
+lgtm = no visible errors after quick inspection
+
+vector intuition:
+
+lgtm = 6 (right) + 0 (stable)
+
+system meaning:
+	•	acceptable
+	•	passes quick check
+
+⸻
+
+ok
+
+ok = usable but not optimal
+
+vector intuition:
+
+ok = 0 (stable) + small 4 (forward)
+
+system meaning:
+	•	proceed
+	•	not diamond
+
+⸻
+
+part 6: key insight
+
+You now have a three-layer language:
+
+layer 1: numbers (core physics)
+
+direction, state, lifecycle
+
+layer 2: letters (fast control)
+
+human usable commands
+
+layer 3: words (human meaning)
+
+interpretation, explanation, teaching
+
+
+⸻
+
+final recommendation
+
+lock this:
+
+0 stop
+
+4 fore / 3 back
+7 up / 9 down
+5 left / 6 right
+
+8 transform
+
+1 start
+2 to
+
+
+⸻
+
+treat 1 and 2 as:
+
+1 = initiate
+2 = connect
+
+
+⸻
+
+treat words like:
+
+wtf = anomaly
+glitch = deviation
+lgtm = acceptable
+ok = usable
+
+
+⸻
+
+final principle
+
+axes define space
+1 and 2 define motion
+8 defines change
+words describe what happened
+
+
+⸻
+
+If you want next, I can draft:
+
+beast core 66 word vocabulary v0.1
+organized by role and mapped to vectors
+
+
+
+
+
+
+
+
+
+
+
+
+llm where token size is 1 character, 36 total (plus space, maybe minimal beast dsl symbols), limits, vectoring, code writing? advantages and disadvantages vs 666 word vocab?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+You’re now choosing between two fundamentally different philosophies:
+	•	character language (36 tokens, ultra-primitive, compositional)
+	•	word language (666 tokens, structured, semantic)
+
+This is not just an implementation detail. It changes what the model is.
+
+Let’s analyze it clearly.
+
+⸻
+
+option A: 36-token character LLM
+
+token set
+
+a-z
+0-9
+(space)
+(optional: . # $ , " ? ! ( ) < >)
+
+~36–50 total tokens
+
+⸻
+
+what this model is
+
+a universal compressor + generator
+
+It learns everything:
+	•	words
+	•	syntax
+	•	structure
+	•	meaning
+
+from sequences of characters
+
+⸻
+
+advantages
+
+1. minimal vocabulary = maximum flexibility
+	•	no OOV (out of vocab)
+	•	no need to predefine words
+	•	works for:
+	•	code
+	•	beast language
+	•	english
+	•	dsl
+
+⸻
+
+2. perfect for code writing
+
+Code is already character-based:
+
+if(x>0){run();}
+
+A char model:
+	•	aligns directly with syntax
+	•	no tokenization mismatch
+	•	no "broken token" issues
+
+⸻
+
+3. extremely small embedding matrix
+	•	36 tokens vs 666 tokens
+	•	massive memory savings
+	•	better for tiny local models
+
+⸻
+
+4. compositional power
+
+It can generate:
+
+wtf
+glitch
+f4 u2 r6
+
+from first principles
+
+⸻
+
+disadvantages
+
+1. longer sequences = harder learning
+
+Instead of:
+
+make 4 image
+
+you get:
+
+m a k e   4   i m a g e
+
+	•	4–6x longer sequences
+	•	more steps per prediction
+	•	harder for tiny models to maintain coherence
+
+⸻
+
+2. no built-in semantics
+
+The model must learn:
+
+"up" means upward
+
+from scratch
+
+vs 666 vocab where:
+
+up = one embedding
+
+
+⸻
+
+3. weaker structure
+
+You lose:
+
+token = concept
+
+Everything becomes:
+
+sequence = concept
+
+This increases:
+	•	ambiguity
+	•	training difficulty
+	•	drift risk
+
+⸻
+
+4. slower inference (token count)
+
+Even if each token is cheap:
+	•	more tokens → more steps → more latency
+
+⸻
+
+option B: 666-word Beast vocab
+
+what this model is
+
+a structured reasoning system
+
+Each token is:
+
+meaningful unit
+
+
+⸻
+
+advantages
+
+1. strong semantic anchors
+
+up = known direction
+glitch = known concept
+wtf = anomaly
+
+No need to rediscover meaning.
+
+⸻
+
+2. shorter sequences
+
+make 4 image
+
+= 3–4 tokens instead of ~12–16 chars
+	•	faster reasoning
+	•	easier training
+
+⸻
+
+3. better for tiny models
+
+Small models struggle with long-range dependencies.
+
+Word tokens reduce:
+	•	sequence length
+	•	cognitive load
+
+⸻
+
+4. aligns with your vector system
+
+You can map:
+
+up → 7
+down → 9
+
+directly
+
+⸻
+
+disadvantages
+
+1. fixed vocabulary ceiling
+	•	must design and maintain 666 words
+	•	adding new concepts is harder
+
+⸻
+
+2. weaker for raw code
+
+Code is not word-based:
+
+for(int i=0;i<n;i++)
+
+Word tokenization can:
+	•	break syntax
+	•	introduce weird splits
+
+⸻
+
+3. less flexible
+
+Cannot easily:
+	•	invent new words
+	•	adapt to new domains
+
+⸻
+
+direct comparison
+
+character model
+
++ universal
++ perfect for code
++ tiny embedding
+- long sequences
+- weak semantics
+
+666-word model
+
++ strong semantics
++ short sequences
++ easier reasoning
+- less flexible
+- worse for raw code
+
+
+⸻
+
+key insight
+
+You don’t actually have to choose one.
+
+The strongest system is:
+
+dual-layer beast llm
+
+
+⸻
+
+recommended architecture
+
+layer 1: character model (base)
+	•	token size = 1 char
+	•	handles:
+	•	code
+	•	DSL
+	•	unknown words
+	•	raw text
+
+⸻
+
+layer 2: beast token layer (overlay)
+	•	maps sequences → tokens
+
+example:
+
+"u p" → UP
+"w t f" → WTF
+"g l i t c h" → GLITCH
+
+
+⸻
+
+hybrid reasoning
+
+internal form
+
+f4 u2 r6
+
+expanded form
+
+forward strong
+slight up
+move right
+
+
+⸻
+
+how this helps code writing
+
+character model handles syntax
+
+if(x>0){...}
+
+beast layer handles intent
+
+fix memory leak
+
+
+⸻
+
+practical modes
+
+mode 1: code mode
+	•	character tokens only
+	•	no abstraction
+
+mode 2: beast mode
+	•	compressed tokens
+	•	structured commands
+
+mode 3: hybrid
+	•	code + beast tokens mixed
+
+⸻
+
+limits
+
+character-only model
+	•	needs more training data
+	•	harder to stabilize semantics
+
+word-only model
+	•	brittle for code
+	•	less expressive
+
+⸻
+
+recommendation
+
+do NOT pick only one
+
+instead:
+
+core = character model
+overlay = beast token system
+
+
+⸻
+
+minimal viable version
+
+Start with:
+
+char model
+
+a-z 0-9 space
+
+plus special tokens
+
+wtf
+glitch
+lgtm
+ok
+
+as hard-coded shortcuts
+
+⸻
+
+final principle
+
+characters give you universality
+
+beast tokens give you meaning
+
+
+⸻
+
+blunt conclusion
+	•	char model alone → powerful but chaotic
+	•	666 vocab alone → clean but limited
+	•	hybrid → best of both
+
+⸻
+
+If you want next, I can design:
+
+beast tokenizer v0.1
+	•	how char sequences become beast tokens
+	•	reversible mapping
+	•	efficient for tiny models
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+yes
+
+
+
+
+
+
+
+Here is a clean draft.
+
+beast tokenizer v0.1
+
+purpose
+
+define how beast text is tokenized for tiny local llms
+
+goal:
+	•	keep code possible
+	•	keep beast meaning stable
+	•	keep implementation simple
+	•	work on cheap hardware
+
+this tokenizer is hybrid
+
+it combines:
+	•	character universality
+	•	beast token meaning
+
+⸻
+
+core idea
+
+characters are the base layer
+
+beast tokens are the meaning layer
+
+pipeline:
+
+raw text
+→ normalize
+→ scan character stream
+→ match beast tokens where possible
+→ fall back to character tokens where needed
+
+
+⸻
+
+law
+
+characters preserve possibility
+beast tokens preserve meaning
+
+
+⸻
+
+token classes
+
+1. character tokens
+
+base alphabet:
+
+a-z
+0-9
+space
+
+optional minimal syntax set:
+
+. # $ , " ? ! ( ) < > - _ / : ; = + * [ ] { }
+
+these make code and beast dsl possible
+
+character tokens are always valid fallback
+
+⸻
+
+2. beast word tokens
+
+small fixed set of high-value beast tokens
+
+examples:
+
+beast
+make
+run
+show
+save
+load
+rate
+find
+fix
+test
+image
+video
+art
+gen
+model
+file
+doc
+note
+task
+queue
+voice
+text
+ok
+wtf
+glitch
+lgtm
+diamond
+landfill
+fore
+back
+up
+down
+left
+right
+stop
+transform
+
+these should be matched as whole words only
+
+⸻
+
+3. beast compact tokens
+
+high-value compressed forms
+
+examples:
+
+u
+r
+ur
+2
+4
+7
+8
+9
+f4
+u2
+r6
+
+these are allowed when they are canonical beast forms
+
+⸻
+
+4. beast control tokens
+
+reserved for future structured use
+
+examples:
+
+cli
+cdi
+dsl
+db
+id
+sig
+
+these remain optional in v0.1
+
+⸻
+
+normalization
+
+before tokenization:
+	•	lowercase all text
+	•	trim leading and trailing spaces
+	•	collapse repeated spaces to one
+	•	preserve syntax characters exactly
+	•	do not correct spelling
+	•	do not infer meaning
+
+examples:
+
+"  Make   4   Image  " → "make 4 image"
+"WTF" → "wtf"
+"run   last   gen" → "run last gen"
+
+
+⸻
+
+matching order
+
+tokenizer must scan in this order:
+
+1. longest exact beast token
+
+prefer the longest valid beast token
+
+example:
+
+landfill
+
+should become:
+
+[landfill]
+
+not:
+
+[l][a][n][d][f][i][l][l]
+
+2. exact compact beast token
+
+example:
+
+ur
+
+should become:
+
+[ur]
+
+3. exact single word beast token
+
+example:
+
+glitch
+
+should become:
+
+[glitch]
+
+4. exact numeric token
+
+example:
+
+4
+
+should become:
+
+[4]
+
+5. fallback to characters
+
+example:
+
+wan22
+
+might become:
+
+[w][a][n][2][2]
+
+unless later added as a whole token
+
+⸻
+
+word boundary rule
+
+beast word tokens match only at boundaries
+
+valid boundaries:
+	•	start of text
+	•	end of text
+	•	space
+	•	punctuation
+
+example:
+
+glitch
+
+matches as one token
+
+but:
+
+glitched
+
+does not match glitch plus ed
+unless explicitly defined later
+
+fallback:
+
+[g][l][i][t][c][h][e][d]
+
+
+⸻
+
+fallback rule
+
+if no beast token matches:
+	•	emit characters one by one
+	•	never fail tokenization
+	•	never invent a token
+
+this guarantees:
+	•	code always works
+	•	unknown words still work
+	•	future words remain possible
+
+⸻
+
+examples
+
+example 1
+
+input:
+
+make 4 image
+
+tokens:
+
+[make] [space] [4] [space] [image]
+
+
+⸻
+
+example 2
+
+input:
+
+wtf glitch
+
+tokens:
+
+[wtf] [space] [glitch]
+
+
+⸻
+
+example 3
+
+input:
+
+i c that u r
+
+tokens:
+
+[i] [space] [c] [space] [t][h][a][t] [space] [u] [space] [r]
+
+note:
+	•	that is only one token if added to beast vocab
+	•	otherwise falls back to chars
+
+⸻
+
+example 4
+
+input:
+
+f4 u2 r6
+
+tokens:
+
+[f4] [space] [u2] [space] [r6]
+
+if compact control tokens are enabled
+
+otherwise:
+
+[f] [4] [space] [u] [2] [space] [r] [6]
+
+
+⸻
+
+example 5
+
+input:
+
+if(x>0){run();}
+
+tokens:
+
+[i][f][(][x][>][0][)][{][run][(][)][;][}]
+
+note:
+	•	run may be recognized as a beast token
+	•	surrounding syntax remains character tokens
+
+⸻
+
+advantages of hybrid tokenization
+
+1. code always possible
+
+characters guarantee coverage
+
+2. beast meaning stays stable
+
+core words like wtf, glitch, ok, diamond, landfill stay atomic
+
+3. tiny model friendly
+
+common concepts become one token
+rare concepts stay compositional
+
+4. future growth possible
+
+new beast tokens can be added later without breaking fallback
+
+⸻
+
+disadvantages
+
+1. tokenizer complexity higher than pure chars
+
+must support matching and boundaries
+
+2. vocab governance required
+
+adding too many beast tokens causes drift
+
+3. mixed granularity
+
+some concepts are words, some are chars, some are compact forms
+
+this must stay intentional
+
+⸻
+
+token budget strategy
+
+recommended early strategy:
+
+phase 1
+	•	characters
+	•	digits
+	•	space
+	•	minimal syntax
+	•	32 to 64 beast words
+
+phase 2
+	•	first 66 canonical beast words
+	•	top diagnostics
+	•	top command words
+	•	top artifact words
+
+phase 3
+	•	full 666 word beast vocab
+
+do not jump to 666 immediately unless the list is already stable
+
+⸻
+
+beast token selection rules
+
+a token should become atomic only if it is:
+	•	common
+	•	useful
+	•	stable
+	•	semantically important
+	•	painful to spell every time
+	•	low ambiguity
+
+good examples:
+
+wtf
+glitch
+lgtm
+diamond
+landfill
+artifact
+generator
+
+bad examples:
+	•	rare words
+	•	stylistic variants
+	•	words with unstable meaning
+
+⸻
+
+compact token policy
+
+compact tokens are powerful but dangerous
+
+allow only if:
+	•	they are canonical beast forms
+	•	they are easy to parse
+	•	they are frequent
+	•	they reduce meaningful sequence length
+
+examples that may be worth it:
+
+ur
+f4
+u2
+r6
+
+examples that should wait:
+	•	obscure compressed phrases
+	•	user slang
+
+⸻
+
+reversibility
+
+tokenization should be reversible enough for debugging
+
+meaning:
+	•	original normalized text can be reconstructed from tokens
+	•	no hidden expansion inside tokenizer
+	•	expansion happens later in decode, not tokenization
+
+⸻
+
+implementation outline
+
+simple tokenizer algorithm:
+	1.	normalize text
+	2.	at each position:
+	•	try longest beast token match
+	•	if matched, emit token
+	•	else emit current character as token
+	3.	continue until end
+
+this can be implemented with:
+	•	trie
+	•	sorted token table
+	•	longest-match scan
+
+for v0.1, a sorted token table is acceptable
+
+⸻
+
+recommended v0.1 output format
+
+each token should carry:
+	•	token type
+	•	token text
+	•	source span start
+	•	source span end
+
+example:
+
+type: BEAST_TOKEN_WORD
+text: make
+start: 0
+end: 4
+
+this helps:
+	•	syntax highlighting
+	•	decode
+	•	debugging
+	•	code writing apparatus
+
+⸻
+
+non goals
+
+this tokenizer does not:
+	•	parse commands
+	•	infer semantics
+	•	expand voice traces
+	•	correct english
+	•	choose meanings
+
+it only creates stable token streams
+
+⸻
+
+final principle
+
+tokenize without guessing
+preserve meaning where stable
+preserve characters everywhere else
+
+If you want, I can draft the matching C header and implementation skeleton for beast_tokenizer.h next.
+
+
+
+
+
+
+
+
+
+tell me more about llm reasoning. also how do word vectors compare to letter vectors
+
+
+
+
+
+
+
+
+
+You’re asking the right question at the right layer. "Reasoning" in an LLM is not a separate module. It emerges from how tokens map to vectors and how those vectors interact over sequences.
+
+So the real question becomes:
+
+what kind of thinking emerges from word-level vectors vs character-level vectors?
+
+⸻
+
+what "reasoning" actually is in an LLM
+
+At a mechanical level:
+
+tokens → vectors → transformations → next token prediction
+
+But internally, the model is building something like:
+
+state = compressed representation of everything seen so far
+
+Reasoning is:
+
+progressively refining that state in a useful direction
+
+
+⸻
+
+three kinds of reasoning you get
+
+1. pattern reasoning
+
+if(x>0){...}
+
+Model learns:
+	•	syntax patterns
+	•	structural repetition
+
+This works well with character tokens
+
+⸻
+
+2. semantic reasoning
+
+if user asks for safe action → avoid destructive operation
+
+Model uses:
+	•	meaning of words
+	•	relationships between concepts
+
+This works best with word tokens
+
+⸻
+
+3. procedural reasoning
+
+step 1 → step 2 → step 3
+
+Model chains operations:
+	•	planning
+	•	transformations
+	•	workflows
+
+This benefits from structured tokens (your beast system)
+
+⸻
+
+character vectors vs word vectors
+
+character-level vectors
+
+what they represent
+
+Each token = tiny unit:
+
+"a" → vector
+"b" → vector
+"4" → vector
+
+No inherent meaning.
+
+Meaning must emerge from sequences:
+
+"u p" → "up"
+"w t f" → "wtf"
+
+
+⸻
+
+strengths
+
+1. universal
+	•	handles any text
+	•	perfect for code
+	•	no vocabulary limits
+
+2. compositional
+
+Model can invent:
+
+newword
+customdsl
+f4u2r6
+
+3. robust
+
+No tokenization failures.
+
+⸻
+
+weaknesses
+
+1. long sequences
+
+Everything is expanded:
+
+"transform" = 9 characters
+
+Model must remember long dependencies.
+
+⸻
+
+2. weak semantic anchors
+
+The model must learn:
+
+"u p" = up
+
+instead of:
+
+UP = one vector
+
+That’s much harder for small models.
+
+⸻
+
+word-level vectors
+
+what they represent
+
+Each token = concept:
+
+"up" → vector
+"glitch" → vector
+"wtf" → vector
+
+
+⸻
+
+strengths
+
+1. strong semantic anchors
+
+The vector for:
+
+glitch
+
+already encodes:
+	•	error
+	•	deviation
+	•	unexpected
+
+This dramatically helps reasoning.
+
+⸻
+
+2. shorter sequences
+
+make 4 image
+
+vs
+
+m a k e   4   i m a g e
+
+Fewer steps = easier reasoning.
+
+⸻
+
+3. better abstraction
+
+The model can operate on:
+
+concepts instead of letters
+
+
+⸻
+
+weaknesses
+
+1. rigid vocabulary
+	•	must define tokens ahead of time
+	•	unknown words break into fragments
+
+⸻
+
+2. worse for code
+
+Code is not word-based:
+
+for(int i=0;i<n;i++)
+
+Word tokenization often misaligns with syntax.
+
+⸻
+
+the real difference
+
+character model
+
+meaning = emergent from sequences
+
+word model
+
+meaning = pre-compressed into tokens
+
+
+⸻
+
+why this matters for reasoning
+
+small models
+
+Small models have limited capacity.
+
+They struggle with:
+	•	long sequences
+	•	weak signals
+	•	ambiguous structures
+
+So:
+
+word tokens → stronger reasoning
+char tokens → weaker reasoning
+
+
+⸻
+
+large models
+
+Large models can:
+	•	reconstruct meaning from characters
+	•	learn long dependencies
+
+So they can use char tokens effectively.
+
+⸻
+
+where beast fits
+
+You are building:
+
+tiny local llms
+
+So you need:
+
+strong signals
+short sequences
+stable meaning
+
+
+⸻
+
+best structure for beast reasoning
+
+layer 1: directional numerals
+
+4 fore
+7 up
+9 down
+
+These are primitive reasoning axes
+
+⸻
+
+layer 2: beast tokens
+
+wtf
+glitch
+lgtm
+ok
+
+These are semantic anchors
+
+⸻
+
+layer 3: character fallback
+
+code
+dsl
+unknown words
+
+
+⸻
+
+how reasoning happens in beast
+
+Example:
+
+wtf glitch image gen
+
+Model sees:
+	•	wtf → anomaly
+	•	glitch → system deviation
+	•	image gen → generation pipeline
+
+It can infer:
+
+inspect pipeline
+
+
+⸻
+
+with directional system
+
+9 → 7 → 8
+
+Model can infer:
+
+discard → recover → transform
+
+That is reasoning without English.
+
+⸻
+
+key insight
+
+You are not just compressing tokens.
+
+You are:
+
+embedding reasoning into the language itself
+
+
+⸻
+
+comparison summary
+
+character vectors
+
++ universal
++ perfect for code
++ flexible
+- weak meaning
+- long sequences
+- harder reasoning
+
+
+⸻
+
+word vectors
+
++ strong meaning
++ short sequences
++ better reasoning
+- rigid vocab
+- worse for code
+
+
+⸻
+
+beast hybrid
+
++ stable primitives (numbers)
++ strong anchors (words)
++ universal fallback (chars)
+
+
+⸻
+
+final recommendation
+
+For beast:
+
+use character tokens as substrate
+use beast tokens as reasoning anchors
+use numerals as semantic geometry
+
+
+⸻
+
+final principle
+
+letters let the model say anything
+
+words let the model mean something
+
+numbers let the model understand structure
+
+
+⸻
+
+If you want next, I can go deeper into:
+	•	how attention actually forms "reasoning chains"
+	•	or how to train a tiny beast llm with this tokenizer and vector system
+	
+	
+	
+	
+	
+	
+	
+	
+
+beast hybrid llm with tiny 666 word vocabulary optimized for beast ops (in the beast system).
+
+one thing i want is a general purpose llm. i want my ai assistant to both know beast geneators but also my address book and how to dial a number for me (via the beast ios app). plus all the unique names of unique people.
+
+666 words (see beast language doc for first 66)
++
+dictionary.db
++
+phonetic.db (ideally: every unique syllable to every possible spelling)
++
+hybrid approach
+
+seems to be the only realistic option for phone hardware in 2026
+
+please design beast general purpose ai (llm) doc v0.1.md
+
+
+
+
+
+
+
+
+Here is a clean repo-ready draft.
+
+⸻
+
+beast general purpose ai llm doc v0.1
+
+purpose
+
+define the first beast general purpose ai design
+
+goal:
+	•	run locally
+	•	work on phone-class hardware
+	•	operate inside beast
+	•	handle beast-native tasks and ordinary personal tasks
+	•	remain inspectable
+	•	remain useful with small local models
+
+this is not a giant cloud model replacement
+
+this is a beast-native assistant for real work inside the beast system
+
+⸻
+
+core idea
+
+beast general purpose ai is a hybrid local system
+
+it is not:
+	•	pure english
+	•	pure beast language
+	•	pure character model
+	•	pure fixed vocabulary model
+
+it is:
+
+tiny beast llm
++ dictionary.db
++ phonetic.db
++ beast context
++ explicit tools
+
+
+⸻
+
+design goal
+
+the model should be able to do both:
+	•	beast tasks
+	•	ordinary life tasks
+
+examples:
+
+beast tasks
+	•	run generator
+	•	inspect artifact
+	•	explain beast doc
+	•	rerun last image with one change
+	•	help write c code for beast
+
+ordinary tasks
+	•	find a person in address book
+	•	dial a number through beast ios app
+	•	explain a message
+	•	look up a saved note
+	•	help remember context
+
+the same assistant should be able to say:
+
+run last wan22 generator with red armor
+
+and also:
+
+call alex mobile
+
+
+⸻
+
+system law
+
+the llm should think in beast
+and reach into dictionaries when beast is not enough
+
+
+⸻
+
+why this design exists
+
+phone hardware is limited
+
+general purpose natural language is expensive
+
+full english is large, unstable, and ambiguous
+
+beast language is:
+	•	smaller
+	•	more stable
+	•	more inspectable
+
+but beast language alone is not enough for:
+	•	names
+	•	addresses
+	•	unique contacts
+	•	arbitrary real-world data
+
+therefore the realistic design is hybrid
+
+⸻
+
+top level architecture
+
+user input
+→ phonetic layer
+→ beast language layer
+→ llm reasoning layer
+→ tool / db lookup
+→ action or response
+→ artifact / log
+
+expanded:
+
+voice or text
+→ phonetic.db
+→ beast tokenizer
+→ beast llm
+→ dictionary.db / contacts / docs / artifacts / tools
+→ answer or command
+
+
+⸻
+
+core components
+
+1. tiny beast llm
+
+the central model
+
+properties:
+	•	small enough for local hardware
+	•	optimized for beast operations
+	•	trained or tuned on beast language
+	•	able to route to tools and databases
+	•	does not need to memorize everything
+
+role
+
+the beast llm should be good at:
+	•	command interpretation
+	•	procedural reasoning
+	•	tool selection
+	•	local context use
+	•	explanation
+	•	constrained code writing
+	•	teaching
+
+it should not be expected to memorize:
+	•	all names
+	•	all phone numbers
+	•	all arbitrary strings
+	•	all encyclopedic facts
+
+those belong in databases
+
+⸻
+
+2. 666 word beast vocabulary
+
+beast language provides the stable semantic core
+
+properties:
+	•	small
+	•	curated
+	•	low drift
+	•	optimized for beast operations
+	•	easier for tiny local models than full english
+
+first 66 words already defined in beast language doc
+
+the full 666 words should cover:
+	•	commands
+	•	artifact operations
+	•	ratings
+	•	debugging words
+	•	navigation
+	•	scheduling
+	•	tool use
+	•	explanation
+	•	teaching
+	•	personal assistant basics
+
+role
+
+the 666 word vocab gives the model:
+	•	semantic anchors
+	•	shorter sequences
+	•	stable concepts
+	•	less ambiguity than full english
+
+⸻
+
+3. dictionary.db
+
+external structured knowledge store
+
+contains:
+	•	rare words
+	•	names
+	•	addresses
+	•	unique identifiers
+	•	contact records
+	•	alternate spellings
+	•	domain-specific vocabulary
+	•	encyclopedia entries
+
+role
+
+dictionary.db is where the assistant looks when the token is:
+	•	uncommon
+	•	unique
+	•	not worth putting in core 666
+	•	dangerous to compress away
+
+examples:
+	•	michael manesh
+	•	alex rodriguez
+	•	gaithersburg
+	•	wan22
+	•	civitai model names
+	•	local contacts
+	•	project names
+
+principle
+
+the llm should reason over stable concepts
+and retrieve specific names from db
+
+
+⸻
+
+4. phonetic.db
+
+phonetic bridge between sound and written forms
+
+contains:
+	•	every unique syllable Beast cares about
+	•	every possible spelling or likely spelling
+	•	pronunciation variants
+	•	dialect variants
+	•	beast spoken forms
+	•	mappings to canonical beast tokens where possible
+
+examples:
+
+4 -> for fore four
+2 -> to too two
+z -> zee
+zed -> zed
+sev -> seven
+zeer -> zero
+dub -> doubleyou w
+
+ideal role
+
+phonetic.db should map:
+
+heard syllable
+→ possible spellings
+→ possible beast token
+
+this enables:
+	•	voice to beast syllables
+	•	later english reconstruction
+	•	unique name lookup via syllable matching
+
+⸻
+
+5. beast tokenizer
+
+hybrid tokenizer layer
+
+uses:
+	•	beast vocab tokens when stable
+	•	character fallback for unknown text
+	•	digits and directional tokens
+	•	db lookups for names and rare words
+
+role
+
+make tiny llm reasoning practical by:
+	•	shortening common beast sequences
+	•	preserving universality for code and unique names
+
+⸻
+
+6. tool layer
+
+the assistant should not only answer
+it should act through explicit tools
+
+examples:
+	•	call contact
+	•	send text
+	•	open artifact
+	•	run generator
+	•	rate artifact
+	•	search doc
+	•	search address book
+	•	inspect command history
+
+principle:
+
+reason in llm
+act through tools
+
+
+⸻
+
+why hybrid is the realistic phone path
+
+a small model on phone hardware can be useful if it does not carry the whole world inside itself
+
+instead:
+
+keep inside model
+	•	stable reasoning patterns
+	•	beast operations
+	•	small semantic core
+	•	command grammar
+	•	teaching style
+
+keep outside model
+	•	unique names
+	•	exact numbers
+	•	addresses
+	•	project titles
+	•	long-tail vocabulary
+	•	encyclopedic entries
+	•	contact details
+
+this reduces:
+	•	model size
+	•	training burden
+	•	hallucination pressure
+
+⸻
+
+reasoning model
+
+beast general purpose ai should reason in three passes
+
+pass 1: classify input
+
+what kind of thing is this
+
+examples:
+	•	command
+	•	question
+	•	contact request
+	•	code request
+	•	doc request
+	•	generator request
+
+⸻
+
+pass 2: gather context
+
+what does the model need
+
+sources:
+	•	artifact graph
+	•	command history
+	•	dictionary.db
+	•	phonetic.db
+	•	contacts
+	•	docs
+	•	user context
+
+⸻
+
+pass 3: produce result
+
+result may be:
+	•	answer
+	•	command
+	•	tool call
+	•	explanation
+	•	diff
+	•	teaching feedback
+
+⸻
+
+memory philosophy
+
+the model should not be the memory
+
+beast is the memory
+
+the model should query:
+	•	artifacts
+	•	docs
+	•	contacts
+	•	dictionary
+	•	command logs
+
+principle:
+
+artifacts and dbs remember
+the llm reasons
+
+
+⸻
+
+contact and phone example
+
+user says:
+
+call alex mobile
+
+pipeline:
+
+voice
+→ phonetic trace
+→ beast decode
+→ llm classifies as contact action
+→ contacts db lookup
+→ alex mobile match
+→ tool call through beast ios app
+→ call starts
+→ command logged
+
+the model does not need to memorize alex’s number
+
+it needs to:
+	•	recognize the task
+	•	lookup the right person
+	•	call the correct tool
+
+⸻
+
+beast generator example
+
+user says:
+
+run last wan22 generator with red armor
+
+pipeline:
+
+input
+→ beast tokenizer
+→ llm classifies as generator action
+→ artifact/generator lookup
+→ edit prompt parameter
+→ rerun tool call
+→ artifact created
+
+the model does not need to invent a generator
+it operates on the beast system
+
+⸻
+
+code writing example
+
+user says:
+
+fix memory leak in this function
+
+pipeline:
+
+request
+→ code context retrieval
+→ llm reasoning
+→ diff proposal
+→ explanation
+→ human review
+→ artifact / signed change
+
+again:
+	•	core reasoning in model
+	•	exact symbols from context
+	•	unique names from files
+	•	action through explicit review flow
+
+⸻
+
+vocabulary strategy
+
+inside 666 core
+
+put words that are:
+	•	common
+	•	stable
+	•	high value
+	•	semantically important
+	•	used often in beast operations
+
+examples:
+	•	make
+	•	run
+	•	save
+	•	load
+	•	rate
+	•	glitch
+	•	wtf
+	•	lgtm
+	•	diamond
+	•	landfill
+	•	artifact
+	•	generator
+	•	command
+	•	prompt
+	•	model
+	•	contact
+	•	call
+	•	send
+	•	note
+	•	doc
+	•	search
+	•	explain
+	•	teach
+
+outside core
+
+leave in db:
+	•	names
+	•	locations
+	•	long-tail words
+	•	exact app titles
+	•	model versions
+	•	uncommon proper nouns
+
+⸻
+
+phonetic strategy
+
+phonetic.db should support both:
+
+beast syllable to beast token
+
+example:
+
+4-ur-sol
+→ 4 ur sol
+
+beast syllable to possible english spellings
+
+example:
+
+sol
+→ soul
+→ sole
+→ sol
+
+this allows:
+	•	stable capture first
+	•	flexible interpretation later
+
+⸻
+
+training strategy
+
+the tiny beast llm should be trained or tuned on:
+	•	beast language
+	•	command examples
+	•	artifact operations
+	•	tool calling formats
+	•	docs and academy style
+	•	careful coding tasks
+	•	contact and personal assistant patterns
+
+the model should not waste capacity on:
+	•	broad internet trivia
+	•	random web slang
+	•	giant general corpora beyond what is needed
+
+⸻
+
+trust model
+
+the assistant should be inspectable
+
+for any action, beast should be able to show:
+	•	what was heard
+	•	what was tokenized
+	•	what dbs were queried
+	•	what tool was selected
+	•	what action was executed
+
+principle:
+
+no hidden magic
+
+
+⸻
+
+advantages of this design
+
+1. realistic on local hardware
+
+small model plus databases is much cheaper than giant model alone
+
+2. stable reasoning core
+
+beast language reduces drift
+
+3. general purpose in practice
+
+can handle both beast tasks and daily tasks
+
+4. better than pure english tiny models
+
+less ambiguity
+shorter core sequences
+more structured meaning
+
+5. better than pure beast language
+
+can still handle names and unique world data
+
+⸻
+
+disadvantages
+
+1. more moving parts
+
+needs:
+	•	model
+	•	tokenizer
+	•	dictionary db
+	•	phonetic db
+	•	tools
+	•	context plumbing
+
+2. db quality becomes critical
+
+bad dictionary or phonetic data harms the whole system
+
+3. less magical than giant cloud models
+
+more explicit
+more constrained
+less broad out of the box
+
+this is acceptable and intended
+
+⸻
+
+implementation phases
+
+phase 1
+
+tiny beast llm for beast ops only
+	•	command interpretation
+	•	artifact lookup
+	•	generator control
+	•	docs explanation
+
+phase 2
+
+dictionary.db and contact lookup
+	•	names
+	•	phone actions
+	•	notes
+	•	addresses
+
+phase 3
+
+phonetic.db integration
+	•	voice capture support
+	•	syllable to spelling mapping
+	•	dialect handling
+
+phase 4
+
+general purpose local assistant mode
+	•	mixed beast and personal tasks
+	•	stronger tool routing
+	•	phone integration
+
+⸻
+
+non goals
+
+this system is not trying to be:
+	•	a giant unrestricted world model
+	•	a cloud replacement in breadth
+	•	a fake omniscient assistant
+
+it is trying to be:
+	•	local
+	•	honest
+	•	useful
+	•	inspectable
+	•	deeply integrated with beast
+
+⸻
+
+final principle
+
+the model should know how to think
+the system should know the facts
+the tools should do the work
+
+
+⸻
+
+closing
+
+beast general purpose ai
+is not one giant brain
+
+it is a small reliable mind
+living inside a rich local world
+
+If you want, next I can draft a companion file:
+
+beast-general-purpose-ai-architecture-v0.1.md
+
+with exact components, data flow, and module boundaries.
+
+
+
+
+
+yes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

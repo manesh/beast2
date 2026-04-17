@@ -1095,3 +1095,685 @@ If you want, next I can draft the minimal command parser spec and C header for:
 	•	rate this diamond/ok/landfill
 
 
+
+
+
+
+
+
+yes
+
+
+
+
+
+
+
+
+Here is a repo-ready minimal command parser spec v0.1 and matching C header.
+
+⸻
+
+minimal command parser spec v0.1
+
+purpose
+
+define the first beast command parser for desktop v0.1
+
+scope:
+	•	small command set
+	•	deterministic parsing
+	•	no llm required
+	•	supports image generation workstation loop
+
+this parser is for:
+	•	command bar
+	•	future cli
+	•	future voice decode target
+
+not for:
+	•	full beast language
+	•	ambiguous freeform english
+	•	complex planning
+
+⸻
+
+law
+
+small command set
+exact parse
+no hidden guess
+
+
+⸻
+
+supported commands
+
+v0.1 must parse these commands:
+
+run last gen
+make 4 image
+show last image
+save this art
+rate this diamond
+rate this ok
+rate this landfill
+
+
+⸻
+
+parse model
+
+each command becomes:
+	•	action
+	•	target
+	•	optional count
+	•	optional rating
+
+example:
+
+make 4 image
+
+becomes:
+
+action = make
+target = image
+count = 4
+
+
+⸻
+
+canonical grammar
+
+1. run last gen
+
+run last gen
+
+meaning:
+	•	rerun last generator using current editable state if present
+	•	otherwise rerun last artifact generator
+
+parse:
+
+action = run
+target = last_gen
+
+
+⸻
+
+2. make 4 image
+
+make <count> image
+
+rules:
+	•	<count> must be integer > 0
+	•	only singular image supported in v0.1
+	•	later versions may support images
+
+parse:
+
+action = make
+target = image
+count = N
+
+
+⸻
+
+3. show last image
+
+show last image
+
+meaning:
+	•	select most recent image artifact
+	•	open it in canvas and inspector
+
+parse:
+
+action = show
+target = last_image
+
+
+⸻
+
+4. save this art
+
+save this art
+
+meaning:
+	•	save currently selected artifact or current preview artifact
+
+parse:
+
+action = save
+target = this_art
+
+
+⸻
+
+5. rate this diamond
+
+rate this diamond
+rate this ok
+rate this landfill
+
+meaning:
+	•	rate selected artifact
+
+parse:
+
+action = rate
+target = this_art
+rating = diamond | ok | landfill
+
+
+⸻
+
+tokenization rules
+	•	split on spaces
+	•	ignore repeated spaces
+	•	lowercase before parse
+	•	no punctuation support required in v0.1
+	•	exact token order required
+
+examples:
+
+valid:
+
+run last gen
+make 4 image
+
+invalid:
+
+run gen last
+make image 4
+rate diamond this
+
+
+⸻
+
+normalization rules
+
+before parse:
+	•	trim leading and trailing spaces
+	•	collapse multiple spaces to one
+	•	convert to lowercase
+
+example:
+
+  Make   4   Image
+
+normalizes to:
+
+make 4 image
+
+
+⸻
+
+parse result
+
+parser returns:
+	•	status
+	•	parsed command if valid
+	•	error if invalid
+
+statuses:
+	•	empty
+	•	valid
+	•	invalid
+	•	ambiguous
+
+note:
+	•	ambiguous should rarely occur in v0.1
+	•	most failures are invalid
+
+⸻
+
+invalid examples
+
+make image
+
+reason:
+	•	missing count
+
+make zero image
+
+reason:
+	•	count must be numeric in v0.1
+
+show image
+
+reason:
+	•	only show last image supported
+
+rate this great
+
+reason:
+	•	unsupported rating
+
+⸻
+
+command execution mapping
+
+parsed commands should map to existing app actions only
+
+no voice-only logic
+no command-only logic
+
+examples:
+	•	run last gen → same rerun path as rerun button
+	•	show last image → same selection path as clicking newest artifact
+	•	rate this diamond → same rating path as context menu
+
+⸻
+
+error handling
+
+on invalid parse:
+	•	do not execute anything
+	•	return explicit error
+	•	keep input in command bar
+	•	show short status text
+
+examples:
+
+unknown command
+missing count
+unsupported rating
+no selected artifact
+no last image
+
+
+⸻
+
+future extension points
+
+not in v0.1, but parser should leave room for:
+	•	plural nouns
+	•	synonyms
+	•	beast english normalization
+	•	cdi forms
+	•	parameter forms
+	•	quoted strings
+
+⸻
+
+final principle
+
+v0.1 parser should be boring
+boring is good
+
+
+⸻
+
+file: src/command/beast_command_parser.h
+
+#ifndef BEAST_COMMAND_PARSER_H
+#define BEAST_COMMAND_PARSER_H
+
+#include <stdbool.h>
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define BEAST_COMMAND_TEXT_MAX 256
+#define BEAST_COMMAND_ERROR_MAX 128
+
+typedef enum BeastCommandParseStatus {
+    BEAST_COMMAND_PARSE_EMPTY = 0,
+    BEAST_COMMAND_PARSE_VALID,
+    BEAST_COMMAND_PARSE_INVALID,
+    BEAST_COMMAND_PARSE_AMBIGUOUS
+} BeastCommandParseStatus;
+
+typedef enum BeastCommandAction {
+    BEAST_COMMAND_ACTION_NONE = 0,
+    BEAST_COMMAND_ACTION_RUN,
+    BEAST_COMMAND_ACTION_MAKE,
+    BEAST_COMMAND_ACTION_SHOW,
+    BEAST_COMMAND_ACTION_SAVE,
+    BEAST_COMMAND_ACTION_RATE
+} BeastCommandAction;
+
+typedef enum BeastCommandTarget {
+    BEAST_COMMAND_TARGET_NONE = 0,
+    BEAST_COMMAND_TARGET_LAST_GEN,
+    BEAST_COMMAND_TARGET_IMAGE,
+    BEAST_COMMAND_TARGET_LAST_IMAGE,
+    BEAST_COMMAND_TARGET_THIS_ART
+} BeastCommandTarget;
+
+typedef enum BeastCommandRating {
+    BEAST_COMMAND_RATING_NONE = 0,
+    BEAST_COMMAND_RATING_DIAMOND,
+    BEAST_COMMAND_RATING_OK,
+    BEAST_COMMAND_RATING_LANDFILL
+} BeastCommandRating;
+
+typedef struct BeastParsedCommand {
+    BeastCommandAction action;
+    BeastCommandTarget target;
+    BeastCommandRating rating;
+    int count;
+    char normalized_text[BEAST_COMMAND_TEXT_MAX];
+} BeastParsedCommand;
+
+typedef struct BeastCommandParseResult {
+    BeastCommandParseStatus status;
+    BeastParsedCommand command;
+    char error_text[BEAST_COMMAND_ERROR_MAX];
+} BeastCommandParseResult;
+
+/* normalize input into lowercase single-space form */
+void BeastCommand_Normalize(const char *input, char *output, size_t output_size);
+
+/* parse normalized or raw input */
+BeastCommandParseResult BeastCommand_Parse(const char *input);
+
+/* helpers */
+const char *BeastCommandParseStatus_ToString(BeastCommandParseStatus status);
+const char *BeastCommandAction_ToString(BeastCommandAction action);
+const char *BeastCommandTarget_ToString(BeastCommandTarget target);
+const char *BeastCommandRating_ToString(BeastCommandRating rating);
+
+/* convenience predicates */
+bool BeastCommand_IsRunnable(const BeastParsedCommand *cmd);
+bool BeastCommand_RequiresSelectedArtifact(const BeastParsedCommand *cmd);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+
+
+⸻
+
+file: src/command/beast_command_parser.c
+
+#include "beast_command_parser.h"
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static void BeastCommand_SetError(BeastCommandParseResult *result, const char *msg) {
+    result->status = BEAST_COMMAND_PARSE_INVALID;
+    snprintf(result->error_text, sizeof(result->error_text), "%s", msg ? msg : "invalid command");
+}
+
+void BeastCommand_Normalize(const char *input, char *output, size_t output_size) {
+    if (!output || output_size == 0) return;
+
+    output[0] = '\0';
+    if (!input) return;
+
+    size_t out = 0;
+    bool in_space = true; /* trim leading spaces */
+
+    for (size_t i = 0; input[i] != '\0'; ++i) {
+        unsigned char ch = (unsigned char)input[i];
+
+        if (isspace(ch)) {
+            if (!in_space && out + 1 < output_size) {
+                output[out++] = ' ';
+            }
+            in_space = true;
+        } else {
+            if (out + 1 < output_size) {
+                output[out++] = (char)tolower(ch);
+            }
+            in_space = false;
+        }
+    }
+
+    if (out > 0 && output[out - 1] == ' ') {
+        out--;
+    }
+
+    output[out] = '\0';
+}
+
+static int BeastCommand_Tokenize(char *text, char *tokens[], int max_tokens) {
+    int count = 0;
+    char *save = NULL;
+    char *tok = strtok_r(text, " ", &save);
+
+    while (tok && count < max_tokens) {
+        tokens[count++] = tok;
+        tok = strtok_r(NULL, " ", &save);
+    }
+
+    return count;
+}
+
+BeastCommandParseResult BeastCommand_Parse(const char *input) {
+    BeastCommandParseResult result;
+    memset(&result, 0, sizeof(result));
+
+    result.status = BEAST_COMMAND_PARSE_EMPTY;
+    result.command.action = BEAST_COMMAND_ACTION_NONE;
+    result.command.target = BEAST_COMMAND_TARGET_NONE;
+    result.command.rating = BEAST_COMMAND_RATING_NONE;
+    result.command.count = 0;
+
+    BeastCommand_Normalize(input, result.command.normalized_text, sizeof(result.command.normalized_text));
+
+    if (result.command.normalized_text[0] == '\0') {
+        result.status = BEAST_COMMAND_PARSE_EMPTY;
+        return result;
+    }
+
+    char work[BEAST_COMMAND_TEXT_MAX];
+    snprintf(work, sizeof(work), "%s", result.command.normalized_text);
+
+    char *tokens[8] = {0};
+    int n = BeastCommand_Tokenize(work, tokens, 8);
+
+    if (n == 3 &&
+        strcmp(tokens[0], "run") == 0 &&
+        strcmp(tokens[1], "last") == 0 &&
+        strcmp(tokens[2], "gen") == 0) {
+        result.status = BEAST_COMMAND_PARSE_VALID;
+        result.command.action = BEAST_COMMAND_ACTION_RUN;
+        result.command.target = BEAST_COMMAND_TARGET_LAST_GEN;
+        return result;
+    }
+
+    if (n == 3 &&
+        strcmp(tokens[0], "make") == 0 &&
+        strcmp(tokens[2], "image") == 0) {
+        char *end = NULL;
+        long value = strtol(tokens[1], &end, 10);
+        if (!end || *end != '\0') {
+            BeastCommand_SetError(&result, "missing or invalid count");
+            return result;
+        }
+        if (value <= 0 || value > 1000000) {
+            BeastCommand_SetError(&result, "count out of range");
+            return result;
+        }
+
+        result.status = BEAST_COMMAND_PARSE_VALID;
+        result.command.action = BEAST_COMMAND_ACTION_MAKE;
+        result.command.target = BEAST_COMMAND_TARGET_IMAGE;
+        result.command.count = (int)value;
+        return result;
+    }
+
+    if (n == 3 &&
+        strcmp(tokens[0], "show") == 0 &&
+        strcmp(tokens[1], "last") == 0 &&
+        strcmp(tokens[2], "image") == 0) {
+        result.status = BEAST_COMMAND_PARSE_VALID;
+        result.command.action = BEAST_COMMAND_ACTION_SHOW;
+        result.command.target = BEAST_COMMAND_TARGET_LAST_IMAGE;
+        return result;
+    }
+
+    if (n == 3 &&
+        strcmp(tokens[0], "save") == 0 &&
+        strcmp(tokens[1], "this") == 0 &&
+        strcmp(tokens[2], "art") == 0) {
+        result.status = BEAST_COMMAND_PARSE_VALID;
+        result.command.action = BEAST_COMMAND_ACTION_SAVE;
+        result.command.target = BEAST_COMMAND_TARGET_THIS_ART;
+        return result;
+    }
+
+    if (n == 3 &&
+        strcmp(tokens[0], "rate") == 0 &&
+        strcmp(tokens[1], "this") == 0) {
+        result.status = BEAST_COMMAND_PARSE_VALID;
+        result.command.action = BEAST_COMMAND_ACTION_RATE;
+        result.command.target = BEAST_COMMAND_TARGET_THIS_ART;
+
+        if (strcmp(tokens[2], "diamond") == 0) {
+            result.command.rating = BEAST_COMMAND_RATING_DIAMOND;
+            return result;
+        }
+        if (strcmp(tokens[2], "ok") == 0) {
+            result.command.rating = BEAST_COMMAND_RATING_OK;
+            return result;
+        }
+        if (strcmp(tokens[2], "landfill") == 0) {
+            result.command.rating = BEAST_COMMAND_RATING_LANDFILL;
+            return result;
+        }
+
+        BeastCommand_SetError(&result, "unsupported rating");
+        return result;
+    }
+
+    BeastCommand_SetError(&result, "unknown command");
+    return result;
+}
+
+const char *BeastCommandParseStatus_ToString(BeastCommandParseStatus status) {
+    switch (status) {
+        case BEAST_COMMAND_PARSE_EMPTY: return "empty";
+        case BEAST_COMMAND_PARSE_VALID: return "valid";
+        case BEAST_COMMAND_PARSE_INVALID: return "invalid";
+        case BEAST_COMMAND_PARSE_AMBIGUOUS: return "ambiguous";
+        default: return "unknown";
+    }
+}
+
+const char *BeastCommandAction_ToString(BeastCommandAction action) {
+    switch (action) {
+        case BEAST_COMMAND_ACTION_RUN: return "run";
+        case BEAST_COMMAND_ACTION_MAKE: return "make";
+        case BEAST_COMMAND_ACTION_SHOW: return "show";
+        case BEAST_COMMAND_ACTION_SAVE: return "save";
+        case BEAST_COMMAND_ACTION_RATE: return "rate";
+        default: return "none";
+    }
+}
+
+const char *BeastCommandTarget_ToString(BeastCommandTarget target) {
+    switch (target) {
+        case BEAST_COMMAND_TARGET_LAST_GEN: return "last_gen";
+        case BEAST_COMMAND_TARGET_IMAGE: return "image";
+        case BEAST_COMMAND_TARGET_LAST_IMAGE: return "last_image";
+        case BEAST_COMMAND_TARGET_THIS_ART: return "this_art";
+        default: return "none";
+    }
+}
+
+const char *BeastCommandRating_ToString(BeastCommandRating rating) {
+    switch (rating) {
+        case BEAST_COMMAND_RATING_DIAMOND: return "diamond";
+        case BEAST_COMMAND_RATING_OK: return "ok";
+        case BEAST_COMMAND_RATING_LANDFILL: return "landfill";
+        default: return "none";
+    }
+}
+
+bool BeastCommand_IsRunnable(const BeastParsedCommand *cmd) {
+    if (!cmd) return false;
+    return cmd->action != BEAST_COMMAND_ACTION_NONE;
+}
+
+bool BeastCommand_RequiresSelectedArtifact(const BeastParsedCommand *cmd) {
+    if (!cmd) return false;
+    return cmd->target == BEAST_COMMAND_TARGET_THIS_ART;
+}
+
+
+⸻
+
+file: docs/cursor-command-parser-handoff-v0.1.md
+
+# cursor handoff: minimal command parser v0.1
+
+implement exactly the command set in `minimal-command-parser-spec-v0.1.md`.
+
+required commands:
+- run last gen
+- make 4 image
+- show last image
+- save this art
+- rate this diamond
+- rate this ok
+- rate this landfill
+
+rules:
+- normalize input first
+- exact parse only
+- no llm
+- no synonyms
+- no punctuation support
+- no hidden guesses
+
+wire parser into:
+- command bar status text
+- parse preview
+- action dispatch layer later
+
+definition of done:
+- parser returns valid parse structs
+- invalid input returns clear error text
+- ui can display parse result
+- no execution on invalid parse
+
+
+⸻
+
+optional: tiny parser test file
+
+#include <assert.h>
+#include <string.h>
+#include "beast_command_parser.h"
+
+static void test_make_image(void) {
+    BeastCommandParseResult r = BeastCommand_Parse("Make   4   Image");
+    assert(r.status == BEAST_COMMAND_PARSE_VALID);
+    assert(r.command.action == BEAST_COMMAND_ACTION_MAKE);
+    assert(r.command.target == BEAST_COMMAND_TARGET_IMAGE);
+    assert(r.command.count == 4);
+}
+
+static void test_rate_ok(void) {
+    BeastCommandParseResult r = BeastCommand_Parse("rate this ok");
+    assert(r.status == BEAST_COMMAND_PARSE_VALID);
+    assert(r.command.action == BEAST_COMMAND_ACTION_RATE);
+    assert(r.command.rating == BEAST_COMMAND_RATING_OK);
+}
+
+static void test_invalid(void) {
+    BeastCommandParseResult r = BeastCommand_Parse("make image");
+    assert(r.status == BEAST_COMMAND_PARSE_INVALID);
+}
+
+int main(void) {
+    test_make_image();
+    test_rate_ok();
+    test_invalid();
+    return 0;
+}
+
+If you want, next I can draft the command dispatch spec v0.1 that maps these parsed commands into concrete Beast app actions and state changes.
+
+
