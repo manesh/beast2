@@ -249,6 +249,10 @@ safe = dont break system
 best = lazy + safe
 
 
+when in doubt:
+pick the more lazy design that is still safe
+
+
 ⸻
 
 tone
