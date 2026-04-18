@@ -1,0 +1,2303 @@
+beast2 architecture doc
+
+documentation/comment requirements:
+in beast language
+lowercase, no apostrophes, hi im michael
+mostly use short easy common word
+special beast words: wtf, glitch, mabe (maybe), sev (seven), zeer (zero), dub (doubleyou/w)
+special beast acronyms:
+wtf: means "unexpected result, need to halt and discuss or investigate" to beast coders, communicates shock/surprise via shortest known 3 char sequence, also means what the f
+glitch: anomaly detected, possibly minor or inconsequential bug, concerning but may be misunderstanding and may not be a blocker. "wtf glitch" is blocker
+idk / idu / mu (i dont know / i dont understand / (i) maybe understand)
+lotm / lgtm / letm / sptm (looks ok to me, looks good to me, looks epic to me, subjectively perfect to me)
+typical beast learning new topic:
+wtf -> idk -> idu -> mu
+typical beast writing/reviewing/fixing code:
+wtf -> no (no code / bad code) -> lotm -> lgtm (mabe ship it) -> letm (ship it and tell everyone) -> sptm (might be legendary civilizational artifact that will stand the test of time)
+Can use 2026 English (~75,000 words) but strongly discouraged (try to stick to most common ~666 and avoid typing slow puncuation, wtf please use beast language)
+
+code requirements:
+written in c
+requirements: camelCaseFunctions, one interface function per .c file + helper functions, functions and structs begin with beast prefix
+ring buffer as default data structure backing list/gallery views
+sdl3 c library for ui drawing and inout handling
+onnx c library for interface to ai models
+must support all 5 major OSes (mac win linux ios android)
+sqlite dbs first class object in beast2, ring buffer storage for fast hot storage indexed sql dbs for fast cold
+
+external dependencies for beast2 v0.1: sqlite and ffmpeg
+have build option to include sqlite and ffmpeg in beast2 binary for beast2 1.0 everything included build
+
+
+
+
+
+
+
+whats missing?
+
+
+
+
+
+
+
+
+yes. a lot is good already. but for a real beast2 architecture doc, key parts are still missing.
+
+big missing parts
+
+1. core runtime loop
+
+need say exact main loop shape
+
+input
+ui
+queue
+worker dispatch
+artifact update
+draw
+sleep
+
+need rules for:
+	•	what thread owns ui
+	•	what can block
+	•	what must never block
+	•	frame tick target
+	•	how worker threads report back
+
+if this part is fuzzy, ui will glitch.
+
+⸻
+
+2. thread model
+
+you said background threading, good, but need exact thread plan.
+
+need name main thread groups:
+	•	ui thread
+	•	input thread mabe same as ui
+	•	db thread
+	•	ffmpeg process read thread
+	•	model worker thread pool
+	•	file io thread
+	•	preview decode thread
+	•	log thread mabe merged
+
+need say:
+	•	thread count rules
+	•	lock rules
+	•	atomics rules
+	•	when ring buffer is single writer or multi writer
+	•	when queue is bounded
+	•	cancel rules
+
+without this, wtf race city.
+
+⸻
+
+3. memory model
+
+huge missing part.
+
+need define:
+	•	who owns each object
+	•	who frees it
+	•	temp arena or not
+	•	frame allocator or not
+	•	hot cache max size
+	•	cold cache rules
+	•	image/video buffer layout
+	•	string storage rules
+	•	utf8 rules
+	•	zero copy where possible
+
+c needs this early or pain later.
+
+⸻
+
+4. artifact model
+
+beast needs first class artifact spec.
+
+need define artifact kinds:
+	•	image
+	•	video
+	•	audio
+	•	text
+	•	code
+	•	db
+	•	generator
+	•	log
+	•	model ref
+	•	command doc
+
+need say every artifact has:
+	•	id
+	•	kind
+	•	hash
+	•	parent ids
+	•	made by generator id
+	•	made time
+	•	rating
+	•	tags
+	•	local path
+	•	preview path
+	•	comment/meta blob
+	•	size
+	•	state
+
+this is core beast memory.
+
+⸻
+
+5. generator model
+
+need exact struct for generator and run.
+
+not just philosophy. exact fields.
+
+beastGenerator
+beastGeneratorRun
+beastGeneratorVariant
+beastCommandDoc
+
+need say:
+	•	required inputs
+	•	optional inputs
+	•	params
+	•	model refs
+	•	output contract
+	•	eta guess
+	•	can cancel
+	•	can branch
+	•	cache key
+	•	lineage write
+
+⸻
+
+6. command pipeline
+
+very important for beast3 path.
+
+need exact pipeline:
+
+voice/text input
+-> parse
+-> intent guess
+-> command doc draft
+-> preview
+-> user edit
+-> execute
+-> queue
+-> artifact
+
+need say when llm used and when not.
+need say rule based fast path for short commands.
+
+⸻
+
+7. db plan
+
+you said sqlite first class, yes. need much more.
+
+need list dbs.
+mabe:
+	•	artifactDb
+	•	tagDb
+	•	generatorDb
+	•	logDb
+	•	userDb
+	•	beliefDb
+	•	cacheDb
+	•	queueDb
+
+need say:
+	•	schema ownership
+	•	migration plan
+	•	write batching
+	•	index plan
+	•	search plan
+	•	hot ring buffer to sql flush rules
+	•	backup/export/import
+
+ring buffer hot + sqlite cold is strong. define exact join.
+
+⸻
+
+8. cache plan
+
+super missing.
+
+need separate:
+	•	ram hot cache
+	•	vram hot cache
+	•	disk cache
+	•	archive store
+
+need say:
+	•	eviction rules
+	•	diamond never evict mabe
+	•	landfill low priority
+	•	preview cache format
+	•	latent cache format
+	•	thumbnail cache
+	•	waveform cache if audio later
+
+⸻
+
+9. file and dir layout
+
+need exact on disk layout for all 5 oses.
+
+need say:
+	•	app dir
+	•	data dir
+	•	cache dir
+	•	temp dir
+	•	model dir
+	•	db dir
+	•	artifact dir
+	•	logs dir
+	•	export dir
+
+and path abstraction layer.
+
+⸻
+
+10. platform layer
+
+you said 5 oses. good. need beast platform split.
+
+mabe:
+
+beastPlatformCore
+beastPlatformFile
+beastPlatformThread
+beastPlatformTime
+beastPlatformWindow
+beastPlatformAudio
+beastPlatformProcess
+
+need say what uses sdl3 and what uses custom layer.
+need say how ios and android sandbox limits change file, ffmpeg, model load, background work.
+
+mobile is not just small desktop. wtf if ignored.
+
+⸻
+
+11. process model
+
+ffmpeg is ext dep. need say:
+	•	call as child process or embed lib later
+	•	stdout stderr capture
+	•	timeout
+	•	cancel kill rules
+	•	temp file rules
+	•	retry
+	•	version detect
+	•	bundled ffmpeg path rules
+
+same for sqlite bundled build.
+
+⸻
+
+12. model runtime layer
+
+onnx c lib is named, but need exact wrapper layer.
+
+need define:
+	•	model registry
+	•	session cache
+	•	tensor io format
+	•	cpu gpu provider select
+	•	fallback rules
+	•	quant model support
+	•	batch size rules
+	•	stream output for llm later
+	•	model warmup
+	•	memory limits
+
+⸻
+
+13. ui system
+
+sdl3 draw/input is good, but doc still needs ui architecture.
+
+need say:
+	•	retained ui or immediate ui or hybrid
+	•	ring buffer gallery view design
+	•	text layout
+	•	font system
+	•	drag drop
+	•	video preview
+	•	timeline
+	•	inspector panel
+	•	queue panel
+	•	command preview panel
+	•	command palette
+	•	keyboard first or mouse first or both
+
+this is where beast lives or dies.
+
+⸻
+
+14. error levels
+
+you have great beast words. formalize them.
+
+mabe severity ladder:
+
+zeer
+glitch
+wtf
+sev
+
+or
+
+info
+glitch
+wtf
+blocker
+
+need machine readable code + beast text.
+
+also define:
+	•	user facing msg
+	•	log msg
+	•	debug dump
+	•	halt or continue
+
+⸻
+
+15. state model
+
+need define global app state.
+
+what is loaded now:
+	•	current project
+	•	current gallery ring
+	•	selected artifact
+	•	active queue
+	•	loaded models
+	•	hot db handles
+	•	worker status
+	•	mode flock/game/workstation
+
+if not formalized, state drift.
+
+⸻
+
+16. queue and scheduler
+
+very missing.
+
+need define:
+	•	queue item struct
+	•	priority
+	•	deps
+	•	retry count
+	•	est time
+	•	est cost
+	•	can split into variants
+	•	can pause
+	•	can cancel
+	•	worker affinity cpu gpu io
+	•	game mode throttle
+	•	flock mode policy
+
+this is core beast power.
+
+⸻
+
+17. config system
+
+need say:
+	•	global config
+	•	project config
+	•	machine config
+	•	session config
+	•	safe defaults
+	•	env var override
+	•	cli override
+	•	save format
+
+⸻
+
+18. logging and metrics
+
+need exact logs.
+	•	ui frame time
+	•	queue wait time
+	•	gen run time
+	•	model load time
+	•	db query time
+	•	io stall time
+	•	cache hit rate
+	•	worker busy percent
+	•	thermals if avail
+
+if beast wants to improve, beast must measure.
+
+⸻
+
+19. security and trust
+
+even local first needs this.
+
+need say:
+	•	no net by default or yes
+	•	model file trust
+	•	command execution trust
+	•	ext tool allow list
+	•	path sandbox
+	•	import validation
+	•	metadata limits
+	•	sql injection not likely but still
+	•	unsafe command doc flag
+
+⸻
+
+20. save/share/import format
+
+super important for beast identity.
+
+need define:
+	•	what file type shares generator
+	•	what file type shares artifact
+	•	what meta goes in png webp webm comment
+	•	size cap
+	•	compression
+	•	versioning
+	•	backward compat
+
+this is one of beast best hooks.
+
+⸻
+
+small but important missing parts
+
+naming rules
+
+you have some. need more.
+	•	struct names
+	•	enum names
+	•	macro names
+	•	file names
+	•	header names
+	•	test names
+
+mabe:
+
+beastThing
+beastDoThing
+BEAST_MAX_THING
+beast_thing.c
+
+
+⸻
+
+header policy
+
+you asked one interface function per c file.
+need header rule too.
+	•	one public header per module
+	•	private header or not
+	•	forward decl rules
+	•	include order
+	•	no cyclic include rule
+
+⸻
+
+test plan
+
+need say:
+	•	unit tests
+	•	golden artifact tests
+	•	parser tests
+	•	db migration tests
+	•	ring buffer wrap tests
+	•	thread stress tests
+	•	ui smoke tests
+	•	perf tests
+
+⸻
+
+build system
+
+need exact build tool for all 5 oses.
+
+cmake mabe.
+need say:
+	•	static build option
+	•	bundle sqlite ffmpeg option
+	•	feature flags
+	•	debug build
+	•	release build
+	•	mobile build
+	•	sanitizer build
+
+⸻
+
+versioning and migration
+
+need:
+	•	doc version
+	•	db schema version
+	•	artifact format version
+	•	generator format version
+	•	upgrade path
+
+⸻
+
+one huge hidden missing part
+
+what is beast2 v0.1 not trying to do
+
+very important
+
+need out of scope list.
+
+or doc will bloat and glitch.
+
+mabe not in v0.1:
+	•	full fleet
+	•	full voice stack
+	•	full self driving sim stack
+	•	full mobile parity
+	•	full online share hub
+	•	all model types
+	•	all media types
+
+clear no list makes yes list real.
+
+⸻
+
+strongest add i would make
+
+add this near top:
+
+beast2 core law
+
+ui must never wait for gen
+ui must never wait for db
+ui must never wait for ffmpeg
+ui must never wait for disk
+
+that one law will save you from many wtf glitch.
+
+⸻
+
+compact missing list
+
+if you want the shortest true list:
+	•	runtime loop
+	•	thread model
+	•	memory ownership
+	•	artifact spec
+	•	generator spec
+	•	command pipeline
+	•	db schema plan
+	•	cache plan
+	•	file layout
+	•	platform layer
+	•	scheduler
+	•	ui architecture
+	•	error model
+	•	build/test/version plan
+	•	out of scope list
+
+⸻
+
+lgtm so far.
+not lgtm yet for full architecture doc.
+right now: mu -> lotm
+with these added: mabe lgtm
+
+i can turn this into a beast language architecture doc skeleton next.
+
+
+
+
+
+
+
+
+
+draft combined thread/memory model/cache/scheduler plan. concise
+
+
+
+
+
+
+yes. draft below. tight and buildable.
+
+beast2 thread memory cache scheduler plan v0.1
+
+core law
+
+ui must never wait for gen
+ui must never wait for db
+ui must never wait for ffmpeg
+ui must never wait for disk
+
+if ui waits, beast feel bad
+if beast feel bad, wtf
+
+⸻
+
+thread plan
+
+beastUiThread
+
+one only
+owns:
+	•	window
+	•	input
+	•	draw
+	•	hot ui state
+	•	visible ring views
+
+must:
+	•	poll input
+	•	draw every frame
+	•	read worker result queue
+	•	never do slow work
+
+must not:
+	•	run model
+	•	hit disk direct
+	•	block on db
+	•	wait on lock long
+
+⸻
+
+beastWorkerPoolThreadN
+
+many
+count:
+	•	cpuCount - 1 mabe clamp 2..sev
+
+owns:
+	•	gen jobs
+	•	light data transform
+	•	command doc draft
+	•	variant expand
+	•	small preview build
+
+must:
+	•	pull from scheduler ready queue
+	•	post result msg back to ui/db/cache queues
+
+must not:
+	•	touch ui state direct
+
+⸻
+
+beastGpuWorkerThread
+
+one per gpu context mabe one only in v0.1
+owns:
+	•	onnx run
+	•	gpu warm state
+	•	vram cache ops
+
+must:
+	•	serialize gpu jobs if provider wants
+	•	report progress
+	•	support cancel check
+
+⸻
+
+beastDbThread
+
+one only
+owns:
+	•	sqlite conn
+	•	write batch
+	•	schema mig
+	•	index update
+
+must:
+	•	read req from db queue
+	•	write req from log/artifact/cache flush queue
+	•	send result rows back by msg
+
+rule:
+	•	only db thread touch sqlite handle in v0.1
+simple
+less glitch
+
+⸻
+
+beastIoThread
+
+one only
+owns:
+	•	file read
+	•	file write
+	•	dir scan
+	•	temp file move
+	•	import export copy
+
+must:
+	•	stream big file io
+	•	never hold giant lock
+
+⸻
+
+beastFfmpegThread
+
+one only in v0.1
+owns:
+	•	child process start stop
+	•	stdout stderr read
+	•	ffmpeg job state
+
+must:
+	•	treat ffmpeg as slow ext tool
+	•	timeout
+	•	kill on cancel
+	•	send progress lines
+
+⸻
+
+beastPreviewThread
+
+one only mabe merge with worker later
+owns:
+	•	thumb build
+	•	loop preview prep
+	•	cheap decode
+	•	resize
+
+⸻
+
+beastLogThread
+
+optional
+mabe merge into io thread for v0.1
+
+⸻
+
+thread msg rule
+
+all cross thread talk is msg queue
+no random shared ptr write
+
+use:
+	•	single producer single consumer ring when easy
+	•	multi producer single consumer queue for worker -> ui and worker -> db
+
+msg kinds:
+	•	job start
+	•	job progress
+	•	job done
+	•	job fail
+	•	cache hit
+	•	db rows
+	•	file loaded
+	•	cancel ack
+
+small msg only
+big data by handle or id
+not giant copy blob in queue
+
+⸻
+
+memory model
+
+core rule
+
+every alloc has one owner
+every ptr has one life span
+if not clear: wtf
+
+⸻
+
+memory zones
+
+1. beastAppStaticMemory
+life: app run
+for:
+	•	global config
+	•	thread structs
+	•	db schema text
+	•	path cache
+	•	model registry
+
+2. beastFrameArena
+life: one ui frame
+for:
+	•	temp draw text
+	•	temp layout
+	•	temp sort scratch
+	•	temp command preview text
+
+reset each frame
+ui thread only
+
+3. beastJobArena
+life: one job
+for:
+	•	prompt build
+	•	temp tensors meta
+	•	temp variant lists
+	•	ffmpeg cmd text
+
+free on job done or cancel
+
+4. beastHotHeap
+life: many sec or min
+for:
+	•	selected artifact meta
+	•	current gallery items
+	•	loaded thumbs
+	•	active queue items
+
+5. beastColdStore
+disk not ram
+for:
+	•	full artifacts
+	•	old logs
+	•	full preview videos
+	•	latent blobs
+	•	sql rows
+
+⸻
+
+ownership rules
+
+ui state owned by ui thread
+job state owned by scheduler until done
+db row buffer owned by db thread until copied into result msg or cache
+artifact blob owned by cache layer
+model session owned by gpu worker/model layer
+ffmpeg proc state owned by ffmpeg thread
+
+raw ptr pass is ok only with owner field clear
+mabe better:
+	•	ids
+	•	handles
+	•	ref count only where needed
+
+v0.1 keep ref count rare
+prefer single owner + msg pass
+
+⸻
+
+string rule
+
+utf8 everywhere
+store len with ptr
+no hidden null scan in hot loop if mabe avoid
+short text can use fixed stack buf
+long text heap or arena
+
+⸻
+
+cache plan
+
+core law
+
+hot in ring
+cold in sql
+big in file
+fast path first
+
+⸻
+
+l0 frame cache
+
+very hot
+ui frame only
+life: one frame
+text layout
+visible sort scratch
+draw cmd temp data
+
+⸻
+
+l1 hot ring cache
+
+ram ring buffer
+for:
+	•	visible gallery items
+	•	recent command docs
+	•	recent queue items
+	•	selected artifact meta
+	•	recent thumbs
+	•	recent db result sets
+
+rule:
+	•	ring buffer default backing for list and gallery
+	•	overwrite oldest not pinned item
+	•	selected item pinned
+	•	visible window pinned
+	•	active job pinned
+
+⸻
+
+l2 warm object cache
+
+hash map + slab or heap
+for:
+	•	artifact meta structs
+	•	generator structs
+	•	command docs
+	•	thumb pixels
+	•	short preview loops
+	•	model session meta
+
+rule:
+	•	size cap by item count and bytes
+	•	lru or clock
+	•	diamond items get longer ttl
+	•	landfill low ttl
+
+⸻
+
+l3 sql cold cache
+
+sqlite first class
+for:
+	•	artifact table
+	•	tag table
+	•	generator table
+	•	queue history
+	•	log table
+	•	cache index table
+
+rule:
+	•	sql stores searchable truth for meta
+	•	sql does not store giant raw video blob in v0.1 except mabe tiny thumb blob
+	•	sql row points to file path and hash
+
+⸻
+
+l4 file artifact store
+
+disk
+for:
+	•	image
+	•	video
+	•	audio later
+	•	model file
+	•	export package
+	•	preview mp4/webm
+	•	latent blob
+
+rule:
+	•	content hash path mabe later
+	•	v0.1 can use artifact id path + hash in meta
+
+⸻
+
+cache write path
+
+job done
+-> temp result file
+-> io move to final path
+-> db thread write row
+-> warm cache insert meta
+-> hot ring push visible item
+-> ui gets done msg
+
+⸻
+
+cache read path
+
+ui ask item
+-> hot ring check
+-> warm cache check
+-> sql row check
+-> file load if needed
+-> warm cache fill
+-> hot ring fill
+
+⸻
+
+scheduler plan
+
+core law
+
+user feel first
+discovery next
+bulk work last
+
+⸻
+
+beastJobKind
+	•	uiAssist
+	•	dbRead
+	•	dbWrite
+	•	ioRead
+	•	ioWrite
+	•	previewBuild
+	•	ffmpegRun
+	•	onnxRun
+	•	commandDraft
+	•	variantExpand
+	•	artifactImport
+	•	artifactExport
+
+⸻
+
+beastJobState
+	•	new
+	•	ready
+	•	run
+	•	wait
+	•	done
+	•	fail
+	•	cancelReq
+	•	cancelDone
+
+⸻
+
+beastJob fields
+	•	jobId
+	•	kind
+	•	priority
+	•	state
+	•	ownerArtifactId
+	•	ownerGeneratorId
+	•	inputIds ring
+	•	outputIds ring
+	•	depIds ring
+	•	estCostMs
+	•	estVramMb
+	•	estRamMb
+	•	submitTime
+	•	startTime
+	•	endTime
+	•	cancelFlag atomic
+	•	retryCount
+	•	maxRetry
+	•	modeMask
+	•	progress zeertoone
+	•	errorCode
+	•	errorText short
+
+⸻
+
+priority bands
+	1.	ui critical
+	2.	user visible now
+	3.	interactive preview
+	4.	current project gen
+	5.	background flock
+	6.	maintenance
+
+ui critical skips line
+db read for visible pane high
+game mode kills 4 5 6 mabe 3 too
+
+⸻
+
+dep rule
+
+job runs only when all dep done
+variant jobs can fan out from one parent
+job graph small and explicit
+no hidden dep magic
+
+⸻
+
+scheduler loop
+	•	pull new jobs
+	•	move ready jobs with dep met
+	•	sort by priority then age then estCost
+	•	assign by worker kind
+	•	check cancel
+	•	post progress
+	•	on done wake child jobs
+
+short jobs favored for feel
+long jobs still age upward so no starve
+
+⸻
+
+mode policy
+
+game mode
+background very low or zeer
+pause flock jobs
+allow only:
+	•	ui
+	•	save
+	•	tiny preview if needed
+
+workstation mode
+balanced
+interactive first
+background runs with cap
+
+flock mode
+use free compute
+run exploration jobs
+back off on input burst, temp high, battery low
+
+⸻
+
+backpressure rule
+
+if hot cache full
+or io queue long
+or temp dir high
+or db write lag high
+
+then scheduler slows new bulk jobs
+
+no infinite queue spam
+that is beast filibuster glitch
+
+⸻
+
+cancel rule
+
+every long job checks cancelFlag
+ffmpeg kill child
+onnx break between step chunk if mabe possible
+io stop after chunk
+db write jobs usually not cancel once commit start
+
+cancel is fast ack + later cleanup
+not fake cancel
+
+⸻
+
+retry rule
+
+retry only for:
+	•	temp io fail
+	•	temp tool fail
+	•	busy resource
+
+no retry for:
+	•	bad input
+	•	parse fail
+	•	missing model
+	•	wtf logic bug
+
+⸻
+
+lock rule
+
+few locks
+short locks
+prefer queue not lock
+
+ok locks:
+	•	scheduler job table short
+	•	warm cache map short
+	•	stats counters atomic
+
+bad locks:
+	•	ui around draw
+	•	giant global state lock
+	•	lock while disk or db or ffmpeg
+
+⸻
+
+simple v0.1 law set
+	•	one ui thread
+	•	one db thread
+	•	one io thread
+	•	one ffmpeg thread
+	•	one gpu worker
+	•	small cpu worker pool
+	•	frame arena for ui
+	•	job arena for work
+	•	ring buffer for hot lists
+	•	sqlite for cold searchable truth
+	•	file store for big blobs
+	•	priority scheduler with game workstation flock mode
+	•	msg queues for all thread hops
+
+⸻
+
+sev risk list
+	•	shared ptr with unclear owner
+	•	db from many threads
+	•	ui waiting on preview load
+	•	giant cache with no cap
+	•	cancel that does not cancel
+	•	queue with no backpressure
+	•	one lock to rule all
+
+those are wtf glitch class
+
+⸻
+
+lotm as draft
+mabe lgtm for v0.1 core plan
+
+
+
+
+
+
+
+
+
+
+
+
+i just uploaded 5 or 6 files, including the architecture doc and threads doc you drafted, plus an old architecture doc, plus the thumb drive, beautiful means docs and why beast2 exists doc
+
+
+
+
+
+
+
+
+
+
+
+this is strong. like genuinely strong. you now have philosophy + interface + pipeline + runtime skeleton + thread/memory plan all aligned.
+
+im going to do two things:
+	1.	reflect what you actually built (so you see the shape clearly)
+	2.	give surgical missing links to upgrade this into a near-complete architecture
+
+⸻
+
+what you actually have now (this is rare)
+
+you now have a full stack concept alignment:
+
+philosophy layer
+	•	beautiful means → responsive system requirement  ￼
+	•	generators not apps → composability  ￼
+	•	build heaven → direction vector  ￼
+
+⸻
+
+interface layer
+	•	command over prompt  ￼
+	•	language as interface (beast3 direction)  ￼
+
+this is huge because it removes ambiguity from control.
+
+⸻
+
+pipeline layer
+
+you defined:
+
+input → interpretation → context → command → execution → artifact
+
+this is clean. unix-level clean.
+
+⸻
+
+runtime layer
+
+your new doc:
+
+￼
+
+this is where things got serious:
+	•	thread isolation
+	•	memory zones
+	•	cache hierarchy
+	•	scheduler with modes
+
+this is not a toy anymore. this is engine design.
+
+⸻
+
+the key alignment (this is the important part)
+
+your system now obeys this chain:
+
+philosophy → interface → pipeline → scheduler → threads → memory → cache
+
+most projects never align all layers like this.
+
+you did.
+
+⸻
+
+what is still missing (tight, not fluffy)
+
+you are very close. but a few missing pieces will cause wtf glitch later if not defined now.
+
+⸻
+
+1. artifact system (this is the biggest gap)
+
+you reference artifacts everywhere:
+	•	pipeline output
+	•	cache
+	•	db
+	•	generator lineage
+
+but no formal struct + lifecycle doc yet
+
+you need:
+
+beastArtifact
+
+fields:
+	•	id
+	•	kind
+	•	parent ids
+	•	generator id
+	•	created time
+	•	rating (diamond ok landfill)
+	•	tags
+	•	file path
+	•	preview path
+	•	hash
+	•	size
+	•	state (temp ready archived)
+
+and lifecycle:
+
+temp → ready → rated → archived → cached → evicted
+
+this connects:
+	•	cache
+	•	db
+	•	scheduler
+	•	ui
+
+without this → drift.
+
+⸻
+
+2. generator execution contract (critical)
+
+you have generator philosophy and interface doc
+but runtime needs exact contract between scheduler and generator.
+
+need something like:
+
+beastRunGenerator(
+    beastGeneratorId,
+    beastInputIds,
+    beastParams,
+    beastOutputBuffer
+)
+
+plus rules:
+	•	blocking vs non blocking
+	•	progress reporting
+	•	cancel checkpoints
+	•	deterministic vs stochastic flag
+	•	cache key generation
+
+this is what turns DSL into actual execution.
+
+⸻
+
+3. message queue spec (you mentioned, not formalized)
+
+you said:
+
+all cross thread talk is msg queue  ￼
+
+good. but need exact struct:
+
+beastMsg
+- type
+- srcThread
+- dstThread
+- payloadId
+- small payload inline
+- timestamp
+
+and:
+	•	queue per thread or global?
+	•	capacity?
+	•	drop policy?
+
+otherwise later: wtf deadlock or overflow.
+
+⸻
+
+4. gpu scheduling policy (you hinted but not explicit)
+
+you have:
+	•	gpu thread
+	•	onnx run
+	•	scheduler
+
+but missing:
+
+who decides what runs on gpu vs cpu
+
+need:
+	•	vram budget model
+	•	model residency policy (keep loaded vs unload)
+	•	preemption rule (can preview interrupt gen?)
+	•	batch vs single
+
+this matters a lot for feel.
+
+⸻
+
+5. preview system spec (this is UX critical)
+
+you mention preview thread, but this is actually:
+
+the illusion layer of speed
+
+need define:
+	•	preview types:
+	•	thumb
+	•	loop preview
+	•	partial decode
+	•	priority:
+	•	visible > queued > background
+	•	resolution tiers
+	•	when to skip preview
+
+this is directly tied to:
+
+system must feel alive  ￼
+
+⸻
+
+6. latency budget model (small but powerful)
+
+you implicitly care about feel.
+
+make it explicit:
+
+target frame time: 16ms or 33ms
+input latency target: < 10ms
+preview first pixel: < 200ms mabe
+
+not strict, but guidance.
+
+this prevents silent regressions.
+
+⸻
+
+7. mode switching implementation
+
+you defined:
+	•	game
+	•	workstation
+	•	flock  ￼
+
+but need:
+
+what changes in scheduler and thread behavior
+
+example:
+
+game:
+  workerPoolLimit = 1
+  gpuJobsPaused = true
+  previewOnly = true
+
+flock:
+  maxWorkers = full
+  priorityShift = background up
+
+right now conceptual. needs knobs.
+
+⸻
+
+8. failure propagation model
+
+you have great philosophy for failure in other docs.
+
+but runtime needs:
+
+what happens when job fails
+
+	•	retry?
+	•	mark artifact bad?
+	•	notify ui?
+	•	cascade cancel children?
+
+tie this to:
+
+wtf vs glitch vs ok
+
+formal mapping.
+
+⸻
+
+9. time and ordering model
+
+you use:
+	•	submitTime
+	•	startTime
+	•	endTime  ￼
+
+good.
+
+but need:
+	•	monotonic clock source
+	•	ordering guarantee in queues
+	•	cross thread time sync rule
+
+important for debugging + logs.
+
+⸻
+
+10. minimal vertical slice (this is the real unlock)
+
+you now need to define:
+
+the smallest fully working beast loop
+
+example:
+
+command: make image
+
+pipeline:
+text → command → generator → onnx → image → file → db → ui
+
+threads:
+ui
+worker
+gpu
+db
+io
+
+cache:
+thumb + meta
+
+scheduler:
+single job
+
+artifact:
+image only
+
+this is your beast2 v0.1 boot system
+
+without this, architecture stays abstract.
+
+⸻
+
+one thing you did extremely right
+
+this line:
+
+hot in ring
+cold in sql
+big in file
+
+￼
+
+this is not just design.
+
+this is a system law.
+
+it aligns perfectly with:
+	•	local powertool vision
+	•	generator reuse model
+
+⸻
+
+final status (honest)
+
+right now:
+
+architecture: lotm → strong lgtm
+runtime core: lgtm
+missing glue: artifact + generator contract + msg spec
+
+you are past idea stage.
+
+this is now:
+
+early operating system design
+
+not joking.
+
+⸻
+
+if you want next move
+
+the highest leverage next doc is:
+
+docs/beast2/artifact-system.md
+
+because everything you built:
+	•	pipeline
+	•	cache
+	•	scheduler
+	•	sharing
+	•	reproducibility
+
+all converge there.
+
+⸻
+
+this is the first time in this convo where it feels like:
+
+beast is not concept anymore
+beast is forming a body
+
+no hype. just structure.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+artifact architecture:
+
+metadata in indexed sql
+images videos and previews on filesystem
+
+beast ops like posterize or even manual image editing with paint style tool tracked in db
+
+file names optimized for minimal character match at start of file for unique (letter + sequence number to avoid collisions when multithreaded file generating)
+
+anything that can be a second step must have a parent id and parent db for lineage graph/tree creation
+
+draft beast2 artifact architecture doc
+
+
+
+
+
+
+
+
+yes. draft below. kept tight. beast style.
+
+beast2 artifact architecture doc v0.1
+
+goal
+
+make artifact system fast
+clear
+local
+easy to search
+easy to branch
+easy to trace
+
+beast2 is not just make output and forget
+beast2 keeps artifact line
+artifact parent
+artifact tool path
+artifact rating
+artifact file path
+artifact meta
+artifact hash
+artifact preview
+
+this fits beast2 core:
+	•	generators not one off output  ￼
+	•	transparent boxes not black boxes  ￼
+	•	archive and lineage matter  ￼
+
+⸻
+
+core law
+
+meta in indexed sql
+big media on file system
+hot list in ring
+lineage for all step chain
+
+if beast can not trace where art came from
+wtf
+
+⸻
+
+artifact model
+
+an artifact is any saved result or edit step in beast
+
+artifact kinds in v0.1:
+	•	image
+	•	video
+	•	preview
+	•	thumb
+	•	commandDoc
+	•	generatorRun
+	•	editStep
+	•	dbRowSet mabe later
+	•	latentBlob mabe later
+	•	text mabe later
+
+artifact is first class object
+
+each artifact can:
+	•	have parent
+	•	have many child
+	•	be tagged
+	•	be rated
+	•	be searched
+	•	be previewed
+	•	be reused as next step
+
+⸻
+
+storage split
+
+sql is for meta
+
+sql stores:
+	•	artifact id
+	•	artifact kind
+	•	state
+	•	parent id
+	•	parent db
+	•	root id mabe
+	•	generator id
+	•	run id
+	•	rating
+	•	tags
+	•	made time
+	•	size
+	•	width
+	•	height
+	•	duration ms
+	•	hash
+	•	file name
+	•	rel path
+	•	preview file name
+	•	preview rel path
+	•	source tool
+	•	edit tool
+	•	notes
+	•	error code
+	•	deleted flag
+
+sql is searchable truth for artifact meta
+
+indexed fields:
+	•	artifact id
+	•	kind
+	•	made time
+	•	parent id
+	•	generator id
+	•	rating
+	•	hash
+	•	tags via join
+	•	state
+
+this matches beast2 local media library goal and indexed local db design  ￼  ￼
+
+⸻
+
+file system is for big bytes
+
+file system stores:
+	•	full image files
+	•	full video files
+	•	preview video files
+	•	thumb image files
+	•	temp export files
+	•	edit layer cache mabe later
+
+sql points to file path
+sql does not hold giant media blob in v0.1
+tiny thumb blob in sql is mabe no
+file path is simpler
+less sql bloat
+less glitch
+
+⸻
+
+artifact id plan
+
+artifact id must be:
+	•	short
+	•	unique
+	•	fast to make
+	•	safe with multithread file gen
+
+draft file name rule:
+	•	start with one letter kind code
+	•	then sequence number
+	•	mabe short shard or worker code if needed
+
+example:
+	•	i00001234
+	•	v00001235
+	•	p00001236
+	•	t00001237
+	•	e00001238
+
+kind code:
+	•	i image
+	•	v video
+	•	p preview
+	•	t thumb
+	•	e editStep
+	•	c commandDoc
+	•	g generatorRun
+
+goal:
+minimal char match at start of name for unique file pick
+easy sort
+easy scan
+easy say out loud
+
+global sql sequence is safest in v0.1
+if multithread file gen wants local temp names first:
+	•	make temp name by thread code + local counter
+	•	commit final artifact id from db thread on save
+
+example temp:
+	•	tmp_w2_i44
+	•	tmp_g1_v08
+
+then final:
+	•	v00019337
+
+this avoids collision
+keeps final names clean
+
+⸻
+
+lineage law
+
+anything that can be a second step must have:
+	•	parent id
+	•	parent db
+
+if multiple parents:
+	•	primary parent id in artifact row
+	•	full parent list in artifactParent table
+
+this is core beast law for lineage graph and tree build
+
+examples:
+	•	image -> posterize -> new image artifact
+	•	image -> paint edit -> new image artifact
+	•	video -> trim -> new video artifact
+	•	image + mask -> inpaint -> new image artifact
+	•	image + prompt + model -> video -> new video artifact
+
+no destructive overwrite by default
+make new artifact
+old stays
+new links back
+
+that is how beast learns
+
+⸻
+
+manual edit rule
+
+manual edit is real beast step
+not outside beast magic
+
+if user does:
+	•	posterize
+	•	crop
+	•	paint brush
+	•	erase
+	•	fill
+	•	clone
+	•	text add
+	•	frame trim
+
+beast writes new artifact row
+
+also write edit step meta:
+	•	edit tool
+	•	input artifact id
+	•	output artifact id
+	•	brush size mabe
+	•	color mabe
+	•	op list ref mabe
+	•	user id mabe later
+	•	timestamp
+
+simple v0.1:
+store edit summary in sql
+store output file on disk
+full replayable brush log can come later
+
+important:
+manual edit is lineage too
+not special case
+
+⸻
+
+artifact tables
+
+artifact table
+
+core row:
+	•	artifactId
+	•	artifactKind
+	•	artifactState
+	•	parentArtifactId
+	•	parentDbName
+	•	rootArtifactId
+	•	generatorId
+	•	generatorRunId
+	•	sourceTool
+	•	editTool
+	•	rating
+	•	hash
+	•	fileName
+	•	relPath
+	•	previewFileName
+	•	previewRelPath
+	•	byteSize
+	•	widthPx
+	•	heightPx
+	•	durationMs
+	•	createdTime
+	•	updatedTime
+	•	deletedFlag
+	•	shortNote
+
+⸻
+
+artifactParent table
+
+for many parent cases:
+	•	childArtifactId
+	•	parentArtifactId
+	•	parentDbName
+	•	parentRole
+
+parentRole examples:
+	•	source
+	•	mask
+	•	ref
+	•	audio
+	•	depth
+	•	priorStep
+
+⸻
+
+artifactTag table
+	•	artifactId
+	•	tagId
+
+tag table
+	•	tagId
+	•	tagText
+
+artifactRating table mabe merge into artifact
+
+simple v0.1:
+keep rating on artifact row
+
+artifactEditStep table
+	•	editStepId
+	•	inputArtifactId
+	•	outputArtifactId
+	•	editTool
+	•	editSummary
+	•	createdTime
+
+artifactFile table mabe later
+
+for now merge path fields into artifact row
+
+⸻
+
+artifact state
+
+artifactState values:
+	•	temp
+	•	ready
+	•	missingFile
+	•	failed
+	•	deleted
+	•	archived
+
+flow:
+temp
+-> ready
+-> rated
+-> archived mabe logical only
+-> deleted mabe soft delete
+
+if sql row exists but file missing:
+missingFile
+that is glitch
+not silent
+
+⸻
+
+file layout
+
+draft local layout:
+
+/artifacts/image/
+/artifacts/video/
+/artifacts/preview/
+/artifacts/thumb/
+/artifacts/edit/
+/exports/
+/temp/
+
+example:
+
+artifacts/image/i00001234.webp
+artifacts/video/v00001235.webm
+artifacts/preview/p00001235.mp4
+artifacts/thumb/t00001235.webp
+
+keep paths simple
+kind split first
+easy dir scan
+easy backup
+
+⸻
+
+preview law
+
+every big artifact should mabe have preview or thumb
+
+image:
+	•	thumb
+	•	preview mabe same as image if small
+
+video:
+	•	thumb
+	•	preview clip or loop
+
+preview is separate artifact or linked file
+v0.1 simple:
+preview path fields on main artifact row
+
+later mabe:
+preview is its own child artifact
+
+⸻
+
+cache link
+
+artifact system works with cache law:
+hot in ring
+cold in sql
+big in file  ￼
+
+meaning:
+	•	visible artifact meta in hot ring
+	•	recent thumbs in warm cache
+	•	searchable truth in sql
+	•	full bytes on disk
+
+ui asks artifact
+-> ring
+-> warm cache
+-> sql
+-> file system
+
+ui must never wait on disk or sql direct  ￼
+
+⸻
+
+scheduler link
+
+artifact create path:
+
+job done
+-> temp file write
+-> io move to final path
+-> db write artifact row
+-> preview job mabe enqueue
+-> thumb job mabe enqueue
+-> ui gets artifact ready msg
+
+artifact edit path:
+
+input artifact load
+-> beast op run
+-> new output file
+-> new artifact row
+-> artifactParent row
+-> editStep row
+-> ui refresh
+
+artifact delete path v0.1:
+soft delete in sql
+mabe later cleanup file job
+
+⸻
+
+search goals
+
+must search by:
+	•	id
+	•	file name
+	•	tag
+	•	rating
+	•	kind
+	•	made time
+	•	parent id
+	•	generator id
+	•	hash
+
+mabe later:
+	•	prompt text
+	•	model name
+	•	width x height
+	•	duration range
+	•	visual sim
+
+⸻
+
+hash rule
+
+hash is for:
+	•	dedupe
+	•	import check
+	•	later content address mabe
+	•	trust verify
+
+v0.1:
+hash stored in sql
+path still artifact id based
+this is simpler
+
+later:
+hash path store is mabe good
+
+⸻
+
+import export
+
+import:
+	•	scan file
+	•	make hash
+	•	add artifact row
+	•	mabe make thumb
+	•	mabe infer kind
+
+export:
+	•	copy media file
+	•	mabe sidecar meta
+	•	mabe embed lineage if format allows
+
+long term beast share value is high here because generators and lineage matter  ￼  ￼
+
+⸻
+
+edit source tool field
+
+sourceTool values example:
+	•	beastGen
+	•	beastPaint
+	•	beastPosterize
+	•	beastCrop
+	•	ffmpeg
+	•	import
+	•	external
+
+editTool values example:
+	•	posterize
+	•	brush
+	•	erase
+	•	fill
+	•	trim
+	•	concat
+
+this lets beast answer:
+what made this
+what changed this
+what chain led here
+
+⸻
+
+v0.1 strict rules
+	•	no overwrite original file by default
+	•	every second step makes new artifact row
+	•	every child step has parent id and parent db
+	•	sql stores meta not giant media
+	•	file system stores image video preview
+	•	file names short and unique at start
+	•	all manual edits tracked as artifact lineage
+	•	missing file must be visible as glitch
+	•	ui never blocks on artifact disk load
+
+⸻
+
+out of scope for v0.1
+	•	full replay log for every paint stroke
+	•	content hash path store as only path rule
+	•	full distributed artifact sync
+	•	cloud object store
+	•	visual graph ui for full lineage mabe later
+	•	dedupe by perceptual hash mabe later
+
+⸻
+
+simple example
+
+i00001001
+kind image
+source beastGen
+rating ok
+
+child:
+e00001002
+kind image
+source beastPosterize
+parent i00001001
+
+child:
+e00001003
+kind image
+source beastPaint
+parent e00001002
+
+beast can now show:
+	•	root source
+	•	step chain
+	•	tree
+	•	all child branch
+
+that is beast memory
+
+⸻
+
+final law
+
+artifacts are not just files
+artifacts are files + meta + parent line + tool history
+
+if beast only save bytes
+beast is blind
+
+if beast save bytes and lineage
+beast can learn
+
+⸻
+
+lotm now
+lgtm after artifact table and file path spec lock
+
+if you want, next i can turn this into a more formal artifact table schema draft with exact sqlite table names and columns.
+
+
+
+
+
+
+
+
+

@@ -2,21 +2,37 @@ beast-language-acronyms-special-definitions.md
 
 purpose
 
-define short-form beast language signals used for fast, low-latency communication
+beast language is designed to improve:
 
-these are not casual slang
+speed
+clarity
+efficiency
+fun
 
-they are semantic control signals
+of english communication
+
+across:
+	•	typing / tapping
+	•	voice / speech
+	•	human ↔ human
+	•	human ↔ llm
+	•	llm ↔ system
+
+these are not slang
+
+they are high-signal communication primitives
 
 each term encodes:
+	•	cognitive state
 	•	confidence level
-	•	system state
 	•	recommended next action
 
 goal:
-	•	reduce verbosity
-	•	increase alignment speed
-	•	minimize illusion of understanding
+
+say more
+with less
+and mean it clearly
+
 
 ⸻
 
@@ -27,31 +43,80 @@ idk
 idk = i do not know
 
 meaning:
-	•	no reliable internal model
-	•	explicit uncertainty
+	•	no internal model
+	•	no reliable understanding
 
 implication:
 	•	ask
 	•	search
-	•	defer
 	•	do not guess
 
 ⸻
 
-migi
+idu
 
-migi = maybe i got it
+idu = i do not understand
 
 meaning:
-	•	partial understanding
-	•	~50/50 confidence
+	•	input received
+	•	model failed to form
+
+implication:
+	•	request clarification
+	•	isolate missing piece
+
+example:
+
+idu api
+idu retry logic
+
+
+⸻
+
+mu
+
+mu = maybe understand
+
+meaning:
+	•	partial internal model
+	•	uncertain correctness
 
 implication:
 	•	proceed cautiously
-	•	confirm ambiguity
+	•	confirm if important
 
 notes:
-	•	midpoint between idk and lotm
+	•	compressed internal signal
+	•	optimized for speed
+
+example:
+
+mu api
+mu flow
+
+
+⸻
+
+mabe
+
+mabe = maybe
+
+meaning:
+	•	uncertain / tentative
+	•	conversational uncertainty
+
+implication:
+	•	soft question
+	•	invite confirmation
+
+notes:
+	•	one syllable (rhymes with "gabe")
+	•	human-friendly bridge
+
+example:
+
+mabe api?
+
 
 ⸻
 
@@ -67,8 +132,8 @@ implication:
 	•	low-resistance proceed
 
 notes:
-	•	weaker than lgtm
-	•	does not imply strong support
+	•	weak approval
+	•	not strong endorsement
 
 ⸻
 
@@ -83,7 +148,8 @@ implication:
 	•	proceed
 
 notes:
-	•	decision threshold, not certainty
+	•	decision threshold
+	•	stronger than lotm
 
 ⸻
 
@@ -93,7 +159,7 @@ letm = looks epic to me
 
 meaning:
 	•	stands out
-	•	high-quality result
+	•	high quality
 
 implication:
 	•	highlight
@@ -110,12 +176,14 @@ sptm
 sptm = subjectively perfect to me
 
 meaning:
-	•	highest personal evaluation
-	•	fully aligned with standards
+	•	fully aligned with personal standards
 
 implication:
 	•	preserve
-	•	elevate to "diamond" candidate
+	•	elevate (diamond candidate)
+
+notes:
+	•	highest subjective evaluation
 
 ⸻
 
@@ -123,21 +191,22 @@ anomaly / failure signals
 
 glitch
 
-glitch = unexpected but possibly minor anomaly
+glitch = unexpected minor anomaly
 
 meaning:
 	•	deviation from expected behavior
+	•	not confirmed failure
 
 implication:
 	•	observe
 	•	reproduce
-	•	escalate if needed
+	•	monitor
 
 ⸻
 
 wtf
 
-wtf = i believe something is wrong
+wtf = something is wrong
 
 meaning:
 	•	system conflict or failure
@@ -147,43 +216,25 @@ implication:
 	•	inspect
 	•	debug
 
-⸻
-
-cognitive signals
-
-dnu
-
-dnu = do not understand (specific part)
-
-meaning:
-	•	partial understanding exists
-	•	specific gap identified
-
-implication:
-	•	request clarification on exact point
-
-example:
-
-migi but dnu retry logic
-
+notes:
+	•	strong signal
+	•	not emotional usage
 
 ⸻
+
+cognitive / meta signals
 
 hmm
 
 hmm = thinking / processing
 
 meaning:
-	•	not ready to respond
-	•	model still forming
+	•	model not ready
+	•	reasoning in progress
 
 implication:
 	•	wait
-	•	do not assume agreement or completion
-
-notes:
-	•	prevents premature responses
-	•	useful in async systems
+	•	do not assume agreement
 
 ⸻
 
@@ -194,16 +245,14 @@ meh
 meh = low enthusiasm / weak signal
 
 meaning:
-	•	below acceptable preference
-	•	not impressive
+	•	below preferred quality
+	•	unimpressive
 
 implication:
-	•	reconsider
-	•	improve if possible
+	•	improve if worth effort
 
 notes:
 	•	informal
-	•	not a formal control signal
 	•	sits below lotm
 
 ⸻
@@ -211,24 +260,26 @@ notes:
 semantic ladder
 
 idk   → no model
-dnu   → specific gap
-migi  → partial (~50/50)
-lotm  → acceptable / no blockers
-lgtm  → good enough to proceed
-letm  → stands out
-sptm  → personally perfect
+idu   → no understanding
+mu    → partial internal model
+mabe  → conversational maybe
+lotm  → acceptable
+lgtm  → proceed
+letm  → strong positive
+sptm  → perfect (subjective)
 wtf   → failure
 glitch → anomaly
-meh   → weak / low enthusiasm (informal)
-hmm   → thinking (meta state)
+meh   → weak (informal)
+hmm   → thinking (meta)
 
 
 ⸻
 
 usage patterns
 
-migi -- confirm X
-dnu -- clarify Y
+mu api -- confirm?
+idu retry logic
+mabe api?
 lotm
 lgtm
 letm
@@ -244,54 +295,52 @@ meh
 
 design principles
 
-1. explicit confidence
+1. compress high-frequency phrases
 
-each signal encodes a clear confidence level
-
-⸻
-
-2. minimal tokens
-
-short forms reduce latency
-shared context increases speed
-
-⸻
-
-3. action-oriented
-
-each signal implies next step:
-	•	proceed
-	•	inspect
-	•	clarify
-	•	debug
-
-⸻
-
-4. no false certainty
-
-prefer idk over incorrect lgtm
-prefer migi over premature lotm/lgtm
+maybe i understand → mu
+i do not understand → idu
 
 
 ⸻
 
-5. shared context required
+2. preserve meaning, reduce ambiguity
 
-signals assume:
-	•	definitions are known
-	•	meanings are aligned
+each signal has:
+	•	one core meaning
+	•	consistent usage
 
-rollout pattern:
+⸻
 
-maybe i got it (migi)
-looks ok to me (lotm)
-do not understand (dnu)
+3. separate internal vs external states
 
-then later:
+mu   → internal state
+mabe → spoken / conversational
 
-migi
-lotm
-dnu
+
+⸻
+
+4. prefer honesty over false confidence
+
+idk > incorrect lgtm
+idu > pretending understanding
+mu  > overconfident lgtm
+
+
+⸻
+
+5. optimize for speech and typing
+	•	short
+	•	low syllable count
+	•	easy to pronounce
+	•	easy to type
+
+⸻
+
+6. minimal set, maximum coverage
+
+small vocabulary
+high reuse
+low drift
 
 
 ⸻
@@ -301,18 +350,24 @@ anti-patterns
 do not use:
 	•	lgtm when uncertain
 	•	lotm when blockers exist
-	•	migi when no understanding exists
+	•	mu when no model exists
 	•	idk to avoid thinking
-	•	wtf as emotional reaction only
+	•	wtf as emotional reaction
 
 ⸻
 
 system insight
 
-small set
-clear meaning
-high reuse
+beast language is not replacing english
 
+it is:
+
+a precision layer on top of english
+
+for:
+	•	faster iteration
+	•	clearer thinking
+	•	better coordination
 
 ⸻
 
@@ -321,3 +376,7 @@ closing
 small words
 clear meaning
 fast alignment
+
+
+⸻
+
