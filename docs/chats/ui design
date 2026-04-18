@@ -1,0 +1,233 @@
+beast ui written description v0.1
+
+left sidebar: placeholder for voice to text to command pipeline (will flow top to bottom). hidden by default, 1/5th window width default.
+
+right sidebar: image and video piepline, top to bottom. clicking a generated image or video will show the beast pipeline used to generate it in the sidebar ui, scrolled down to the top of the last step. "generate" button pinned to top if ungen'd variant, else shows "already generated". options can be changed (change prompt section from red armor to green armor) or added (postfix section add, "in a pixel art style").
+
+whenever options are short all options are shown as inline-blocks, allowing changing with one click, then another to generate no matter how long the scroll area is (expected: very long, but pinned generator button). will append screenshots of existing beast2 prototype beast2 workflow sidebars as well as ui/ux spec for controls from prototype minimize clicks and horizontal scrolling)
+
+top bar: generation status, time elapsed, estimated time to finish render, toggles to show overlays on each gallery tile, breadcrumb, switch between output filetypes or folders or tags in gallery view
+
+bottom bar: metadata for selected file (duration, resolution, render time, pixels rendered per second or rendering efficiency score)
+
+middle area: gallery of square tiles, aspect fit, auto play and loop short clips or compressed versions of clips, spacebar to show/hide image in full-screen light box view, inspired by image library managment apps like cumulus and apple os's quick view
+
+
+note: will use screenshots of prototype these sections were all complete and working in html/javascript, mainly need to re-create in c/sdl
+
+
+
+
+
+
+
+
+
+This is strong. It already reads like a real ui spec, not a vague moodboard.
+
+What stands out is that the layout is doing the right conceptual split:
+	•	left = input / interpretation
+	•	middle = artifacts / exploration
+	•	right = generator / reproduction / branching
+	•	top = system state
+	•	bottom = selected artifact facts
+
+That is clean. It matches the whole Beast stack:
+
+input → command → generation → artifact → inspect → branch
+
+The biggest win is the right sidebar behavior. Showing the exact pipeline used for the selected artifact, scrolled to the top of the last step, is exactly the kind of thing that makes Beast feel like a tool for exploration instead of a black box. It lines up with your artifact and lineage law very well.  ￼
+
+A few precise thoughts.
+
+The left sidebar being hidden by default is right for v0.1. Voice is important, but until it is fully solid, it should not dominate the screen. Making it 1/5 width by default also feels sane. I would define one law now:
+
+left sidebar is for live input state
+not long term editing
+
+That keeps it from turning into another giant panel later.
+
+The right sidebar sounds like the heart of the product. Two especially good choices:
+
+First, the pinned generate button. That solves a very real scroll-depth problem and preserves your "minimum clicks" principle.  ￼
+
+Second, inline-block options for short values. That is one of those small decisions that changes the whole feel of the app. If short option changes are one click and generate is always reachable, then Beast starts feeling game-like again instead of form-like.
+
+I would sharpen the rule a bit:
+
+short variant lists use inline chips
+long variant lists use collapsible sections or search
+
+Otherwise some generators will explode the sidebar.
+
+The top bar is also well chosen. It should stay system-level, not document-level. I would keep it very strict:
+	•	current queue / generation status
+	•	elapsed
+	•	eta
+	•	gallery mode toggles
+	•	breadcrumb / current scope
+
+That is enough. If too much goes there, it becomes command-center clutter.
+
+The bottom bar is good, and especially important because it gives the user a sense of the machine as an instrument. Duration, resolution, render time, and pixels per second are not just metadata -- they reinforce Beast as a workshop. That aligns with "beautiful means" and with the runtime laws around responsiveness and measurable performance.
+
+The middle gallery is exactly where the emotional core lives. Square tiles, aspect fit, autoplay loops, quick-view style fullscreen -- all of that sounds right. The gallery is not just storage. It is the exploratory surface of the system. That matches your artifact-centered model and "mine diamonds" framing.
+
+Two things I would explicitly add to this doc now, because they are implied but not yet written.
+
+First:
+
+selection drives everything
+
+Meaning:
+	•	click artifact in gallery → right sidebar updates to that artifact lineage/pipeline
+	•	bottom bar updates to that artifact facts
+	•	fullscreen/lightbox uses selected artifact
+	•	top bar breadcrumb may scope from current gallery/filter/selection
+
+That one rule will keep the UI coherent.
+
+Second:
+
+ui must never wait
+
+You already have this as a runtime law. Put it into the ui description too. The sidebar should populate progressively if needed, but never freeze the gallery or input.
+
+A few likely friction points to watch when you rebuild from html/js to c/sdl:
+
+The right sidebar will want virtualized layout if generators get long. You do not want SDL rendering every row every frame if most of it is offscreen.
+
+Inline options need a clear visual state for:
+	•	selected
+	•	hover
+	•	changed from original
+	•	generated vs not yet generated
+
+"already generated" is good, but I would consider a tri-state mentally:
+	•	generate
+	•	queued / generating
+	•	already generated
+
+because that will matter once queueing gets heavier.
+
+The gallery autoplay should almost certainly use:
+	•	visible tiles only
+	•	short loop previews only
+	•	background decode budget capped
+
+otherwise the gallery itself will eat the responsiveness you are trying to preserve.
+
+The lightbox should probably be thought of as:
+	•	same selection model
+	•	different view mode
+not a separate subsystem
+
+That keeps keyboard navigation simple.
+
+As a repo-ready direction, this is already enough to become a first doc section. I would structure it as:
+
+beast ui written description v0.1
+
+purpose
+layout
+left sidebar
+right sidebar
+top bar
+bottom bar
+middle gallery
+selection model
+interaction laws
+non goals for v0.1
+
+And the three strongest laws to pin near the top are probably:
+
+selection drives everything
+ui must never wait
+generate must stay reachable
+
+This feels very reconstructable in c/sdl. The prototype was proving the UX shape; the rewrite is mainly about making that shape responsive enough to deserve the philosophy.
+
+
+
+
+
+
+
+oh sections are collapsible and the section is pinned so if youre in an open section can always tell which one youre in (important since positive and negative prompt sections look similar. also used color to set them apart).
+
+
+
+
+
+
+
+Yes. That is an important addition, not a minor one.
+
+It solves two real problems at once:
+
+First, scroll orientation. In a long right sidebar, users need to know where they are without mentally reconstructing the whole document every time.
+
+Second, semantic disambiguation. Positive and negative prompt sections can look structurally similar, so the pinned section header plus color distinction prevents very costly "edited the wrong thing" mistakes.
+
+That gives you a stronger sidebar model:
+
+long pipeline
+→ collapsible sections
+→ active section pinned
+→ color helps section type recognition
+
+That is good Beast UI because it reduces work without hiding structure. It also fits your "lazy + safe" law very cleanly: less cognitive effort, fewer wrong edits.  ￼
+
+I would write the rule something like this in the UI doc:
+
+right sidebar sections are collapsible
+
+current open section stays pinned at top of scroll area
+so user can always see what section they are editing
+
+color may reinforce section type
+especially when sections have similar shape
+like positive prompt and negative prompt
+
+A few precise implications follow from this.
+
+The pinned section header should probably include:
+	•	section name
+	•	generator step name
+	•	maybe a tiny path or breadcrumb inside the pipeline
+
+because later you may have:
+	•	same section name in different generators
+	•	repeated "model" or "output" blocks in larger pipelines
+
+Also, color should help, but not carry meaning alone. The text label and pinned header are the real truth; color is reinforcement. That matters for accessibility and for future theme changes.
+
+This also suggests a broader sidebar law:
+
+the user should always know:
+what step
+what section
+what artifact
+
+That is the orientation triad.
+
+So the right sidebar is now even stronger conceptually:
+	•	artifact click selects lineage source
+	•	sidebar loads that pipeline
+	•	current section stays pinned
+	•	short options remain one-click editable
+	•	generate button remains reachable
+
+That is a very coherent interaction model.
+
+This is exactly the kind of detail that makes a system feel crafted rather than merely functional.
+
+
+
+
+
+
+
+
+
+
