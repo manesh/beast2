@@ -1,0 +1,2258 @@
+suggested folder structure for docs?
+
+
+
+
+you’re at the point where structure matters more than more docs. keep it simple, layered, and obvious.
+
+here’s a beast-style docs structure that matches what you’ve built:
+
+⸻
+
+🧱 core structure
+
+/docs
+
+  /00-core
+  /01-language
+  /02-architecture
+  /03-runtime
+  /04-artifacts
+  /05-generators
+  /06-ui
+  /07-ai
+  /08-academy
+  /09-release
+  /10-future
+
+  /archive
+
+
+⸻
+
+🧠 what goes where
+
+/00-core
+
+foundation. smallest set. must read.
+
+why-beast2-exists.md
+beautiful-means.md
+beast-is-lazy-canonical.md
+docs-readme.md   (what is canonical vs draft)
+
+
+⸻
+
+/01-language
+
+all beast language layers
+
+beast-languages-v0.6.md
+beast-english.md (if split later)
+beast-phonetic.md (optional split)
+beast-cdi.md (optional split)
+beast-acronyms.md (if kept separate)
+numeral-system.md
+
+rule:
+👉 eventually compress to 1 doc
+👉 for now composable ok
+
+⸻
+
+/02-architecture
+
+high level system shape
+
+beast2-architecture.md
+implementation-details-addendum.md
+system-overview.md (optional)
+
+no low-level thread detail here
+
+⸻
+
+/03-runtime
+
+how system runs
+
+thread-memory-cache-scheduler.md
+gpu-model-runtime.md (later)
+queue-system.md (later)
+
+rule:
+👉 performance + execution only
+
+⸻
+
+/04-artifacts
+
+your strongest differentiator
+
+artifact-architecture.md
+artifact-schema.md (later)
+artifact-lineage.md (optional)
+
+
+⸻
+
+/05-generators
+
+actual power system
+
+generator-model.md
+generator-execution.md
+cdi-examples/
+    pixel-art-generator.md
+
+keep real examples here
+
+⸻
+
+/06-ui
+
+everything visual / interaction
+
+beast-ui-written-description-v0.2.md
+ui-principles.md (optional)
+interaction-model.md (later)
+
+
+⸻
+
+/07-ai
+
+llm + hybrid system
+
+general-purpose-ai.md
+llm-integration.md (later)
+retrieval-db.md (later)
+
+
+⸻
+
+/08-academy
+
+learning + onboarding
+
+academy/
+    intro.md
+    generators.md
+    artifacts.md
+
+
+⸻
+
+/09-release
+
+this is new and important
+
+v0.1-must-haves.md
+v1.0-must-haves.md
+roadmap.md
+
+keeps scope sane
+
+⸻
+
+/10-future
+
+do not mix with current
+
+beast3-direction.md (if revived later)
+voice-system.md
+robotics.md
+p2p.md
+
+
+⸻
+
+/archive
+
+old drafts
+
+old-architecture-v0.0.md
+beast2-to-beast3-old.md
+notes/
+
+rule:
+👉 nothing in archive is canonical
+
+⸻
+
+🧭 naming rules (important)
+
+use:
+
+kebab-case.md
+
+avoid:
+	•	spaces
+	•	version in filename unless needed
+
+versions inside doc:
+
+# v0.6
+
+
+⸻
+
+🧠 one critical file
+
+add this:
+
+/docs/README.md
+
+with:
+
+core docs (read first)
+canonical docs
+draft docs
+archived docs
+
+this prevents confusion later
+
+⸻
+
+🧨 beast rule
+
+if two docs say same thing
+merge or delete one
+
+no duplicate truth
+
+⸻
+
+🧩 mental model
+
+this structure matches your system:
+
+core → language → architecture → runtime → artifacts → generators → ui → ai → release → future
+
+clean pipeline
+
+⸻
+
+final read
+
+structure = lgtm
+simple = good
+scalable = mabe yes
+
+you’re setting up for:
+👉 many docs later without chaos
+
+⸻
+
+if you want next:
+i can map your current files into this structure exactly and flag duplicates to delete.
+
+
+
+
+
+
+
+
+
+hi
+
+
+
+
+
+
+pink alert. marketing ideas
+
+
+
+
+
+
+
+pink alert received
+
+you don’t need generic marketing. beast already has a myth + mechanic. lean into both.
+
+here are high-signal directions, not fluff.
+
+⸻
+
+⚡ core positioning (tight)
+
+beast is not:
+	•	ai tool
+	•	image generator
+	•	comfyui wrapper
+
+beast is:
+
+a local ai workbench for building generators that persist
+
+or more aggressive:
+
+beast turns prompts into systems
+
+or strongest:
+
+stop prompting
+start building generators
+
+
+⸻
+
+🔥 emotional hook angles
+
+you already have one of the strongest:
+
+1. "you lose your best prompts"
+
+pain:
+	•	found something amazing
+	•	gone
+	•	cant reproduce
+
+message:
+
+beast remembers everything
+
+
+⸻
+
+2. "ai is powerful but fragile"
+
+pain:
+	•	drift
+	•	inconsistency
+	•	rebuild every time
+
+message:
+
+beast makes ai reliable
+
+
+⸻
+
+3. "you are wasting compute"
+
+pain:
+	•	rerunning same thing
+	•	no reuse
+	•	no caching
+
+message:
+
+compute once reuse forever
+
+
+⸻
+
+4. "tools vs toys"
+
+pain:
+	•	midjourney fun but not reusable
+	•	comfyui powerful but chaotic
+
+message:
+
+from toy to tool
+from tool to system
+
+
+⸻
+
+🧠 concept marketing (this is your edge)
+
+most people market features
+
+you market concepts that stick
+
+⸻
+
+generator > prompt
+
+prompt = guess
+generator = system
+
+
+⸻
+
+artifact > output
+
+output disappears
+artifact persists
+
+
+⸻
+
+workflow > magic
+
+magic breaks
+workflows scale
+
+
+⸻
+
+local > rented brain
+
+your models
+your data
+your system
+
+
+⸻
+
+🎬 demo ideas (very important)
+
+you don’t sell beast with text
+you sell it with watchable loops
+
+⸻
+
+demo 1: "lost prompt"
+	•	generate cool image
+	•	refresh → gone
+	•	switch to beast
+	•	click image → pipeline appears
+	•	tweak → regenerate
+
+caption:
+
+never lose it again
+
+
+⸻
+
+demo 2: "one click variants"
+	•	red armor knight
+	•	click → green armor
+	•	click → pixel art
+	•	click → 10 variants
+
+caption:
+
+explore instead of restart
+
+
+⸻
+
+demo 3: "artifact memory"
+	•	show gallery
+	•	click random image
+	•	show full pipeline
+	•	rerun instantly
+
+caption:
+
+every result is reusable
+
+
+⸻
+
+demo 4: "lazy compute"
+	•	show same gen rerun vs cached
+	•	instant reuse
+
+caption:
+
+beast is lazy
+that is why it is fast
+
+
+⸻
+
+🧪 hacker news style titles
+
+you already had a strong one, here are refined:
+	•	beast: a local ai workbench for reusable generators
+	•	stop prompting start building generators
+	•	beast: turning ai outputs into persistent systems
+	•	local ai that remembers what worked
+	•	comfyui but everything is reusable
+
+⸻
+
+🎯 target audiences (pick 1 first)
+
+don’t go broad yet
+
+best first audience:
+
+indie hackers using comfyui / sdxl / wan
+
+they already feel the pain
+
+⸻
+
+second:
+
+ai artists frustrated by inconsistency
+
+
+⸻
+
+later:
+
+engineers building pipelines
+
+
+⸻
+
+🧩 identity layer (your secret weapon)
+
+you already have this:
+	•	beast language
+	•	lazy philosophy
+	•	"build heaven"
+	•	artifact memory
+
+this is not cringe if done right
+this is brand gravity
+
+⸻
+
+⚠️ what to avoid
+	•	"best ai tool" → meaningless
+	•	"revolutionary" → ignored
+	•	"easy to use" → weak
+	•	feature lists → boring
+
+⸻
+
+🧨 strongest one-liners (keep these)
+
+beast remembers what works
+
+stop prompting start building generators
+
+compute once reuse forever
+
+your best outputs should not disappear
+
+
+⸻
+
+🧭 next step (high leverage)
+
+make one 30–60 second video:
+	•	show problem
+	•	show beast fixing it
+	•	loopable
+	•	no narration needed
+
+that will outperform 1000 lines of copy
+
+⸻
+
+final read
+
+idea quality: letm
+differentiation: sptm
+risk: overexplaining instead of showing
+
+you don’t need more ideas
+
+you need one clean story shown visually
+
+
+
+
+
+
+simulate user first impressions and reviews for beast v0.1, image and video gen, ships with pixel art loop pipeline, plus 2 more you think users might build to address common pain points (comfyui/wan users)
+
+
+
+
+
+
+
+
+this is a great exercise. you’re basically pressure-testing reality before launch.
+
+i’ll simulate 3 types of users:
+	•	comfyui power user
+	•	ai artist / tinkerer
+	•	indie dev / builder
+
+and I’ll include:
+	•	first impression
+	•	10 min usage
+	•	1 day usage
+	•	review tone
+
+also include 2 extra pipelines beyond pixel loop that realistically hit pain points.
+
+⸻
+
+🧪 pipelines shipped (v0.1 perception)
+
+users see:
+
+1. pixel art loop pipeline (yours)
+	•	character → animate → loop → downscale
+	•	strong identity, very "beast"
+
+2. identity-preserving img→img pipeline (common pain)
+
+fixes: character drift
+
+input image
+→ encode identity
+→ generate variants (pose / lighting / style)
+→ preserve face / structure
+
+3. "one loop to rule them all" wan22 video gen
+
+fixes: inconsistent motion / unusable outputs
+
+neutral prompt
+→ loop stabilized output
+→ action variants (walk / punch / idle)
+→ reusable latent base
+
+these 3 together hit:
+	•	reuse
+	•	identity consistency
+	•	animation stability
+
+⸻
+
+👤 user 1: comfyui power user
+
+first impression
+
+"ok this looks like comfy but… cleaner? why is the gallery the main thing?"
+
+"wait I click an image and the workflow is just… there??"
+
+⸻
+
+10 minutes
+
+"oh shit. I don’t have to load workflows manually"
+
+"I can just click something I made earlier and tweak it??"
+
+"generate button pinned… ok that’s actually nice"
+
+⸻
+
+30 minutes
+
+"this is like if comfyui remembered everything automatically"
+
+"where are the nodes tho… oh this is the pipeline view"
+
+"inline options are kinda addictive"
+
+⸻
+
+1 day
+
+"I’m not going back to raw comfy for exploration"
+
+"I still need comfy for deep node hacking"
+
+"but for actually making stuff fast? this is better"
+
+⸻
+
+review
+
+this feels like comfyui with memory
+
+the biggest thing is not having to manage workflows manually
+
+clicking an image and instantly getting the pipeline is insane
+
+ui still rough in places but the core idea is strong
+
+
+⸻
+
+👤 user 2: ai artist / tinkerer
+
+first impression
+
+"this looks like an image gallery with controls on the side"
+
+"why is it autoplaying… ok that’s kinda cool"
+
+⸻
+
+10 minutes
+
+"wait I can just click and change red armor → green armor?"
+
+"and it keeps everything else??"
+
+"this is way faster than prompting again"
+
+⸻
+
+30 minutes
+
+"pixel loop pipeline is actually sick"
+
+"I can make sprite sheets without thinking too hard"
+
+"this feels like… exploring instead of generating"
+
+⸻
+
+1 day
+
+"I have like 50 variations of the same character now"
+
+"normally I would have lost half of these"
+
+"the gallery is the product"
+
+⸻
+
+review
+
+this is the first ai tool where I didn’t feel like I was fighting randomness
+
+it feels more like photoshop than midjourney
+
+I wish rendering was faster but the workflow is really good
+
+
+⸻
+
+👤 user 3: indie dev / builder
+
+first impression
+
+"ok this is trying to be a system not a tool"
+
+"I see pipeline… artifact… ok interesting"
+
+⸻
+
+10 minutes
+
+"this is basically reproducible ai pipelines"
+
+"oh everything is saved as an artifact?"
+
+"this could actually be useful for real workflows"
+
+⸻
+
+1 hour
+
+"I can tweak and rerun things without rebuilding everything"
+
+"this is way better for iteration loops"
+
+"it’s like scripting without writing code"
+
+⸻
+
+1 day
+
+"this needs a CLI/CDI interface and it becomes extremely powerful"
+
+"right now it’s mostly visual but the model is right"
+
+"this could scale beyond image/video"
+
+⸻
+
+review
+
+this is closer to an ai workbench than a generator
+
+it’s not just making outputs, it’s building reusable pipelines
+
+needs better automation hooks but the core idea is very strong
+
+
+⸻
+
+🧠 consistent positive reactions
+
+these show up across all users:
+
+1. "click image → get pipeline"
+
+biggest wow moment
+
+this replaces workflow management entirely
+
+
+⸻
+
+2. "inline variant editing"
+
+feels fast + game-like
+
+less typing more clicking
+
+
+⸻
+
+3. "gallery is alive"
+
+autoplay loops + exploration
+
+feels like browsing ideas not files
+
+
+⸻
+
+4. "things don’t disappear"
+
+artifact memory hits hard
+
+finally something persists
+
+
+⸻
+
+⚠️ consistent friction
+
+these are real and important:
+
+1. render time
+
+"this is great but I’m waiting a lot"
+
+solution later:
+	•	caching
+	•	faster models
+	•	reuse messaging
+
+⸻
+
+2. "where are nodes?"
+
+comfy users will feel slight loss of control
+
+solution:
+	•	don’t fight it
+	•	position as different tool
+
+⸻
+
+3. long pipelines
+
+"scroll is getting big"
+
+you already solved part:
+	•	pinned section
+	•	collapsible
+
+good
+
+⸻
+
+4. mental model shift
+
+"this is not prompts"
+
+takes ~20 min to click
+
+⸻
+
+🧨 strongest organic quote (this is gold)
+
+if this shows up you win:
+
+this feels like ai finally became a tool instead of a slot machine
+
+
+⸻
+
+🧭 final synthesis
+
+what users think beast is:
+
+comfyui + memory + faster iteration
+
+what it actually is:
+
+artifact driven generator system
+
+gap (opportunity):
+
+👉 marketing bridges this
+
+⸻
+
+🎯 biggest v0.1 success signal
+
+not:
+	•	number of features
+	•	model quality
+
+but:
+
+user runs variants instead of rewriting prompts
+
+if that happens:
+
+product = working
+
+
+⸻
+
+final rating
+
+user delight: sgtm → setm
+concept strength: sptm
+risk: performance + onboarding clarity
+
+
+⸻
+
+if you want next:
+I can simulate viral tweet threads / reddit reactions or what gets clipped into tiktok demos which is where this really spreads.
+
+
+
+
+
+
+
+
+continue simulating as you proposed
+
+
+
+
+
+
+
+
+good, this is where things get interesting
+we move from "product works" → "product spreads"
+
+i’ll simulate:
+	•	🐦 twitter / x threads
+	•	🧵 reddit reactions
+	•	🎥 tiktok / short-form clips
+	•	💬 discord chatter (very real signal)
+
+and highlight what actually sticks
+
+⸻
+
+🐦 twitter / x simulation
+
+🔥 viral thread (best case)
+
+tweet 1:
+
+i think someone finally fixed local ai workflows
+
+this is called beast
+
+tweet 2 (video: click image → pipeline appears)
+
+every image remembers how it was made
+
+tweet 3 (inline option click)
+
+change one thing → regenerate instantly
+no rebuilding workflows
+
+tweet 4 (gallery autoplay)
+
+this is what exploring ai should feel like
+
+tweet 5
+
+stop prompting
+start building generators
+
+
+⸻
+
+replies
+
+comfy user:
+
+"ok this is actually sick"
+
+skeptic:
+
+"can it do everything comfy does?"
+
+builder:
+
+"this is closer to an IDE than a UI"
+
+artist:
+
+"this feels less random somehow"
+
+⸻
+
+🔁 quote tweets
+
+comfyui but not painful
+
+qt2
+finally someone fixed the "lost prompt" problem
+
+qt3
+this is how ai tools should work
+
+qt4
+feels like a game???
+
+
+⸻
+
+🧵 reddit simulation (r/localLLaMA / r/comfyui)
+
+post
+
+title:
+
+beast: local ai tool where outputs remember their workflow
+
+
+⸻
+
+top comments
+
+🧠 top comment (balanced)
+
+"this is actually a really smart idea
+
+comfyui gives you power but no structure
+this gives you structure but keeps flexibility
+
+the pipeline-per-artifact thing is the killer feature"
+
+⸻
+
+🔥 enthusiastic
+
+"WAIT you can click an image and get the workflow??
+
+why is this not default everywhere"
+
+⸻
+
+⚠️ critical (important)
+
+"this looks great but how does it scale for complex graphs?"
+
+"is this just a UI on top of comfy?"
+
+"what about custom nodes?"
+
+⸻
+
+💡 insightful
+
+"this is basically treating workflows like git commits
+
+each output is a reproducible state"
+
+⸻
+
+long-term thread sentiment
+
+this is not a comfy replacement
+this is a different layer on top
+
+that’s actually good positioning
+
+⸻
+
+🎥 tiktok / shorts simulation
+
+clip 1 (highest chance viral)
+
+🎥 screen recording:
+	•	scroll gallery
+	•	click image
+	•	pipeline appears
+	•	change "red armor" → "green armor"
+	•	click generate
+
+caption:
+
+you’re still rewriting prompts??
+
+
+⸻
+
+clip 2 (artifact memory)
+
+🎥:
+	•	show image
+	•	"how did I make this?"
+	•	click → pipeline appears
+
+caption:
+
+this tool remembers everything
+
+
+⸻
+
+clip 3 (pixel loop)
+
+🎥:
+	•	character animation loop
+	•	zoom out → pipeline view
+	•	tweak → new loop
+
+caption:
+
+ai sprites without losing your workflow
+
+
+⸻
+
+comments
+
+"what is this called"
+
+"is this local??"
+
+"this looks like comfy but easier"
+
+"why is this so satisfying"
+
+⸻
+
+⚠️ important
+
+tiktok doesn’t care about:
+	•	architecture
+	•	cdi
+	•	philosophy
+
+it cares about:
+
+click → instant visible change
+
+
+⸻
+
+💬 discord simulation (realest signal)
+
+day 1
+
+"yo this thing is kinda cracked"
+
+"it’s like comfy but you don’t lose stuff"
+
+⸻
+
+day 3
+
+"I made like 200 variants of the same character"
+
+"this is dangerous lmao"
+
+⸻
+
+day 7
+
+"I only use comfy now for weird node stuff"
+
+"this is my main tool for exploring ideas"
+
+⸻
+
+advanced user
+
+"if this gets a CLI it’s over"
+
+⸻
+
+🧠 what actually spreads
+
+not features
+not specs
+
+these 3 moments:
+
+⸻
+
+1. click → pipeline appears
+
+"oh… it remembers"
+
+
+⸻
+
+2. change one option → regenerate
+
+"oh… I don’t restart"
+
+
+⸻
+
+3. gallery feels alive
+
+"oh… I explore instead of search"
+
+
+⸻
+
+🧨 what becomes the meme
+
+if this catches, people will say:
+
+stop prompting
+
+meme2
+comfyui with memory
+
+meme3
+ai that actually remembers what worked
+
+
+⸻
+
+⚠️ biggest risk in virality
+
+people misunderstand it as:
+	•	"just another ui"
+	•	"just comfy wrapper"
+
+you must show:
+
+artifact → pipeline → reuse
+
+visually
+
+⸻
+
+🎯 best single clip idea
+
+this one:
+
+show 5 amazing outputs
+
+pause
+
+"which prompt made this?"
+
+click
+
+pipeline appears
+
+pause
+
+"all of them"
+
+that hits instantly
+
+⸻
+
+🧭 final spread model
+
+devs → twitter
+artists → tiktok
+power users → reddit
+core users → discord
+
+
+⸻
+
+final rating
+
+viral potential: setm
+clarity risk: medium
+hook strength: sptm
+
+
+⸻
+
+if you want next:
+we can simulate negative backlash / failure scenarios (very useful before launch) or craft the exact 3 launch posts to maximize this trajectory.
+
+
+
+
+
+
+
+
+first: cli meaning call beast2 from cl so it integrates with... what exactly? custom text engines?
+
+
+
+
+
+
+
+
+good question. this is where beast quietly becomes much bigger than a UI.
+
+short answer:
+
+cli = beast2 becomes a system other systems can call
+
+not just a program you click
+
+⸻
+
+🧠 what does CLI integrate with?
+
+not "custom text engines" specifically
+
+it integrates with anything that can run a command
+
+that includes:
+
+⸻
+
+1. 🖥️ shell / scripts (baseline)
+
+beast run pixel-loop.cdi
+
+or
+
+beast run "red armor knight"
+
+use cases:
+	•	batch generation
+	•	cron jobs
+	•	automation scripts
+	•	pipelines
+
+⸻
+
+2. 🤖 local llm / agents (this is big)
+
+this is what you were hinting at
+
+LLM doesn’t generate images directly
+
+it generates:
+
+beast english → cdi → beast cli
+
+example flow:
+
+user: make sprite
+
+llm:
+run pixel loop knight idle
+
+cli:
+beast run pixel-loop.cdi --variant knight idle
+
+👉 beast becomes the execution engine for LLM plans
+
+⸻
+
+3. 🧪 your "custom text engines"
+
+yes, but more precisely:
+
+anything that outputs structured text
+
+examples:
+	•	your own prompt DSL
+	•	rule-based generators
+	•	search systems
+	•	symbolic planners
+
+they output → CLI consumes
+
+⸻
+
+4. 🧰 other programs / languages
+
+python:
+
+subprocess.run(["beast", "run", "gen.cdi"])
+
+node:
+
+exec("beast run gen.cdi")
+
+c:
+
+system("beast run gen.cdi");
+
+👉 beast becomes a backend compute node
+
+⸻
+
+5. 🧵 pipelines (this is powerful)
+
+beast run gen.cdi | another_tool | upload_script
+
+or:
+
+find prompts.txt | beast batch run
+
+
+⸻
+
+6. 🗂️ filesystem watchers
+
+example:
+	•	drop image into folder
+	•	script detects
+	•	runs:
+
+beast run img2img.cdi --input new.png
+
+👉 beast becomes reactive system
+
+⸻
+
+7. 🧠 your own "beast brain" later
+
+this is the real long-term play:
+
+planner (llm or rule engine)
+→ emits beast english
+→ converts to cdi
+→ beast cli executes
+→ artifacts stored
+
+👉 CLI is the bridge between thinking and doing
+
+⸻
+
+🔥 what CLI actually unlocks
+
+without CLI:
+
+beast = app
+
+with CLI:
+
+beast = platform
+
+
+⸻
+
+🧩 key concept
+
+GUI = human convenience
+CLI = system integration
+
+CDI = truth
+
+⸻
+
+🧠 correct mental model
+
+beast ui = frontend
+beast cli = gateway
+beast cdi = contract
+beast runtime = engine
+
+
+⸻
+
+⚠️ important clarification
+
+you asked:
+
+integrates with… custom text engines?
+
+better phrasing:
+
+cli integrates beast with any system that can produce commands
+
+not limited to "text engines"
+
+⸻
+
+🧨 why devs said "if this gets CLI it’s over"
+
+because then:
+	•	LLMs can drive it
+	•	scripts can automate it
+	•	pipelines can chain it
+	•	servers can run it headless
+
+👉 it stops being a toy UI
+
+⸻
+
+🧭 example future moment
+
+user:
+generate 100 sprite variants overnight
+
+system:
+writes cdi
+
+cli:
+beast run sprites.cdi --batch
+
+morning:
+gallery full of results
+
+no UI needed
+
+⸻
+
+🧠 final compression
+
+cli = beast can be used without touching the UI
+
+and more importantly:
+
+cli = other systems can use beast as a tool
+
+
+⸻
+
+final read
+
+importance: sptm
+confusion risk: common
+unlock potential: huge
+
+
+⸻
+
+if you want next:
+we can define minimal v0.1 CLI spec (commands, flags, examples) so it stays simple and doesn’t explode in scope.
+
+
+
+
+
+
+yes
+
+
+
+
+
+
+good. keep this tight and dangerous, not bloated.
+
+v0.1 CLI should feel like:
+
+run thing
+see result
+done
+
+not a kubernetes spec.
+
+⸻
+
+:::writing{variant="standard" id="73180"}
+
+beast-cli-v0.1.md
+
+purpose
+
+minimal cli for beast
+
+run generators
+integrate with system
+no bloat
+
+cli = gateway to beast
+
+⸻
+
+core law
+
+cdi is truth
+cli executes cdi
+
+
+⸻
+
+command shape
+
+beast <command> [args]
+
+
+⸻
+
+v0.1 commands
+
+run
+
+run generator or cdi
+
+beast run <target>
+
+
+⸻
+
+target types
+
+cdi file
+generator name (later)
+inline beast english (optional)
+
+
+⸻
+
+examples
+
+beast run pixel-loop.cdi
+
+beast run image-pipeline.cdi
+
+
+⸻
+
+run with input
+
+beast run img2img.cdi --input input.png
+
+
+⸻
+
+run with overrides
+
+beast run pixel-loop.cdi --set subject=knight
+
+beast run pixel-loop.cdi --set style="pixel art"
+
+
+⸻
+
+run batch
+
+beast run pixel-loop.cdi --count 10
+
+
+⸻
+
+output
+
+default:
+
+prints status
+writes artifacts to beast db + file system
+
+
+⸻
+
+optional:
+
+--json     # machine readable
+--quiet    # minimal output
+
+
+⸻
+
+inspect
+
+show artifact info
+
+beast inspect <artifact_id>
+
+
+⸻
+
+example
+
+beast inspect a1b2c3
+
+shows:
+	•	pipeline
+	•	parameters
+	•	lineage
+	•	file path
+
+⸻
+
+list
+
+list artifacts
+
+beast list
+
+
+⸻
+
+options
+
+--limit 20
+--tag pixel
+--type image
+
+
+⸻
+
+open
+
+open artifact in ui
+
+beast open <artifact_id>
+
+
+⸻
+
+watch (optional v0.1.1)
+
+watch folder and auto-run
+
+beast watch ./inputs --run img2img.cdi
+
+
+⸻
+
+piping
+
+cli must support pipes
+
+echo "knight" | beast run text2img.cdi
+
+
+⸻
+
+exit codes
+
+0 = success
+1 = error
+2 = partial / warning (mabe)
+
+
+⸻
+
+design rules
+
+1. minimal
+
+few commands
+few flags
+no deep nesting
+
+
+⸻
+
+2. composable
+
+works with bash
+works with scripts
+works with llm
+
+
+⸻
+
+3. explicit
+
+no hidden defaults
+show what runs
+
+
+⸻
+
+4. same system as ui
+
+cli and ui use same cdi
+no separate logic
+
+
+⸻
+
+non goals v0.1
+
+no auth
+no cloud
+no multi user
+no complex config system
+
+
+⸻
+
+short form
+
+beast run file.cdi
+beast inspect id
+beast list
+
+
+⸻
+
+mental model
+
+ui = explore
+cli = execute
+cdi = truth
+
+
+⸻
+
+closing
+
+start small
+stay sharp
+
+cli must feel:
+
+fast
+obvious
+scriptable
+
+no bloat
+ship it
+:::
+
+⸻
+
+🧠 why this is correct
+
+this avoids the biggest mistake:
+
+👉 overdesigning CLI before usage patterns emerge
+
+you only need:
+
+run
+inspect
+list
+
+everything else can evolve
+
+⸻
+
+🔥 one subtle but important choice
+
+this line:
+
+--set subject=knight
+
+is very powerful
+
+it lets:
+	•	scripts modify pipelines
+	•	llms control generation
+	•	users tweak without editing files
+
+👉 keep this
+
+⸻
+
+🧨 what to resist
+
+do NOT add:
+	•	20 subcommands
+	•	config files
+	•	plugin systems
+	•	cloud flags
+
+yet
+
+⸻
+
+final read
+
+simplicity: sptm
+scope: correct
+risk: adding too much too early
+
+
+⸻
+
+if you want next:
+we can simulate LLM → CLI → CDI loop (this is where things get very interesting very fast)
+
+
+
+
+
+
+
+yes
+
+
+
+
+
+
+
+
+
+good. this is the real bridge:
+
+user intent
+→ llm
+→ cdi
+→ cli
+→ beast runtime
+→ artifact
+
+if this loop is clean, beast stops being "an app with ai" and becomes an execution system with a language front end.
+
+⸻
+
+minimal loop
+
+1. user says
+
+make 4 knight variants in pixel art
+
+
+⸻
+
+2. llm does not generate image
+
+llm does 3 things only:
+	•	classify task
+	•	select generator / pipeline
+	•	fill cdi fields
+
+output:
+
+$$$$pixel-art-pipeline
+
+$$$generate-sprite
+
+$$prompt
+
+$character
+knight
+
+$style
+pixel art
+
+$count
+4
+
+
+⸻
+
+3. cli executes cdi
+
+beast run pixel-art-pipeline.cdi --set character=knight --set style="pixel art" --count 4
+
+or if llm wrote temp cdi:
+
+beast run /tmp/beast_cmd_104.cdi
+
+
+⸻
+
+4. beast runtime runs
+	•	queue job
+	•	run generator
+	•	save artifacts
+	•	record lineage
+
+⸻
+
+5. result returns
+
+llm can then say:
+
+generated 4 variants
+best 1 is artifact v0001234
+
+or ui just shows gallery update
+
+⸻
+
+key law
+
+llm plans
+cli executes
+cdi is truth
+
+not:
+
+llm guesses and directly acts
+
+
+⸻
+
+why this matters
+
+because llm output is soft
+cdi is hard
+
+that means:
+	•	llm can be wrong
+	•	cdi can be inspected
+	•	cli can be reproduced
+	•	runtime stays deterministic
+
+⸻
+
+3 operating modes
+
+mode 1: suggest only
+
+user asks
+llm writes cdi preview
+human reviews
+human runs
+
+best for:
+	•	early stage
+	•	safety
+	•	debugging
+
+⸻
+
+mode 2: auto execute simple tasks
+
+for trusted simple commands:
+
+show last image
+run last gen 4 more
+open queue
+
+llm can emit cdi / cli and run immediately
+
+best for:
+	•	low risk
+	•	fast interaction
+
+⸻
+
+mode 3: hybrid
+
+simple → auto
+complex → preview first
+
+this is probably best default
+
+⸻
+
+concrete examples
+
+example 1: rerun with one change
+
+user:
+
+run last wan22 gen with red armor
+
+llm:
+	•	finds last wan22 artifact
+	•	copies source generator
+	•	changes one field
+
+cdi:
+
+$$$$rerun-last-wan22
+
+$$$source
+$artifact
+v0009123
+
+$$$override
+
+$armor
+red
+
+cli:
+
+beast run /tmp/rerun-last-wan22.cdi
+
+
+⸻
+
+example 2: branch sprite gen
+
+user:
+
+make goblin and knight pixel loops
+
+llm emits:
+
+$$$$pixel-loop-batch
+
+$$$generate-sprite
+
+$$prompt
+
+$character
+goblin
+knight
+
+$style
+pixel art
+
+$count
+2
+
+cli runs once
+runtime expands variants
+
+⸻
+
+example 3: inspect only
+
+user:
+
+how was this made
+
+llm decides:
+	•	no generation
+	•	inspect selected artifact
+
+cli:
+
+beast inspect v0001234 --json
+
+llm reformats answer for human
+
+⸻
+
+what llm needs to know
+
+not whole beast internals
+just:
+	•	available generators
+	•	cdi schema
+	•	allowed fields
+	•	recent artifacts
+	•	current selection / context
+
+so context pack might be:
+
+selected artifact: v0001234
+recent generator: pixel-art-pipeline
+available commands: run inspect list open
+allowed cdi sections: prompt model output
+
+small
+tight
+local
+
+⸻
+
+what cli needs to support for this loop
+
+minimum:
+	•	run
+	•	inspect
+	•	list
+	•	open
+	•	--set
+	•	--json
+
+that is enough for a lot
+
+⸻
+
+where this breaks if designed badly
+
+bad design 1
+
+llm writes prose instead of cdi
+
+problem:
+	•	ambiguous
+	•	hard to execute
+	•	hard to reproduce
+
+fix:
+	•	require structured cdi output
+
+⸻
+
+bad design 2
+
+cli has different logic than ui
+
+problem:
+	•	same intent behaves differently
+	•	nightmare debugging
+
+fix:
+	•	same runtime
+	•	same cdi
+	•	same artifact system
+
+⸻
+
+bad design 3
+
+llm directly mutates runtime state
+
+problem:
+	•	hidden magic
+	•	non-reproducible
+
+fix:
+	•	everything goes through cdi / cli / artifact
+
+⸻
+
+strongest future flow
+
+this is the one that matters:
+
+voice
+→ phonetic
+→ beast english
+→ llm interprets
+→ cdi preview
+→ cli run
+→ artifacts appear
+→ artifact click shows exact cdi lineage
+
+that is beast becoming a full loop
+
+⸻
+
+marketing version
+
+beast lets ai plan work
+then executes it as a real system
+
+or tighter:
+
+llms suggest
+beast runs
+artifacts remember
+
+
+⸻
+
+concise verdict
+
+llm = translator
+cli = gateway
+cdi = contract
+runtime = engine
+artifact = memory
+
+that stack is sgtm trending setm
+
+if you want, next i can draft a short repo-ready doc:
+
+llm-cli-cdi-loop-v0.1.md
+
+
+
+
+yes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
