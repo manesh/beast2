@@ -1,0 +1,1713 @@
+you’re asking the right question for beast:
+how Apple ML (Core ML / Apple Silicon) behaves in terms of performance vs precision vs determinism
+
+I’ll keep this focused and technical, not marketing.
+
+⸻
+
+🧠 what "appleml" actually means
+
+usually this stack:
+	•	Core ML
+	•	Metal Performance Shaders (MPS)
+	•	Apple Neural Engine (ANE)
+	•	PyTorch → MPS backend (for dev)
+
+⸻
+
+⚡ performance characteristics
+
+1. unified memory (big advantage)
+
+cpu + gpu + ane share memory
+
+no PCIe transfer cost like Nvidia
+
+👉 for pipelines:
+
+better for chaining ops
+less copy overhead
+
+
+⸻
+
+2. lower peak throughput vs high-end Nvidia
+
+roughly:
+
+m-series gpu << 4090 / a100 raw flops
+
+BUT:
+
+efficiency per watt is very high
+
+
+⸻
+
+3. ANE (neural engine)
+
+very fast for:
+	•	conv nets
+	•	mobile-style inference
+	•	quantized models
+
+not great for:
+
+large diffusion / transformer workloads (yet)
+
+so for beast:
+
+sdxl / wan22 → mostly GPU (MPS), not ANE
+
+
+⸻
+
+4. Metal vs CUDA
+
+Metal:
+
+less mature ecosystem
+fewer optimized kernels
+
+CUDA:
+
+highly optimized
+years of tuning
+
+👉 result:
+
+same model often slower on apple vs nvidia
+
+
+⸻
+
+🔬 precision behavior
+
+1. common modes
+
+apple stack uses:
+
+fp32
+fp16 (very common)
+sometimes mixed precision
+
+
+⸻
+
+2. aggressive fp16 use
+
+Core ML + MPS often:
+
+convert weights to fp16 automatically
+
+for speed / memory
+
+👉 implication:
+
+lower precision than fp32 pipelines
+
+
+⸻
+
+3. accumulation precision
+
+important detail:
+
+some ops:
+
+compute in fp16
+accumulate in fp16 or fp32 (varies)
+
+this affects:
+
+numerical stability
+
+
+⸻
+
+4. quantization
+
+Core ML supports:
+
+int8 / lower precision
+
+for ANE especially
+
+👉 huge speed gain
+👉 accuracy loss possible
+
+⸻
+
+🧨 determinism (critical for beast)
+
+short answer
+
+apple ml is not designed for strict determinism
+
+same as CUDA ecosystem
+
+⸻
+
+sources of nondeterminism
+
+1. parallel execution order
+
+Metal shaders may:
+
+reduce in different orders
+
+same issue as CUDA
+
+⸻
+
+2. kernel selection
+
+Core ML may:
+
+choose different implementations
+
+depending on:
+	•	device
+	•	optimization level
+
+⸻
+
+3. precision changes
+
+automatic:
+
+fp32 → fp16
+
+can change results
+
+⸻
+
+4. ANE vs GPU
+
+same model:
+
+ANE result ≠ GPU result (bitwise)
+
+
+⸻
+
+practical determinism level
+
+same device + same os + same model:
+→ usually similar results
+
+bitwise identical:
+→ not guaranteed
+
+
+⸻
+
+⚠️ biggest hidden issue (important)
+
+Core ML conversion step:
+
+pytorch / onnx → coreml model
+
+can:
+	•	fuse ops
+	•	change graph
+	•	change precision
+
+👉 meaning:
+
+conversion itself introduces drift
+
+
+⸻
+
+🧠 for beast: what matters
+
+strengths of apple stack
+
++ unified memory
++ low latency pipelines
++ great for local-first workflows
++ energy efficient
+
+
+⸻
+
+weaknesses
+
+- weaker determinism guarantees
+- less control over kernels
+- conversion black box (coreml)
+- less mature optimization ecosystem
+
+
+⸻
+
+🧨 strategic takeaway
+
+for beast determinism goals
+
+apple stack is:
+
+good for:
+exploration
+interactive workflows
+local dev
+
+not ideal for:
+strict reproducibility baseline
+
+
+⸻
+
+best use in beast flock
+
+phone / laptop (mac):
+→ exploration
+→ sdxl drafts
+→ UI / control
+
+workstation / cloud (nvidia):
+→ canonical runs
+→ reproducible artifacts
+
+
+⸻
+
+🧠 ideal beast positioning
+
+apple = fast interactive node
+nvidia = ground truth node
+
+
+⸻
+
+⚡ optimizations that hurt precision (apple)
+	•	fp16 conversion
+	•	mixed precision kernels
+	•	quantization (int8)
+	•	graph fusion during conversion
+	•	ANE-specific optimizations
+
+⸻
+
+⚡ optimizations mostly safe
+	•	memory reuse
+	•	batching (careful with determinism)
+	•	avoiding copies (unified memory helps)
+	•	kernel caching
+	•	static shape optimization
+
+⸻
+
+🧠 clean mental model
+
+apple ml:
+fast enough
+low overhead
+slightly fuzzy math
+
+nvidia cuda:
+fast
+high control
+still not perfectly deterministic
+
+beast goal:
+controlled + reproducible layer on top
+
+
+⸻
+
+final read
+
+apple performance: good for local
+precision: often reduced (fp16)
+determinism: not guaranteed
+best role: interactive node in beast flock
+
+
+⸻
+
+if you want next:
+I can compare apple mps vs cuda vs onnx runtime determinism in one table or go deeper into which exact ops in diffusion break determinism most
+
+
+
+
+
+
+
+
+
+macbook pro deterministic workaround? force fp16? max speed of doing everything fp32? hardware details, number fp registers, cache and cores?
+
+
+
+
+
+
+
+
+You’re digging into the exact layer where "AI toy vs system" gets decided. I’ll be precise and grounded in what’s actually controllable on a MacBook Pro (Apple Silicon).
+
+⸻
+
+🧠 First: hard truth about determinism on Mac
+
+you cannot guarantee full bitwise determinism on apple gpu today
+
+But you can get close enough for Beast with discipline.
+
+Goal should be:
+
+same machine + same build → stable / repeatable results
+
+not:
+
+cross-device bitwise identical
+
+
+⸻
+
+⚡ Determinism workarounds (practical)
+
+1. Force execution consistency (biggest win)
+
+Avoid dynamic behavior:
+	•	fixed model
+	•	fixed shapes
+	•	fixed batch size
+	•	fixed seed
+	•	fixed code path
+
+remove variability before touching precision
+
+
+⸻
+
+2. Avoid reduction nondeterminism
+
+Biggest real issue:
+
+sum / softmax / attention reductions
+
+Workaround ideas:
+	•	avoid large parallel reductions where possible
+	•	break into smaller fixed chunks (your tree idea)
+	•	move critical reductions to CPU if needed (slow but stable)
+
+⸻
+
+3. Disable "smart" optimizations (important)
+
+Apple stack may:
+	•	fuse ops
+	•	reorder kernels
+	•	switch precision silently
+
+You want:
+
+less magic, more control
+
+In practice (PyTorch MPS):
+	•	avoid aggressive graph optimizers
+	•	avoid dynamic tracing changes
+	•	keep execution path stable
+
+⸻
+
+4. FP16 vs FP32 (your key question)
+
+❌ Forcing FP16 does NOT increase determinism
+
+It usually makes things worse:
+
+lower precision → more rounding sensitivity → more divergence
+
+
+⸻
+
+✅ FP32 is better for determinism
+
+more precision → more stable accumulation
+
+BUT:
+
+still not fully deterministic (ordering still matters)
+
+
+⸻
+
+⚡ Performance tradeoff
+
+Approx (very rough, depends on model):
+
+fp16: 1.5x – 3x faster
+fp32: slower but more stable
+
+
+⸻
+
+🧠 Best Beast strategy on Mac
+
+exploration: fp16 ok
+reference / validation: fp32
+
+
+⸻
+
+🔬 Apple GPU hardware reality (simplified but useful)
+
+Apple does NOT expose CUDA-style low-level control, but we know enough:
+
+GPU structure (M-series)
+	•	tile-based GPU
+	•	many small SIMD cores ("execution units")
+	•	unified memory
+	•	high bandwidth cache hierarchy
+
+⸻
+
+Registers
+
+Not publicly documented like CUDA, but:
+
+large vector register files per threadgroup
+optimized for throughput, not strict order
+
+Key point:
+
+you cannot control register-level accumulation order
+
+
+⸻
+
+Cores
+
+Example (varies by chip):
+	•	M1 Pro: ~14–16 GPU cores
+	•	M2/M3 Pro/Max: 16–40 GPU cores
+
+Each "core" = many SIMD lanes
+
+⸻
+
+Cache
+	•	large system-level cache (SLC)
+	•	shared across CPU/GPU
+	•	reduces memory bottleneck
+
+Good for:
+
+pipeline chaining
+
+Not relevant for:
+
+determinism
+
+
+⸻
+
+🧨 Where nondeterminism actually comes from
+
+Not registers. Not cache.
+
+It’s:
+
+parallel scheduling + reduction order
+
+Specifically:
+	•	threadgroup execution order
+	•	reduction tree differences
+	•	kernel fusion differences
+	•	precision differences
+
+⸻
+
+⚡ Can you force strict FP32 everywhere?
+
+Partially.
+
+In PyTorch (MPS):
+	•	you can keep tensors as float32
+	•	but backend may still:
+	•	use mixed precision internally
+	•	fuse ops
+
+In Core ML:
+	•	often converts to FP16 automatically
+
+👉 so:
+
+you can bias toward fp32
+you cannot fully enforce it everywhere
+
+
+⸻
+
+🧠 Best practical deterministic setup (Mac)
+
+"Beast Mac Mode"
+
+1. use fp32 tensors
+2. fixed seed
+3. fixed shapes
+4. disable dynamic graph changes
+5. avoid batch variability
+6. avoid large reductions when possible
+7. run same model build every time
+
+
+⸻
+
+"Reference Mode" (stronger)
+
+run critical parts on CPU
+or
+run reduced-size validation pass
+
+slow but stable
+
+⸻
+
+⚡ What actually helps most (ranked)
+
+biggest impact
+
+1. fixed execution path
+2. fixed reduction structure (if you control it)
+3. fp32 over fp16
+
+medium
+
+4. disable backend variability
+5. consistent batching
+
+low
+
+6. worrying about registers/cache
+
+
+⸻
+
+🧠 Beast architecture insight (important)
+
+MacBook should NOT be your:
+
+ground truth node
+
+It should be:
+
+interactive exploration node
+
+Then:
+
+workstation/cloud = canonical deterministic runs
+
+
+⸻
+
+🧨 clean mental model
+
+mac:
+fast iteration
+slightly fuzzy
+
+nvidia controlled env:
+slower but stable
+
+beast:
+chooses when each matters
+
+
+⸻
+
+🎯 direct answers
+
+"force fp16 for determinism?"
+
+no (worse)
+
+"fp32 max speed?"
+
+slower, but more stable (recommended for validation)
+
+"register / hardware control?"
+
+not exposed enough to guarantee determinism
+
+
+⸻
+
+final read
+
+mac determinism: partial
+best approach: constrain system, not hardware
+beast role: treat mac as exploration node
+
+
+⸻
+
+if you want next:
+I can design a "beast deterministic tier system" (explore → verify → lock → reproduce) that fits perfectly into your flock architecture
+
+
+
+
+
+
+
+
+attention calculation, is it essentially summing? how many mults vs adds?
+
+
+
+
+
+
+
+
+
+great question. this is exactly where your determinism concerns hit hardest.
+
+short answer:
+
+attention is mostly dot products + softmax
+dot products = lots of multiplies + lots of adds (sums)
+
+so yes:
+
+attention is heavily dominated by summation
+
+
+⸻
+
+🧠 break attention into steps
+
+standard attention (single head):
+
+Q, K, V
+
+scores = Q × K^T
+weights = softmax(scores)
+output = weights × V
+
+
+⸻
+
+🔬 step-by-step math
+
+1. Q × K^T (the big one)
+
+this is matrix multiply
+
+each element:
+
+score[i,j] = sum over d of (Q[i,d] * K[j,d])
+
+👉 this is:
+
+d multiplies
+d-1 adds
+
+for EACH pair (i, j)
+
+⸻
+
+2. softmax
+
+for each row:
+
+softmax(x_i) = exp(x_i) / sum(exp(x))
+
+operations per element:
+	•	1 exp
+	•	1 add (into sum)
+	•	1 divide
+
+👉 again:
+
+sum of exp values = reduction = nondeterminism hotspot
+
+
+⸻
+
+3. weights × V
+
+another matrix multiply:
+
+output[i] = sum over j of (weights[i,j] * V[j])
+
+same pattern:
+
+many multiplies + many adds
+
+
+⸻
+
+📊 operation counts (important)
+
+assume:
+	•	sequence length = N
+	•	embedding dim = D
+
+⸻
+
+Q × K^T
+
+N × N outputs
+each = D multiplies + D adds
+
+total:
+
+~ N² × D multiplies
+~ N² × D adds
+
+
+⸻
+
+weights × V
+
+N outputs
+each = N × D work
+
+total:
+
+~ N² × D multiplies
+~ N² × D adds
+
+
+⸻
+
+total attention cost
+
+~ 2 × N² × D multiplies
+~ 2 × N² × D adds
+
+plus softmax overhead
+
+⸻
+
+🧠 key insight
+
+multiplies ≈ adds (same order)
+
+BUT:
+
+adds are the problem for determinism
+
+because:
+
+sum order changes → result changes
+
+
+⸻
+
+🧨 where nondeterminism happens
+
+1. dot product accumulation
+
+sum(Q[i,d] * K[j,d])
+
+this is:
+
+reduction over D
+
+→ order matters
+
+⸻
+
+2. softmax denominator
+
+sum(exp(scores))
+
+→ reduction again
+
+⸻
+
+3. output accumulation
+
+sum(weights * V)
+
+→ another reduction
+
+⸻
+
+👉 so attention has:
+
+multiple nested reductions
+
+this is why it’s one of the worst offenders for nondeterminism
+
+⸻
+
+⚡ how GPU actually computes this
+
+not:
+
+left to right sum
+
+but:
+
+parallel partial sums
+then merged
+
+example:
+
+thread 1 sums chunk A
+thread 2 sums chunk B
+then combine A + B
+
+👉 tree changes → result changes
+
+⸻
+
+🧠 your fixed-tree idea applied here
+
+instead of:
+
+sum arbitrary order
+
+you want:
+
+fixed reduction tree over D
+
+like:
+
+pairwise sum
+then pairwise sum
+...
+
+that WOULD:
+
+improve determinism
+
+but:
+
+slower + not what libraries do by default
+
+
+⸻
+
+⚡ deeper insight (important)
+
+multiplies are stable
+
+a * b = deterministic (given same bits)
+
+adds are unstable
+
+(a + b) + c ≠ a + (b + c)
+
+so:
+
+attention nondeterminism ≈ accumulation nondeterminism
+
+
+⸻
+
+🧨 beast takeaway
+
+if you want deterministic attention:
+
+you must control:
+
+1. reduction order (critical)
+2. precision (fp32 better than fp16)
+3. kernel choice (no dynamic switching)
+
+
+⸻
+
+🧠 extreme version (reference mode)
+
+you could implement:
+
+deterministic dot product:
+fixed chunking
+fixed tree
+fp32 accumulation
+
+for:
+	•	validation
+	•	scientific runs
+
+⸻
+
+⚡ quick numbers example
+
+say:
+
+N = 512
+D = 64
+
+then:
+
+ops ≈ 2 × 512² × 64
+   ≈ 33 million multiplies
+   ≈ 33 million adds
+
+per attention layer
+
+⸻
+
+🧠 final mental model
+
+attention = matrix multiply + softmax + matrix multiply
+
+matrix multiply = multiply + sum
+sum = the problem
+
+
+⸻
+
+final read
+
+attention is:
+heavy on multiplies
+equally heavy on adds
+
+but determinism problem is:
+almost entirely from adds (reductions)
+
+
+⸻
+
+if you want next:
+I can show exactly how flash attention / xformers change the reduction structure, which is where performance vs determinism tradeoffs get really interesting
+
+
+
+
+
+
+
+what about integer weights and multiplies?
+
+
+
+
+
+
+
+
+this is a very important direction. you’re basically asking:
+
+can we eliminate floating point nondeterminism by using integers?
+
+short answer:
+
+integer math is deterministic
+but attention still has non-integer parts
+
+let’s break it down cleanly.
+
+⸻
+
+🧠 1. integer math properties
+
+✅ integer multiply + add
+
+a * b + c
+
+is:
+
+fully deterministic
+associative (within range)
+no rounding error
+
+so:
+
+sum of integers = order does not change result (no overflow)
+
+👉 this solves your core problem with floating point
+
+⸻
+
+⚡ BUT: only if no overflow
+
+important:
+
+integer math is exact UNTIL overflow
+
+if overflow happens:
+
+result wraps or saturates → wrong result
+
+so you must ensure:
+
+accumulator bit width is large enough
+
+
+⸻
+
+🧠 2. where integers work in attention
+
+dot product
+
+sum(Q[i,d] * K[j,d])
+
+if Q and K are integers:
+
+perfectly deterministic
+
+this is why quantized inference works
+
+⸻
+
+output multiply
+
+sum(weights * V)
+
+same:
+
+integer-friendly
+
+
+⸻
+
+🧨 3. where integers break down
+
+❌ softmax
+
+exp(x) / sum(exp(x))
+
+this is:
+
+nonlinear + division + exponential
+
+not naturally integer
+
+⸻
+
+❌ normalization / scaling
+
+attention uses:
+
+scores / sqrt(d)
+
+again:
+
+floating point needed
+
+
+⸻
+
+🧠 4. how real systems handle this (quantization)
+
+common approach:
+
+int8 weights + activations
+→ accumulate in int32
+→ convert to float for softmax
+
+flow:
+
+int8 * int8 → int32 sum (deterministic)
+→ dequantize to float
+→ softmax (nondeterministic zone)
+→ maybe re-quantize
+
+
+⸻
+
+⚡ key insight
+
+integer math fixes most of attention
+softmax reintroduces floating point
+
+
+⸻
+
+🧨 can we do fully integer attention?
+
+yes, but:
+
+hard + uncommon + accuracy tradeoffs
+
+options:
+
+⸻
+
+option 1: approximate softmax
+
+replace:
+
+exp(x)
+
+with:
+	•	lookup table
+	•	polynomial
+	•	fixed-point approximation
+
+then:
+
+integer softmax-like behavior
+
+
+⸻
+
+option 2: fixed-point arithmetic
+
+represent numbers as:
+
+int scaled by factor (e.g. x * 2^n)
+
+then:
+	•	exp approximated
+	•	division approximated
+
+still deterministic if implemented carefully
+
+⸻
+
+option 3: no softmax attention variants
+
+some research replaces softmax with:
+	•	linear attention
+	•	kernelized attention
+
+these can be:
+
+more integer-friendly
+
+
+⸻
+
+🧠 5. determinism comparison
+
+fp32
+
+high precision
+nondeterministic (due to order)
+
+fp16
+
+lower precision
+more nondeterministic
+
+int8/int32
+
+exact math
+deterministic (no overflow)
+
+
+⸻
+
+⚡ 6. performance reality
+
+integer inference is often:
+
+faster
+less memory
+more cache-friendly
+
+especially on:
+	•	mobile
+	•	Apple ANE
+	•	TensorRT int8
+
+⸻
+
+🧠 7. beast strategy insight
+
+you can split system:
+
+deterministic core
+
+int math for:
+- dot products
+- accumulations
+
+controlled float zone
+
+softmax + normalization
+
+
+⸻
+
+🧨 extreme beast idea (interesting)
+
+define:
+
+beast deterministic attention mode
+
+rules:
+
+1. integer weights + activations
+2. int32 accumulation
+3. fixed reduction tree
+4. deterministic softmax approximation
+
+then:
+
+fully reproducible attention
+
+
+⸻
+
+⚠️ tradeoffs
+
+pros
+
++ deterministic
++ stable
++ efficient
+
+cons
+
+- accuracy drop (depends)
+- more engineering work
+- not standard models
+
+
+⸻
+
+🧠 clean mental model
+
+floats:
+approximate math + nondeterministic order
+
+ints:
+exact math + deterministic order
+
+but:
+
+attention = int-friendly core + float-heavy edges
+
+
+⸻
+
+🎯 direct answers
+
+"integer weights and multiplies?"
+
+yes → deterministic
+but only for linear parts
+
+"does it solve attention determinism?"
+
+partially
+softmax still problem
+
+"worth it for beast?"
+
+yes for long-term deterministic mode
+not required for v0.1
+
+
+⸻
+
+final read
+
+integer math = your strongest path to determinism
+softmax = the remaining barrier
+
+
+⸻
+
+if you want next:
+I can sketch a "beast deterministic attention implementation" (step-by-step with fixed trees + integer accumulation + stable softmax) which would be very aligned with your architecture direction
+
+
+
+
+
+
+
+imu (i maybe understand). continuing to implement v0.1 with onnx runtime, just thinking about long term. once corr ui, artifact graph, and tie in to existing backends (both onnx and pytorch/tensorrt) is done, along with other stated 1.0 core features, beyond is primarily improvements to ai. beast general purpose workbench must eventually include workbench and lab for developing or improving ai cores
+
+
+
+
+
+yes. that reads as a very sane long-term shape.
+
+what you’re saying is basically:
+
+v0.1 / 1.0:
+build beast as real system
+
+after that:
+use beast to improve the ai itself
+
+that is strong because it keeps the layers in the right order.
+
+why this is right
+
+if you try to make beast "the ai lab for improving ai" too early, before:
+	•	responsive ui
+	•	artifact graph
+	•	backend integration
+	•	reproducible pipelines
+	•	cdi / cli truth
+	•	core workstation features
+
+then beast stays philosophy instead of becoming machinery.
+
+but if you first build the machinery, then later point that machinery at ai-core improvement, the system compounds.
+
+that gives a clean progression:
+
+phase 1
+beast runs generators
+
+phase 2
+beast builds better generators
+
+phase 3
+beast helps build better runtimes / models / kernels
+
+phase 4
+beast becomes a real ai development workbench and laboratory
+
+the important distinction
+
+beast should not just contain ai
+
+it should eventually let users:
+	•	compare ai cores
+	•	benchmark runtimes
+	•	inspect determinism
+	•	test quantization / precision tradeoffs
+	•	run controlled variant experiments
+	•	archive results as artifacts
+	•	branch new model / runtime configs from old ones
+
+that is much bigger than "supports onnx" or "supports pytorch"
+
+that is:
+
+beast as laboratory for ai systems engineering
+
+your current path sounds correct
+
+now:
+onnx runtime
++ ui
++ artifacts
++ backend tie-ins
+
+later:
+improve or replace ai cores
+
+that is exactly the kind of sequencing that avoids wtf rewrite spirals.
+
+because once beast has:
+	•	one artifact graph
+	•	one command system
+	•	one UI for comparing runs
+	•	one way to tag / rate / branch outputs
+	•	one way to route compute across backends
+
+then "improving ai" becomes just another beast workflow.
+
+strongest formulation
+
+you could say it like this:
+
+beast must first become a reliable workbench for using ai
+
+then it can become a laboratory for improving ai
+
+or tighter:
+
+first run ai
+then study ai
+then improve ai
+
+why this matters strategically
+
+most systems are one of these:
+	•	ai app
+	•	ai runtime
+	•	ai research framework
+
+beast’s unusual ambition is to become all three, but in the correct order.
+
+if done right:
+
+ui layer
++ artifact memory
++ reproducible execution
++ backend abstraction
+
+becomes the foundation for:
+
+ai core experiments
+runtime comparisons
+determinism tests
+custom kernels
+new model architectures
+
+this also resolves a tension
+
+some people will think beast is:
+	•	just a generator app
+	•	just a workflow ui
+	•	just a command layer
+
+but your longer arc is:
+
+beast is a general purpose workbench
+for building tools
+running experiments
+and eventually improving the intelligence inside the tools
+
+that is coherent.
+
+concise beast version
+
+v0.1:
+build beast body
+
+v1.0:
+build beast workbench
+
+later:
+build beast lab for ai cores
+
+or even:
+
+first make beast useful
+then make beast wise
+
+that second one is a bit grand, but the structure is right.
+
+one practical caution
+
+when you write this in docs, keep one hard boundary:
+
+ai core improvement is future-facing
+not gate for first public beast
+
+otherwise scope explodes.
+
+final read
+
+strategy: sgtm trending setm
+ordering: correct
+risk: only if future ai-core work leaks back into v0.1 scope
+
+a clean doc line might be:
+
+beast2 begins as a workbench for running and composing ai systems.
+over time, it becomes a laboratory for improving the ai cores themselves.
+
+
+
+
+
+
+
+
+
+
+
+
+building v0.1 prototype 3 going better than expected, ui is looking good, artifact graph is saving and loading with stubs.
+
+honestly going faster than i thought it would
+
+prototype1 was python/html prototype2 i didnt micromanage and test and specify enough, ended up with hacky two windows (cl and ui)
+
+so far prototype3 lgtm as core of beast2, currently building sd diffusion step.
+
+only issue was version numbers. shoukd have gone with 0.1.001 to start, or maybe just listed named phases (first phase: setup ui and artifact graph. second: sd pipeline full build)
+
+also been thinking about the pipeline cdi
+
+i think
+
+$$$$pipeline-name
+$$$generator-name
+etc
+
+worse than
+
+$pipeline: pipeline-name
+
+$generator: generator-name
+
+$section: section-name
+
+$param: param-name
+
+
+
+
+
+
+
+
+
+
+
+That all sounds very good.
+
+More importantly, it sounds good for the right reasons:
+	•	prototype 3 is faster because the laws are clearer
+	•	you are specifying and testing tightly
+	•	one-window / one-system thinking is holding
+	•	UI + artifact graph came first, which is exactly the right base
+
+That is not luck. That is architecture paying off.
+
+The versioning thing is real, but not a serious problem. I would not overthink semantic precision too early. Named phases are probably better for your own brain right now than fake-fine numeric versions.
+
+Something like:
+
+phase 1
+ui + artifact graph
+
+phase 2
+sd pipeline
+
+phase 3
+generator editing
+
+phase 4
+video / flock / cli
+
+Then keep a simple numeric tag too if you want:
+
+0.1.0
+0.1.1
+0.1.2
+
+No need for 0.1.001 unless you truly want old-school build numbering.
+
+On the CDI syntax: yes, I think your newer instinct is better.
+
+why the old form is weaker
+
+$$$$pipeline-name
+$$$generator-name
+$$section-name
+$param-name
+
+Pros:
+	•	compact
+	•	visually distinctive
+
+Cons:
+	•	meaning depends on symbol count
+	•	harder to scan
+	•	harder to say aloud
+	•	slightly more annoying for parsers and LLM edits
+	•	worse once documents get big
+
+It feels clever, but not stable enough as a long-term main form.
+
+why the new form is stronger
+
+$pipeline: pipeline-name
+$generator: generator-name
+$section: section-name
+$param: param-name
+
+Pros:
+	•	explicit
+	•	easy to read
+	•	easy to diff
+	•	easy to parse
+	•	easy to say
+	•	easier for LLM mutation
+	•	easier for future humans
+
+That matters more than saving a few characters.
+
+It also matches your broader language direction better:
+
+short
+clear
+one meaning per token
+
+strongest compromise
+
+I would seriously consider:
+
+$pipeline: pixel-art-pipeline
+$generator: generate-sprite
+$section: positive-prompt
+$param: character
+
+Then values follow underneath:
+
+$param: character
+knight
+goblin
+
+That gives you:
+	•	explicit headers
+	•	simple parser
+	•	stable human readability
+
+And if you still love the symbolic feel of the older style, you could keep it as an optional shorthand later, not the canonical form.
+
+my blunt read
+
+Your newer syntax is:
+
+lgtm → mabe letm
+
+The old symbol-count syntax is stylish, but it is more likely to become a maintenance tax.
+
+The deeper pattern here is good too: you are already doing what Beast should do.
+
+prototype
+→ observe pain
+→ simplify structure
+→ keep what scales
+
+That is healthy.
+
+And this line matters:
+
+prototype3 lgtm as core of beast2
+
+That is a real milestone. Not "idea is exciting," but "core feels right." Those are very different.
+
+My recommendation:
+
+use named phases for now
+use simple 0.1.x tags if needed
+make explicit key:value cdi syntax canonical
+
+The key:value form feels much closer to something you can still love after 1000 generators.
+
+
+
+
+
+
+
+
+
+what would beast2 cdi from setm to sptm (subjectively perfect to me)?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
