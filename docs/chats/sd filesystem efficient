@@ -1,0 +1,1592 @@
+onnx bundles for sd dont have naming or directory structure conducive to putting them in  the same folder.
+
+trying to come up with an elegant solution to allow multiple sd file groups with minimal renaming/moving/selection after downloading them
+
+ux: swap from sd no optimization to sd fp16 then swap out the unet model for one downloaded and converted off civitai optimized for pixel art
+
+
+
+
+
+You want a solution that is elegant in three different ways at once:
+
+it should preserve upstream downloads as much as possible
+it should let multiple SD bundles coexist cleanly
+it should make model swapping feel natural in the UI
+
+That is the right instinct. Renaming and hand-curating folders is exactly the kind of friction Beast should absorb.
+
+The cleanest answer is: do not make the downloaded folder structure the runtime structure.
+
+Instead, treat each ONNX bundle as an imported model group artifact, then project it into a Beast-managed logical structure.
+
+In other words:
+
+download layout = messy external reality
+beast model registry = clean internal truth
+
+So I would avoid forcing users to manually rename or merge files into one canonical shared folder. That will get glitchy fast, especially once you have different bundles with different tokenizer, text encoder, vae, scheduler, unet, fp16/fp32 variants, and conversion quirks.
+
+A strong architecture is this:
+
+1. keep imports mostly intact
+
+When the user downloads an ONNX SD bundle, Beast imports it as a group.
+That group gets:
+	•	a stable Beast id
+	•	source path
+	•	detected components
+	•	component roles
+	•	precision info
+	•	conversion provenance
+	•	compatibility tags
+
+Example mental model:
+
+sd_group_001 = sd no optimization
+sd_group_002 = sd fp16
+sd_group_003 = civitai pixel art unet
+
+Do not require perfect upstream naming. Beast should inspect files and infer likely roles.
+
+2. separate logical roles from file names
+
+Internally, Beast should care about roles like:
+	•	text_encoder
+	•	text_encoder_2
+	•	tokenizer
+	•	tokenizer_2
+	•	vae_decoder
+	•	vae_encoder
+	•	unet
+	•	scheduler_config
+	•	model_index
+	•	config
+
+Not about whether the upstream file was named nicely.
+
+So the registry row says, effectively:
+
+this file path fulfills unet for this group
+this file path fulfills vae_decoder for this group
+
+That means ugly downloaded names stop mattering.
+
+3. define a "base group + overrides" model
+
+This feels like your real UX target.
+
+For example:
+
+base:
+	•	sd no optimization group
+
+swap preset:
+	•	sd fp16 group
+
+override:
+	•	unet = civitai pixel art unet group
+
+That is much better than making users manually assemble a frankenfolder.
+
+So the active runtime model becomes a resolved composition:
+
+base group
+	•	optional optimized variant
+	•	optional component overrides
+
+That gives you exactly the workflow you described:
+
+swap from sd no optimization
+→ sd fp16
+→ replace only unet with pixel-art-optimized one
+
+And the user experiences it as selection, not file surgery.
+
+4. make Beast generate the resolved runtime view
+
+At execution time, Beast can materialize a resolved view in one of two ways:
+
+Either a temporary runtime manifest that points to the selected component files, or a generated Beast-managed runtime folder/symlink layout.
+
+The important thing is that the user should not have to manually build this layout.
+
+So:
+
+import once
+tag components
+compose logically
+run from resolved view
+
+5. UI should show "family" and "part"
+
+A good UX shape is:
+
+model family
+	•	SD 1.5 base
+	•	SD 1.5 fp16
+	•	SDXL base
+	•	etc.
+
+active components
+	•	text encoder: from fp16 bundle
+	•	vae: from fp16 bundle
+	•	unet: from pixel art bundle
+	•	tokenizer: from fp16 bundle
+
+This makes the swap inspectable.
+
+That matters because once users start mixing components, hidden state becomes wtf quickly.
+
+6. preserve low-friction imports with a staging area
+
+I would strongly consider:
+
+imports/
+keep raw downloaded bundles here, mostly untouched
+
+registry.db
+stores detected groups and roles
+
+runtime/
+generated resolved layouts or manifests
+
+This avoids destructive moves and lets Beast re-scan or repair imports later.
+
+7. support "component compatibility confidence"
+
+Because not every swapped unet will actually match cleanly.
+
+So Beast should assign something like:
+	•	compatible
+	•	likely compatible
+	•	unknown
+	•	mismatch
+
+Based on:
+	•	model family
+	•	tensor shapes
+	•	architecture markers
+	•	expected inputs
+	•	precision
+	•	known metadata
+
+Then the UI can say:
+
+"swap unet from pixel-art bundle"
+status: likely compatible
+
+That is much better than silent breakage.
+
+8. save this as a reusable "model preset"
+
+Once the user makes a good combo, it should become a named Beast preset or artifact.
+
+Example:
+
+sd15_fp16_pixel_art_v1
+	•	base group: sd15 fp16
+	•	override unet: civitai pixel art unet
+	•	scheduler: euler a
+	•	notes: good for sprite work
+
+That fits Beast perfectly: the composition becomes reusable and inspectable.
+
+⸻
+
+The simplest elegant rule is:
+
+users import bundles, Beast resolves components
+
+not:
+
+users manually normalize folders until the app is happy
+
+That is the right lazy design.
+
+A concise internal design formulation might be:
+
+raw in import
+roles in db
+resolved at runtime
+
+Or in Beast tone:
+
+keep download mess outside
+keep clean truth in beast db
+build runtime view on demand
+
+For the exact UX you described, I would model it as:
+	•	choose base model group
+	•	choose optimization variant
+	•	optionally override components
+	•	save as runtime preset
+
+That gives you minimal renaming, minimal moving, minimal reselection, and maximum clarity.
+
+The only thing I would strongly avoid is a single flat shared folder with copied renamed files from many bundles. It sounds simple at first, but once people mix several SD families and variants, it will become fragile and confusing fast.
+
+A good Beast note for this would be:
+
+onnx imports stay raw
+beast maps files to roles
+runtime model = base group + overrides
+
+That feels like the elegant solution here.
+
+
+
+
+
+
+
+
+sdxl differences from sd
+
+
+
+
+
+
+
+
+
+
+The difference between Stable Diffusion (often SD 1.x/2.x) and SDXL is not just "a bigger model." It is a shift in how the model understands prompts, composes images, and handles detail.
+
+Core idea
+
+SD = single-stage, smaller context, weaker prompt grounding
+SDXL = dual-stage, larger context, stronger structure and detail
+
+That shows up everywhere in practice.
+
+⸻
+
+1. Architecture and prompting
+
+SD (1.5, 2.x)
+	•	One main text encoder (CLIP-based)
+	•	Shorter effective prompt understanding
+	•	Tends to "average" prompts
+	•	Needs tricks (weights, negative prompts, prompt engineering)
+
+SDXL
+	•	Dual text encoders (CLIP variants)
+	•	Much stronger prompt comprehension
+	•	Better at long, structured descriptions
+	•	More literal interpretation of prompt components
+
+In Beast terms:
+SD feels like "suggestion"
+SDXL feels closer to "instruction"
+
+⸻
+
+2. Composition and structure
+
+SD
+	•	Can drift compositionally
+	•	Faces and bodies degrade at higher complexity
+	•	Needs strong anchoring ("full body, centered, etc.")
+
+SDXL
+	•	Much better scene layout
+	•	More consistent anatomy
+	•	Handles multiple elements more reliably
+	•	Better spatial reasoning
+
+This connects directly to what you saw:
+
+weak prompt → SD defaults to "safe prior" (town scene)
+SDXL is less likely to collapse that way because it holds structure better
+
+⸻
+
+3. Resolution and detail
+
+SD
+	•	Native ~512px (SD1.5), ~768px (SD2)
+	•	Upscaling needed for detail
+	•	Fine detail often mushy or inconsistent
+
+SDXL
+	•	Native ~1024px
+	•	Much sharper out of the box
+	•	Better textures, lighting, material definition
+
+This is not just size -- it is learned detail fidelity.
+
+⸻
+
+4. Two-stage generation (important)
+
+SDXL pipeline often uses:
+	1.	base model → composition, layout, main image
+	2.	refiner model → detail, texture, polish
+
+SD does everything in one pass.
+
+This matters for your architecture thinking:
+
+SD = one generator step
+SDXL = naturally two-step generator (fits Beast pipelines well)
+
+⸻
+
+5. Style behavior
+
+SD
+	•	Strong style bias depending on checkpoint
+	•	Easier to "bend" into stylized outputs (anime, pixel art, etc.)
+	•	Sometimes less consistent but more flexible
+
+SDXL
+	•	More "photographic default"
+	•	Cleaner, more realistic outputs
+	•	Harder to force into extreme styles without specialized models
+
+So:
+
+SD → easier for pixel art, stylized generators
+SDXL → better for clean, realistic, structured scenes
+
+This is important for your goblin/pixel experiments.
+
+⸻
+
+6. Model ecosystem
+
+SD (1.5 especially)
+	•	Massive ecosystem
+	•	Tons of finetunes, LoRAs, niche styles
+	•	Lightweight, fast, flexible
+
+SDXL
+	•	Growing ecosystem
+	•	Heavier models
+	•	Fewer niche finetunes (but improving)
+
+So for Beast:
+
+SD = huge generator library potential
+SDXL = higher baseline quality, fewer specialized tools (for now)
+
+⸻
+
+7. Performance / hardware
+
+SD
+	•	Faster
+	•	Lower VRAM
+	•	Easier to run many variants (good for Beast exploration loops)
+
+SDXL
+	•	Slower
+	•	Higher VRAM
+	•	Heavier pipelines (especially with refiner)
+
+So:
+
+SD → exploration, variant farming
+SDXL → higher-quality final passes
+
+⸻
+
+8. Failure modes
+
+This is where your observations connect nicely.
+
+SD failure modes
+	•	collapses to default scenes (like your town example)
+	•	bad anatomy
+	•	prompt drift
+	•	unstable subjects ("boy", "goblin" issues)
+
+SDXL failure modes
+	•	overly literal / stiff outputs
+	•	harder to stylize
+	•	heavier compute cost
+	•	sometimes "too clean" / less character
+
+⸻
+
+9. How this fits Beast2 thinking
+
+This is the interesting part for your system design.
+
+You are not choosing one. You are composing both.
+
+A strong pattern:
+	•	SD generators → exploration, variants, style discovery
+	•	SDXL generators → refinement, structure, final outputs
+
+That maps cleanly to:
+
+generator A (SD) → find diamonds
+generator B (SDXL) → refine diamonds
+
+That aligns with your "diamond / ok / landfill" artifact system.  ￼
+
+⸻
+
+10. Quick mental model
+
+If you want a simple way to think about it:
+
+SD:
+	•	creative
+	•	messy
+	•	flexible
+	•	fast
+	•	sometimes dumb
+
+SDXL:
+	•	structured
+	•	sharp
+	•	literal
+	•	slower
+	•	more reliable
+
+⸻
+
+Final thought
+
+Your earlier observations (town default, goblin/boy issues) are very "SD-class behavior."
+
+SDXL would likely:
+	•	reduce default scene collapse
+	•	handle "goblin child" better structurally
+	•	but might resist stylization unless you guide it harder
+
+So this is not just model comparison -- it is a generator design decision inside Beast.
+
+You are effectively deciding:
+	•	where exploration happens
+	•	where structure is enforced
+	•	where refinement occurs
+
+And SD vs SDXL maps cleanly onto those roles.
+
+
+
+
+
+
+
+
+any blockers to running a few unet steps to "preview" then resuming full steps to get "final"?
+
+
+
+
+
+
+
+
+Not really a fundamental blocker, but there are a few practical catches.
+
+In principle, yes: you can run a diffusion process for a small number of UNet denoise steps, show that as a preview, then continue from that same latent state to finish the run. That is much more like a true progressive preview than "generate a cheap fake and then start over."
+
+The key condition is this:
+
+you must preserve the exact latent state and scheduler state at the pause point.
+
+If you have that, resuming is conceptually straightforward.
+
+The main caveats are these.
+
+First, scheduler bookkeeping.
+It is not just "latent after step 8." The scheduler also defines which timestep you are on, and some schedulers have internal state or assumptions that matter. If Beast can serialize:
+	•	current latent
+	•	current step index
+	•	scheduler/timestep sequence
+	•	seed/noise config
+	•	CFG state and prompt conditioning
+	•	model/component versions
+
+then resume should work fine.
+
+Second, preview quality can be misleading.
+Early-step previews are often structurally useful but aesthetically ugly. They may be good enough to answer:
+	•	composition right?
+	•	subject count right?
+	•	silhouette right?
+	•	camera angle roughly right?
+
+but not:
+	•	face quality
+	•	texture
+	•	hands
+	•	final readability
+
+So this is excellent for "continue or cancel?" but weaker for final judgment.
+
+Third, changing anything after preview breaks continuity.
+If after 8 steps the user changes prompt, CFG, resolution, ControlNet inputs, LoRA stack, or UNet, then it is no longer a true resume. At that point it becomes a branch from an intermediate latent, which can still be useful, but is not the same as continuing the original run.
+
+Fourth, some optimizations make pause/resume awkward.
+Depending on runtime:
+	•	graph-captured execution
+	•	fused pipelines
+	•	provider-specific ONNX sessions
+	•	aggressive memory reuse
+
+may make "stop here, surface preview, then continue later" more annoying to implement cleanly, even though it is still possible architecturally.
+
+Fifth, VAE decode cost.
+If you preview often, the bottleneck may not be UNet alone. Repeatedly decoding latent to image for UI preview can add enough overhead to hurt throughput. So the elegant version is usually:
+	•	sparse preview checkpoints
+	•	maybe lower-frequency decode
+	•	maybe lower-res or tiled preview decode
+
+For Beast, this feels very aligned with your architecture.
+
+A good model is:
+
+run job
+→ checkpoint latent at step N
+→ optional preview artifact
+→ continue to final
+→ final artifact
+
+That means the preview is itself a real artifact in lineage, not just disposable UI fluff. That fits your artifact system nicely.  ￼
+
+The strongest use cases are:
+	•	early cancel if composition is bad
+	•	gallery/live lightbox preview
+	•	branch from step N into alternate continuations
+	•	compare schedulers or CFG from same intermediate state
+
+That last one is especially interesting. If you preserve the step-8 latent, you can fork:
+	•	final A: continue normal
+	•	final B: continue with different CFG
+	•	final C: continue with different sampler path if compatible
+
+So the short answer is:
+
+No hard blocker.
+The real requirement is treating diffusion as a resumable state machine, not a black-box one-shot call.
+
+If you want a Beast phrasing:
+
+preview = partial denoise artifact
+final = continued denoise from same latent state
+
+or even:
+
+gen can pause at step n
+show preview
+resume to final if lgtm
+
+That seems like a very good feature direction.
+
+
+
+
+
+
+
+
+
+steps for sd decode
+
+
+
+
+
+
+
+
+
+
+If you mean how SD turns a latent into a visible image, the decode side is very short compared to denoising.
+
+SD image path
+
+Roughly:
+	1.	start with noise latent
+	2.	run many UNet denoise steps
+	3.	get a final latent
+	4.	run VAE decode once
+	5.	output RGB image
+
+So the important distinction is:
+	•	UNet steps = many iterative diffusion steps
+	•	decode = usually one VAE forward pass
+
+There usually are not "decode steps" in the same sense.
+
+Typical counts
+
+For normal SD generation:
+	•	UNet denoise steps: often 20–50
+	•	VAE decode steps: effectively 1 pass
+
+What VAE decode does
+
+The final latent might be something like:
+	•	4 x 64 x 64 for a 512x512 SD image
+
+The VAE decoder expands that into:
+	•	3 x 512 x 512 RGB image
+
+So decode is more like:
+	•	latent tensor in
+	•	image tensor out
+
+not:
+	•	20-step iterative refinement
+
+Why people sometimes talk like decode has "steps"
+
+Because there are a few related things that can be confused with it:
+	•	diffusion denoise steps
+	•	tiled VAE decode for memory saving
+	•	preview decode at intermediate denoise steps
+	•	multi-stage pipelines like SDXL base + refiner
+
+But plain SD decode itself is still usually just one decoder pass.
+
+Beast-relevant framing
+
+A clean mental model is:
+
+noise -> unet steps -> final latent -> vae decode -> image
+
+So if you are thinking about previewing:
+	•	preview after step 4, 8, 12, etc. means
+decode the current intermediate latent
+	•	final means
+decode the last latent
+
+Same decode operation, different latent.
+
+If you want, I can also break down exactly what happens inside VAE decode in SD, including the 8x latent upscale relation and why it is much cheaper than UNet.
+
+
+
+
+
+
+
+
+
+
+
+yes
+
+
+
+
+
+
+
+
+
+
+Good, this is where the mental model really sharpens.
+
+What the VAE decoder actually does
+
+In Stable Diffusion, the VAE decoder is a neural upscaler + color reconstructor. It takes a compressed latent and expands it into an RGB image.
+
+Think of it as:
+
+latent (compressed, abstract) → image (visible pixels)
+
+⸻
+
+1. Latent space shape
+
+For standard SD 1.5:
+	•	image: 512 x 512 x 3
+	•	latent: 64 x 64 x 4
+
+So:
+	•	spatial size is 1/8
+	•	channels are 4 instead of 3
+
+That 8× factor is fixed by the VAE design.
+
+⸻
+
+2. High-level decode pipeline
+
+The decoder is a stack of convolutional blocks with upsampling.
+
+Conceptually:
+	1.	input latent (4 channels, low res)
+	2.	several residual conv blocks
+	3.	repeated upsample (×2) + conv
+	4.	final conv → 3-channel RGB image
+
+So the spatial growth looks like:
+
+64 → 128 → 256 → 512
+
+Each stage:
+	•	increases resolution
+	•	refines structure
+	•	adds detail
+
+⸻
+
+3. Important detail: latent scaling
+
+Before decode, SD typically applies a scaling factor:
+
+latent = latent / 0.18215
+
+That constant normalizes the latent distribution.
+
+If you skip or mismatch this, you get:
+	•	washed out images
+	•	overly dark or bright outputs
+
+So decode is actually:
+
+scaled latent → VAE → RGB
+
+⸻
+
+4. Why decode is cheap
+
+Compare compute:
+
+UNet
+	•	runs 20–50 times
+	•	large attention + conv network
+	•	conditioned on text
+	•	most of the cost
+
+VAE decode
+	•	runs once
+	•	no attention
+	•	smaller network
+	•	no text conditioning
+
+So decode is typically a small fraction of total runtime.
+
+⸻
+
+5. Why previews work the way they do
+
+When you preview at step N:
+
+you are doing:
+
+intermediate latent → same VAE decode
+
+So the decoder is identical whether:
+	•	step 4
+	•	step 20
+	•	final step
+
+Only the latent changes.
+
+That is why early previews look:
+	•	blurry
+	•	low detail
+	•	noisy shapes
+
+Because the latent itself is not fully denoised yet.
+
+⸻
+
+6. What the decoder is "good at" vs not
+
+The VAE is good at:
+	•	turning structure into pixels
+	•	adding smooth textures
+	•	reconstructing color
+
+It is not responsible for:
+	•	composition
+	•	object identity
+	•	prompt adherence
+
+That all comes from the UNet.
+
+So:
+
+UNet decides what the image is
+VAE decides how it looks as pixels
+
+⸻
+
+7. Common decode variants (relevant for Beast)
+
+You may encounter:
+
+tiled VAE decode
+	•	splits image into tiles
+	•	reduces VRAM usage
+	•	slight seam risk if not careful
+
+fp16 vs fp32 VAE
+	•	fp16 faster, less memory
+	•	sometimes small color differences
+
+different VAEs
+	•	can change:
+	•	sharpness
+	•	contrast
+	•	color tone
+
+This is actually a powerful swap point, just like UNet.
+
+⸻
+
+8. Key insight for your preview idea
+
+Since decode is cheap and stateless:
+
+you can do:
+
+run UNet step N → decode → show preview
+
+without affecting the final run at all.
+
+No extra complexity beyond:
+	•	storing the latent
+	•	calling decode
+
+This is why your earlier idea is solid.
+
+⸻
+
+9. Beast-style framing
+
+You can think of it like:
+
+latent = artifact (invisible)
+decode = render
+
+So:
+
+preview = render intermediate artifact
+final = render final artifact
+
+That aligns very cleanly with your artifact system.  ￼
+
+⸻
+
+10. One subtle but important edge
+
+If you ever:
+	•	swap VAE between preview and final
+	•	or change precision
+
+then:
+
+same latent → different image
+
+So if you want strict reproducibility:
+
+VAE must be part of the generator spec / artifact lineage
+
+⸻
+
+If you want to go deeper next, we can look at:
+	•	how UNet actually updates the latent each step
+	•	or how to design a "latent checkpoint + branch" system cleanly in Beast (that would tie directly into your scheduler and artifact graph)
+	
+
+
+
+
+
+
+
+
+
+Good, this is the layer where Beast can become very powerful.
+
+What UNet actually does each step
+
+At a high level, each diffusion step is:
+
+latent_t → UNet → predicted noise → scheduler → latent_(t-1)
+
+More concretely:
+	1.	You have a noisy latent at timestep t
+	2.	UNet takes:
+	•	latent
+	•	timestep (t)
+	•	text conditioning (embeddings)
+	3.	UNet predicts:
+	•	the noise (or variant like v-pred depending on model)
+	4.	Scheduler uses that prediction to compute:
+	•	a slightly cleaner latent
+	5.	Repeat for next timestep
+
+So UNet is not "building the image directly."
+It is removing noise in a guided way.
+
+⸻
+
+The key mental model
+
+Each step is:
+
+"Given this noisy latent, what part is noise vs signal?"
+
+Over time:
+	•	early steps: global structure emerges
+	•	mid steps: objects + layout stabilize
+	•	late steps: fine detail, texture, edges
+
+⸻
+
+What changes across steps
+
+Early steps (high noise)
+	•	composition forms
+	•	silhouettes appear
+	•	big shapes
+	•	very unstable detail
+
+Middle steps
+	•	subject identity locks in
+	•	pose stabilizes
+	•	scene structure becomes clear
+
+Late steps
+	•	textures
+	•	facial features
+	•	sharp edges
+	•	small corrections
+
+⸻
+
+Why your preview idea works
+
+If you preview at step ~5–10:
+
+you already see:
+	•	composition
+	•	subject count
+	•	framing
+
+That is often enough to decide:
+	•	continue
+	•	cancel
+	•	branch
+
+⸻
+
+Designing latent checkpoints in Beast
+
+This is where it gets interesting.
+
+You can treat intermediate latents as first-class artifacts.
+
+Core idea
+
+At step N:
+
+latent_N = artifact
+
+Then you can:
+	•	decode → preview
+	•	continue → final
+	•	branch → alternate outcomes
+
+⸻
+
+Branching from a latent
+
+This is the powerful part.
+
+From the same latent_8, you can:
+
+Path A (baseline)
+	•	continue with same settings → final A
+
+Path B (variation)
+	•	change CFG → final B
+
+Path C (style shift)
+	•	add LoRA → final C
+
+Path D (model swap, risky)
+	•	swap UNet → final D
+
+So:
+
+latent_8 → multiple futures
+
+That fits your "explore space" philosophy extremely well.
+
+⸻
+
+What must be stored to resume correctly
+
+A latent alone is not enough.
+
+You need a resume bundle:
+	•	latent tensor
+	•	current step index
+	•	scheduler type
+	•	timestep schedule
+	•	seed / initial noise reference
+	•	CFG value
+	•	prompt embeddings (or prompt + encoder)
+	•	model components (UNet, VAE, etc.)
+
+If any of these change, behavior changes.
+
+⸻
+
+Safe vs unsafe branching
+
+Important distinction:
+
+Safe changes (usually stable)
+	•	CFG adjustment
+	•	sampler minor variation (same family)
+	•	adding light LoRA
+	•	minor prompt edits
+
+Risky changes
+	•	switching UNet
+	•	switching model family (SD → SDXL)
+	•	large prompt shifts
+	•	resolution change
+
+These can produce:
+	•	artifacts
+	•	identity collapse
+	•	weird textures
+
+But sometimes that is useful exploration.
+
+⸻
+
+Scheduler constraint
+
+You can only resume if:
+	•	you are continuing along the same timestep sequence
+
+If you change:
+	•	number of steps
+	•	scheduler type
+
+then you are not really "resuming" anymore.
+
+You are doing a new trajectory starting from a mid-state.
+
+Still useful, but different.
+
+⸻
+
+Performance implications
+
+This is where Beast wins.
+
+Instead of:
+
+run 20 steps × 10 variants
+
+You can:
+
+run 8 steps once
+branch into 10 variants from latent_8
+finish 12 steps each
+
+So:
+	•	early expensive structure shared
+	•	later detail diverges
+
+That can save real compute.
+
+⸻
+
+UI / UX shape (this matters a lot)
+
+A clean version could be:
+	•	run generator
+	•	show live previews at step intervals
+	•	user clicks preview
+	•	options:
+	•	continue
+	•	branch
+	•	modify + branch
+
+In lightbox:
+
+show:
+	•	step index
+	•	preview image
+	•	branch options
+
+This turns diffusion into something interactive instead of batch-only.
+
+⸻
+
+Artifact graph mapping
+
+This maps perfectly to your artifact system:
+	•	generator run
+→ latent_4
+→ latent_8
+→ latent_12
+→ final
+
+Branches:
+	•	latent_8 → final_A
+	•	latent_8 → final_B
+	•	latent_8 → final_C
+
+So the graph is not linear anymore, it becomes a tree.
+
+That is exactly what your lineage system is designed for.  ￼
+
+⸻
+
+Beast-level insight
+
+Most tools treat diffusion as:
+
+input → output
+
+You are moving toward:
+
+input → trajectory → exploration → outputs
+
+That is a fundamentally better fit for:
+	•	local compute
+	•	caching
+	•	reuse
+	•	discovery
+
+⸻
+
+Very concise Beast phrasing
+
+latent step n = real artifact
+preview = decode latent n
+branch = continue latent n with change
+final = latent 0 decode
+
+⸻
+
+If you want next, we can design:
+	•	exact C structs for latent checkpoint artifacts
+	•	or scheduler-compatible resume format
+	•	or UI flow for lightbox branching
+
+All three would plug directly into what you are building right now.
+
+
+
+
+
+
+more on cfg in sd
+
+
+
+
+
+
+
+
+
+
+
+
+CFG in Stable Diffusion is one of those controls that feels simple but actually shapes the entire trajectory of the image.
+
+What CFG actually is
+
+CFG = Classifier-Free Guidance scale
+
+At each denoise step, the model runs two predictions:
+	•	unconditional (no prompt)
+	•	conditional (with your prompt)
+
+Then it combines them:
+
+guided = uncond + cfg * (cond - uncond)
+
+So CFG is literally:
+
+"how hard should we push away from ‘no prompt’ toward ‘your prompt’?"
+
+⸻
+
+Intuition
+	•	CFG = 0
+→ ignore prompt completely
+→ pure model prior (your "city/town default" case)
+	•	CFG = 1
+→ roughly just follow the model’s natural conditional output
+	•	CFG > 1
+→ amplify prompt influence
+
+⸻
+
+What increasing CFG does
+
+As you raise CFG:
+
+Pros
+	•	stronger prompt adherence
+	•	clearer subject identity
+	•	less drift into default scenes
+	•	better alignment with keywords
+
+Cons
+	•	oversaturation / harsh contrast
+	•	"burned" details
+	•	weird artifacts
+	•	less natural images
+	•	reduced diversity
+
+So:
+
+low CFG → creative / loose / prior-driven
+high CFG → strict / forced / brittle
+
+⸻
+
+Typical ranges
+
+For SD 1.5:
+	•	3–5 → soft, creative, loose
+	•	6–8 → balanced (most common)
+	•	9–12 → strong enforcement
+	•	13+ → often unstable / overcooked
+
+For SDXL:
+	•	usually lower CFG works better (around 4–7)
+
+⸻
+
+Why CFG matters for your issues
+
+1. "town default" behavior
+
+That is essentially:
+
+CFG too low → model prior dominates
+
+So raising CFG:
+	•	pulls away from default scene
+	•	forces subject into existence
+
+⸻
+
+2. "goblin boy → landfill"
+
+Likely causes:
+	•	weak or conflicting tokens
+	•	model unsure how to render them
+
+CFG interaction:
+	•	too low → ignores subject → fallback scene
+	•	moderate → starts forming subject
+	•	too high → overfits bad interpretation → artifacts
+
+So the sweet spot matters more for weak tokens.
+
+⸻
+
+CFG across steps (important insight)
+
+CFG is applied every step, but its effect is not uniform.
+	•	Early steps: affects composition strongly
+	•	Mid steps: locks identity
+	•	Late steps: affects texture and sharpness
+
+This leads to a powerful idea:
+
+CFG scheduling
+
+Instead of constant CFG:
+	•	lower CFG early (let composition form naturally)
+	•	higher CFG later (enforce details)
+
+Example:
+	•	steps 0–8: CFG 5
+	•	steps 8–20: CFG 8
+
+This often gives:
+	•	better composition
+	•	fewer artifacts
+	•	stronger final adherence
+
+⸻
+
+CFG and your "latent branching" idea
+
+This is where it gets really interesting.
+
+From the same latent at step N:
+
+you can branch:
+	•	CFG 5 → softer, more natural
+	•	CFG 8 → stronger identity
+	•	CFG 12 → aggressive / stylized
+
+So CFG becomes a branch dimension.
+
+This is extremely powerful because:
+	•	early steps shared
+	•	only guidance strength differs
+
+⸻
+
+CFG vs prompt quality
+
+Important relationship:
+	•	strong prompt + moderate CFG = best results
+	•	weak prompt + high CFG = artifacts
+	•	weak prompt + low CFG = drift
+
+So CFG is not a substitute for prompt clarity.
+
+⸻
+
+Failure patterns to recognize
+
+Too low CFG
+	•	ignores subject
+	•	generic scenes
+	•	"why is this a city again"
+
+Too high CFG
+	•	crunchy textures
+	•	blown highlights
+	•	weird edges
+	•	repeated patterns
+	•	unnatural faces
+
+⸻
+
+Interaction with negative prompts
+
+CFG also amplifies negative prompts.
+
+So high CFG:
+	•	strongly enforces what to avoid
+	•	but can overconstrain the image
+
+Example:
+	•	negative: "blurry, low quality"
+	•	high CFG → overly sharp / unnatural
+
+⸻
+
+Beast framing
+
+You can treat CFG as:
+
+"guidance force" in latent space
+
+So:
+
+latent update = model prior + cfg * prompt force
+
+In your system:
+	•	CFG is a generator parameter
+	•	but also a branch axis
+	•	and potentially a schedule over time
+
+⸻
+
+Very concise model
+
+low cfg → prior wins
+mid cfg → balance
+high cfg → prompt dominates (sometimes too much)
+
+⸻
+
+Practical Beast usage pattern
+
+For your workflows:
+	•	use moderate CFG (~6–8) for baseline
+	•	if subject missing → increase slightly
+	•	if artifacts → decrease slightly
+	•	for exploration → branch CFG from same latent
+
+⸻
+
+Advanced direction (fits your architecture)
+
+You could expose:
+	•	CFG as:
+	•	scalar
+	•	curve over steps
+	•	branch dimension
+
+Example CDI idea:
+
+b2_cfg_schedule
+step 0-8: 5
+step 8-20: 8
+
+That would be a very Beast-native control.
+
+⸻
+
+If you want, next we can go into:
+	•	how CFG interacts with different samplers (Euler, DPM++, etc.)
+	•	or how to implement CFG efficiently in ONNX without doubling compute too much
+
+
+
+
+
+
+
+
+highest possible cfg hypothetically reduces steps to get good enough result, reducing compute ideally
+
+
+
+
+
+
+
+Not in the simple way, no.
+
+Higher CFG can sometimes make an image look more "on prompt" earlier, but it is not a free substitute for denoise steps. In practice, pushing CFG too high usually creates a different failure mode rather than cleanly reducing compute.
+
+The reason is that CFG is not "more progress per step." It is more like more force toward the conditional direction at each step. That can help the model commit faster, but it also distorts the trajectory.
+
+So the trade looks more like this:
+	•	slightly higher CFG can sometimes get to "good enough" faster
+	•	very high CFG usually causes overcooked, brittle, ugly, or unstable results
+	•	beyond some point, you are not saving steps, you are just damaging the path
+
+A useful mental model:
+	•	steps = how long you let the denoise process converge
+	•	CFG = how hard you steer it while converging
+
+More steering is not the same as more convergence.
+
+Why very high CFG tends to fail:
+	1.	Overshoot
+The model gets pushed too hard toward prompt differences and leaves the natural image manifold.
+	2.	Artifact amplification
+Bad prompt interpretations get enforced harder too, not just good ones.
+	3.	Loss of naturalness
+You get crunchy contrast, repeated patterns, broken anatomy, weird color pressure.
+	4.	Less diversity / robustness
+The image commits hard, but often in a brittle way.
+
+So the dream of:
+
+raise cfg enough -> need many fewer steps
+
+is only partly true, and only in a narrow band.
+
+A better version of the idea is:
+
+find the best CFG-to-step tradeoff curve for a given generator.
+
+For example, maybe:
+	•	20 steps at CFG 6 = very good
+	•	14 steps at CFG 7.5 = good enough
+	•	10 steps at CFG 14 = trash
+
+That is the kind of curve Beast should profile.
+
+The more promising approach is not "max CFG," but one of these:
+
+1. moderate CFG, fewer steps
+Often the simplest good trade.
+
+2. CFG schedule
+Lower or normal early, stronger later.
+That can preserve composition while improving adherence.
+
+3. early preview + stop
+Instead of guessing the perfect CFG, run partial steps, decode, and stop when the result crosses "ok."
+
+4. branch from an intermediate latent
+One shared early trajectory, then test a few CFG endings.
+
+That last one is especially Beastly:
+	•	run to step 8 once
+	•	branch CFG 5 / 7 / 9
+	•	finish each branch
+	•	rate outputs
+
+That is much more efficient than full reruns.
+
+So the concise answer is:
+
+Hypothetically, somewhat. Maximally, no.
+
+Highest possible CFG does not usually minimize compute for acceptable quality.
+It usually finds the edge of instability.
+
+The real optimum is usually:
+
+enough CFG to resist prior drift, not so much that guidance becomes damage.
+
+A good Beast-style principle here:
+
+cfg can trade for some steps
+too much cfg burns path
+best = lowest steps that still converge with sane cfg
+
+If you want, I can sketch a concrete SD test matrix for finding the cheapest acceptable (steps, cfg) pairs for a checkpoint or generator.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,326 @@
+beast2 prototype3 update: generator to cdi working. updated cdi spec to only use * for params with multiple selectable options. can show cdi based on generator in lightbox, basic gen -> cdi working
+
+
+
+
+
+
+
+That is a real milestone.
+
+You now have the first closed loop of the command layer taking shape:
+
+generator → cdi
+cdi spec tightened
+generator-derived cdi visible in lightbox
+basic gen → cdi path works
+
+That moves Beast further away from "prompt blob hidden in a tool" and closer to a readable, inspectable command system, which fits the command-over-prompt direction in your docs.  ￼  ￼
+
+The * change sounds especially good. Using it only for params with multiple selectable options makes the CDI more semantically clean:
+	•	* now means choice, not just parameter
+	•	single-value params stay visually quieter
+	•	an LLM or human reading the CDI gets a stronger signal about what is mutable versus fixed
+
+That should make lightbox inspection much better too, because the user can see not just "the command doc," but the decision surface of the generator.
+
+The lightbox part matters more than it might seem. Once a user can open an artifact or generator and immediately see its CDI, Beast starts behaving more like an inspectable creation system and less like a pile of hidden settings. That lines up well with your artifact and lineage philosophy.  ￼  ￼
+
+My read is that prototype3 now has the beginnings of three strong UX truths:
+	1.	generator as source
+	2.	cdi as readable execution/view layer
+	3.	lightbox as inspection portal
+
+That is a very good shape.
+
+The next leverage point is probably this: make the generator → cdi transform feel obviously deterministic. In practice that means the same generator should always yield the same CDI layout order, same grouping rules, same representation of selectable vs fixed params. Once that is stable, users start trusting CDI as a first-class interface rather than a temporary debug view.
+
+A crisp way to phrase this update in project language:
+
+"prototype3 update: generator to cdi working. cdi spec now uses * only for multi-option params. lightbox can show cdi derived from generator. first basic gen → cdi path works."
+
+Or, slightly more polished:
+
+"prototype3 now has a working generator → cdi path. CDI was simplified so * marks only parameters with multiple selectable options. A generator-derived CDI can now be inspected in the lightbox, and the first basic generator → CDI flow is working."
+
+This feels like one of those deceptively small updates that actually changes the architecture.
+
+
+
+
+
+
+
+also: the config file for the app uses a cdi-like form
+
+
+
+
+
+
+
+
+
+
+That is a strong move.
+
+If the app config also uses a CDI-like form, you are starting to get one of the most valuable kinds of coherence in a system: the same visual grammar appearing across runtime control, generator inspection, and application configuration.
+
+That has a few big advantages.
+
+First, it lowers cognitive load. If a user learns how to read CDI in one place, they can already read much of the config. They do not have to mentally switch between "generator syntax," "app settings syntax," and "command syntax."
+
+Second, it helps the LLM layer. A shared document shape across config and commands means less translation friction. Instead of teaching the model several adjacent mini-languages, you are giving it one family of forms.
+
+Third, it pushes Beast toward a self-describing system. If generator docs, command docs, and config docs all rhyme structurally, then more of Beast becomes inspectable with the same tools and UI habits.
+
+So the architecture is becoming something like this:
+
+generator defines capability
+cdi expresses executable / inspectable command shape
+config defines system state
+all three share a related document grammar
+
+That is unusually good.
+
+The main thing to guard against is semantic blur. A CDI-like form is great, but config and commands still have different jobs:
+	•	config describes persistent system state
+	•	cdi describes an action, invocation, or executable structure
+	•	generator describes a reusable creation template
+
+If the forms look similar, that is good. If they become hard to distinguish, that is wtf.
+
+So I would preserve some explicit identity marker at the top of each doc type, something like a very clear root kind:
+	•	kind config
+	•	kind cdi
+	•	kind generator
+
+or the Beast equivalent.
+
+That way you keep the shared grammar without losing type clarity.
+
+This also suggests a nice long-term Beast principle:
+
+one doc family, multiple roles
+
+Same reading rhythm. Same parsing style. Different document intent.
+
+A clean way to phrase your update:
+
+"also: the app config now uses a CDI-like document form, so generators, commands, and config are converging on a shared readable grammar."
+
+Or a bit stronger:
+
+"prototype3 is converging on a shared document grammar: generator → cdi is working, and the app config now also uses a CDI-like form."
+
+That sounds like real architectural convergence, not just another feature.
+
+
+
+
+
+
+
+one weird edge case: not having a problem with sd for many gens, but for "goblin" and "boy" i get landfill, tried a few variants
+
+
+
+
+
+
+
+
+That does sound like a real edge case, not random noise.
+
+If many SD gens work but "goblin" and "boy" collapse to landfill, I would suspect one of a few things:
+
+The first is token bias / latent prior collision. "goblin" often pulls models toward ugly caricature, green skin, exaggerated features, messy anatomy, fantasy clutter. "boy" can also be surprisingly unstable because many checkpoints seem better tuned for "man", "woman", "girl", or stylized tags than plain "boy". Put together, you may be hitting a weak or poisoned region of the model’s learned space.
+
+The second is safety or training skew around "boy". Some models seem to get weirdly constrained, sanitized, or anatomically unstable with child-coded terms, even when the intended output is totally ordinary. Not always an explicit filter -- sometimes just bad training distribution.
+
+The third is style mismatch. Some checkpoints can do fantasy creatures well but not in the style framing you are asking for, or they can do young male characters only when strongly anchored by clothing, pose, age band, and medium.
+
+So I would test this like an experiment, not as one prompt.
+
+Try controlled substitutions:
+	•	"goblin boy"
+	•	"young goblin"
+	•	"goblin child"
+	•	"small goblin male"
+	•	"fantasy goblin youth"
+	•	"short goblin adventurer"
+	•	"green-skinned fantasy child character"
+
+And separately test whether one token is the real culprit:
+	•	"goblin man"
+	•	"goblin girl"
+	•	"boy adventurer"
+	•	"young male fantasy character"
+
+If "goblin man" works and "boy adventurer" works, but "goblin boy" fails, then the pair is toxic together. If every "boy" variant fails, that points at the "boy" token itself. If every "goblin" variant fails, then that checkpoint just hates goblins.
+
+A strong mitigation is to replace weak identity tokens with descriptive anchors. Instead of trusting "goblin boy", try something like:
+
+small fantasy humanoid, male child, green skin, large ears, short stature, simple tunic, full body, clean silhouette
+
+That often works better than relying on the concept tokens alone.
+
+Also useful: give the model a role anchor. Models often respond better to concrete archetypes than bare nouns:
+	•	"young goblin merchant"
+	•	"young goblin scout"
+	•	"young goblin prince"
+	•	"goblin child adventurer"
+
+Role adds structure.
+
+For Beast terms, I would treat this as a generator-level bad token combo and save the result. This is exactly the kind of thing the artifact system should remember: certain semantic regions produce landfill on certain checkpoints. That becomes useful negative knowledge.
+
+A practical test matrix:
+
+Checkpoint fixed
+Seed fixed
+Composition fixed
+Run four subject variants:
+	•	goblin boy
+	•	young goblin
+	•	goblin man
+	•	boy adventurer
+
+Then switch only one variable at a time.
+
+My guess, without seeing outputs, is that "boy" is the bigger problem word, and "goblin" makes the failure mode uglier.
+
+A good Beast note could be:
+
+wtf sd token pair goblin + boy -> landfill on this gen
+
+and then:
+
+test subject variants with descriptive anchor not raw token pair
+
+If you want, I can help you design a tiny CDI test spread specifically for isolating bad subject tokens like this.
+
+
+
+
+
+
+
+
+
+with empty prompts or weak keywords in testing, id almost always get a city/town outdoor view, thoughts?
+
+
+
+
+
+
+Yes -- that is a meaningful signal.
+
+If empty prompts or very weak keywords usually collapse toward a city or town outdoor view, that suggests your checkpoint has a strong default visual prior. In plain terms: when the conditioning is weak, the model falls back to the most statistically comfortable scene it knows how to make.
+
+And a city / town exterior is a very plausible fallback because it is:
+	•	common in training data
+	•	compositionally easy
+	•	rich in mid-scale structure
+	•	visually "complete" without needing a strong subject
+	•	safe for the model when it is underconstrained
+
+So I would read this as:
+
+weak prompt → model prior dominates → default scene template appears
+
+That also helps explain your goblin/boy issue. If the model has weak or conflicting grounding for a subject, it may partially "give up" on the intended character and drift back toward its comfortable default scene manifold.
+
+A few useful interpretations:
+
+1. your checkpoint is scene-biased by default
+Not neutral. Not blank-canvas. It wants to paint "a plausible image," and its center of gravity seems to be outdoor built environments.
+
+2. empty prompt behavior is a diagnostic
+This is actually a good test. It tells you what the model "dreams about" when left alone. That default is part of the checkpoint’s personality.
+
+3. weak nouns may be getting overpowered
+If "goblin" or "boy" is not strongly anchoring composition, the model may be blending:
+	•	weak subject token
+	•	strong scene prior
+	•	generic image-quality priors
+
+Result: landfill, drift, bad composition, or irrelevant outdoor scene.
+
+What I would do next is formalize this as a checkpoint profiling test.
+
+Test a fixed matrix:
+	•	empty prompt
+	•	one weak noun
+	•	one strong archetype
+	•	one explicit composition
+	•	one explicit subject + composition
+	•	one explicit subject + blank background
+
+For example:
+	•	""
+	•	boy
+	•	wizard
+	•	a person standing
+	•	young goblin standing facing camera
+	•	young goblin standing facing camera on a plain gray background
+
+That lets you see where the model stops free-falling into town-view mode.
+
+My expectation:
+	•	weak prompt: town/city
+	•	vague subject: subject+scene drift
+	•	strong archetype: better subject lock
+	•	explicit composition/background: much more stable
+
+This also suggests a practical Beast rule:
+
+some checkpoints need anti-default anchoring
+
+Meaning: if the model defaults to outdoor scene clutter, your generator should explicitly fight that with:
+	•	plain background
+	•	full body in frame
+	•	centered subject
+	•	no environment
+	•	character sheet / concept art / sprite sheet style
+	•	isolated subject
+
+So instead of:
+goblin boy
+
+you may need something more like:
+young goblin character, full body, centered in frame, plain background, isolated subject, character design sheet
+
+That is not just "better prompting." It is compensating for checkpoint bias.
+
+I would absolutely save this as checkpoint metadata or a Beast note. Something like:
+
+default weak-prompt prior: town outdoor scene
+
+That is valuable generator knowledge.
+
+A compact phrasing:
+
+wtf weak prompt on this sd checkpoint falls to town/city outdoor default. subject gens need stronger anti-scene anchors.
+
+That feels like a real finding, not just an impression.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
