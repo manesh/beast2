@@ -1,0 +1,1484 @@
+for a generator/pipeline embedded in a file, also need to embed source system specs (for reproducibility check).
+
+analysis: adding $system: and having it in exported/embedded pipelines or embedding it separately
+
+note: separate encodings will be required anyways for full embedding eg base64 encoding of initial/intermediate png or even video
+
+
+
+
+
+
+
+
+yes -- you need system specs for any serious reproducibility claim.
+
+otherwise embedded pipeline means only:
+
+same intent
+
+not:
+
+same executable condition
+
+and for beast that is not enough.
+
+short answer
+
+i would do:
+
+$system:
+
+inside CDI for the canonical declared execution environment
+
+and also keep separate embedded metadata blocks for richer machine data when exported into files.
+
+so:
+
+cdi carries the human-readable reproducibility contract
+embedded metadata carries the full machine payload
+
+that split feels right.
+
+⸻
+
+why $system: belongs in cdi
+
+because system is not just random metadata. for beast it affects:
+	•	reproducibility
+	•	trust
+	•	routing
+	•	determinism
+	•	"can i rerun this here?"
+
+so it is closer to:
+
+execution truth
+
+than to optional notes.
+
+example:
+
+$system: beast-mbp-intel-2023
+
+or more structured:
+
+$section: system
+
+$param: beast-version
+0.1.3
+
+$param: runtime
+onnx-runtime-1.22
+
+$param: model-format
+onnx
+
+$param: os
+macos-14
+
+$param: hardware
+intel-mbp-2023
+
+$param: precision
+fp32
+
+this is good because it is:
+	•	readable
+	•	diffable
+	•	parsable
+	•	exportable
+
+⸻
+
+why separate embedded metadata is also needed
+
+because eventually you will want much richer stuff than CDI should carry inline, like:
+	•	exact hardware ids
+	•	driver/runtime versions
+	•	hashes
+	•	engine build flags
+	•	intermediate artifacts
+	•	thumbnails
+	•	base64 previews
+	•	maybe even initial png/video refs
+
+that is too much for the core CDI language.
+
+so you need two layers:
+
+1. CDI system declaration
+
+small, human-readable, canonical
+
+2. embedded metadata payload
+
+large, machine-oriented, optional / compressed / encoded
+
+⸻
+
+strongest law
+
+cdi says what should be true
+embedded metadata says what was actually true
+
+that is a very strong separation.
+
+⸻
+
+example of the difference
+
+in cdi
+
+$section: system
+
+$param: beast-version
+0.1.3
+
+$param: runtime
+onnx-runtime
+
+$param: model
+sd15-onnx
+
+$param: precision
+fp32
+
+$param: target-node
+beast1-mbp
+
+in embedded metadata
+
+actual_runtime_version=1.22.0
+actual_os_build=...
+actual_cpu_model=...
+actual_model_hash=...
+actual_prompt_hash=...
+actual_intermediate_png_base64=...
+
+that keeps CDI from turning into metadata sludge.
+
+⸻
+
+should it be $system: or $section: system?
+
+i would lean:
+
+$section: system
+
+not:
+
+$system:
+
+why
+
+because it keeps the grammar smaller and cleaner.
+
+you already have:
+
+$pipeline:
+$generator:
+$section:
+$param:
+
+if system is just a standard section, then no new top-level token needed.
+
+example:
+
+$generator: sd15-text2img
+
+$section: system
+
+$param: beast-version
+0.1.3
+
+$param: runtime
+onnx-runtime
+
+$param: model-format
+onnx
+
+that feels more elegant.
+
+⸻
+
+when $system: might still be useful
+
+only if you want system to be special at the parser / CLI level, like:
+	•	required before execution
+	•	auto-compared with current host
+	•	shown in UI badge
+	•	used for routing
+
+if so, $system: as a first-class token could be justified.
+
+but my instinct is still:
+
+prefer fewer top-level tokens
+
+so i would start with:
+
+$section: system
+
+and let runtime treat that section specially.
+
+⸻
+
+reproducibility levels
+
+you might eventually want system metadata to support 3 checks:
+
+1. compatible
+
+can probably run
+
+2. comparable
+
+same enough for useful comparison
+
+3. reproducible
+
+same environment class, should match result class closely
+
+that lets beast say things like:
+
+same pipeline
+different system
+result may differ
+
+which is honest and useful.
+
+⸻
+
+good fields for system section
+
+minimal:
+
+$section: system
+
+$param: beast-version
+$param: runtime
+$param: runtime-version
+$param: model-format
+$param: model-name
+$param: model-hash
+$param: os
+$param: hardware-class
+$param: precision
+
+mabe later:
+
+$param: deterministic-mode
+$param: execution-provider
+$param: engine-build
+$param: node-name
+
+
+⸻
+
+embedding intermediates
+
+yes, separate encodings are required anyway if you want to embed real assets:
+	•	base64 png
+	•	compressed previews
+	•	maybe chunked / sidecar encoding for bigger data
+
+that argues even more strongly for:
+
+keep CDI small
+keep binary / heavy payload separate
+
+otherwise CDI becomes miserable.
+
+⸻
+
+recommended beast rule
+
+pipeline text and payload bytes are different layers
+
+or tighter:
+
+cdi for meaning
+payload for matter
+
+
+⸻
+
+final recommendation
+
+use:
+
+$section: system
+
+inside CDI for the canonical, human-readable reproducibility contract.
+
+embed richer machine metadata separately alongside / inside exported artifacts for exact replay and verification.
+
+concise beast version
+
+cdi says how to run
+system section says where it was proven
+embedded metadata says what actually happened
+
+that feels lgtm trending setm.
+
+
+
+
+
+
+
+
+
+$system: or better $machine: or $compute:
+
+$sections must belong to a generator (validation step), $compute: appears before the first gen/pipe in file, and again if compute changes at an intermediate step
+
+eg
+
+$compute: beast-laptop
+$pipeline: char-sprite
+
+...
+
+-> db.db ->
+
+$compute: beast-workstation
+$generator: char-i2v
+
+
+
+
+
+
+
+
+
+
+yes -- this is better than $section: system
+
+because you want it to mean:
+
+where this runs
+
+not just:
+
+extra metadata
+
+and you want it to sit above generators as an execution context.
+
+best choice
+
+my vote:
+
+$compute:
+
+not:
+
+$system:
+
+not:
+
+$machine:
+
+
+⸻
+
+why $compute: wins
+
+$system:
+
+too broad
+could mean:
+	•	beast version
+	•	os
+	•	runtime
+	•	whole environment
+	•	philosophy of the universe
+
+good metadata word
+weaker execution word
+
+⸻
+
+$machine:
+
+too physical
+sounds like one box only
+
+but beast flock wants:
+	•	laptop
+	•	workstation
+	•	cloud beast
+	•	mabe logical target class
+
+$machine: feels too tied to hardware identity
+
+⸻
+
+$compute:
+
+best balance
+
+means:
+	•	where / how work runs
+	•	execution target
+	•	can be local or remote
+	•	can be physical or logical
+
+example:
+
+$compute: beast-laptop
+$compute: beast-workstation
+$compute: beast-cloud-a100-fp32
+
+very strong
+
+⸻
+
+your structure is good
+
+$compute: beast-laptop
+$pipeline: char-sprite
+
+...
+
+-> db.db ->
+
+$compute: beast-workstation
+$generator: char-i2v
+
+that reads naturally as:
+
+run early stage here
+handoff
+run next stage there
+
+which is exactly what beast flock should express.
+
+⸻
+
+strongest law
+
+$compute: sets execution context
+for following pipeline or generator blocks
+until next $compute:
+
+that is clean and parsable.
+
+⸻
+
+validation law suggestion
+
+yes:
+
+$section: must belong to a $generator:
+
+good rule
+
+then:
+
+$compute:
+
+is not a section. it is a top-level execution context token.
+
+so grammar becomes:
+
+$compute:
+$pipeline:
+$generator:
+$section:
+$param:
+
+that feels right.
+
+⸻
+
+recommended meaning of $compute:
+
+i would define it as:
+
+named execution target or target class
+
+not full machine dump
+
+example values:
+
+beast-laptop
+beast-workstation
+beast-cloud
+beast-cloud-fp32
+beast-local-fast
+
+then richer system details can still live elsewhere in metadata.
+
+⸻
+
+important distinction
+
+$compute:
+
+should mean:
+
+where beast intends this to run
+
+not:
+
+everything about hardware / runtime
+
+that keeps it small and useful.
+
+full reproducibility details still belong in embedded metadata / artifact records.
+
+⸻
+
+sptm direction
+
+something like:
+
+$compute: beast-laptop
+$pipeline: char-sprite
+
+$generator: make-char-still
+$section: prompt
+$param: subject
+green goblin ranger
+
+-> char-still.db ->
+
+$compute: beast-workstation
+$generator: char-i2v
+$section: motion
+$param: action
+walk cycle
+
+-> char-loop.db ->
+
+this is very readable.
+
+⸻
+
+one more rule i would add
+
+if $compute: changes, it should apply to the next generator block, not to a dangling handoff line by itself.
+
+so mentally:
+
+$compute:
+then generator(s)
+until next $compute:
+
+that avoids ambiguity.
+
+⸻
+
+concise verdict
+
+$compute: = sptm
+$machine: = lotm
+$system: = lgtm but too broad
+
+tight beast law:
+
+$compute: says where work runs
+$generator: says what runs
+$section: says how it is grouped
+$param: says what can vary
+
+that’s a very strong backbone.
+
+
+
+
+
+
+
+
+
+$compute: is where it did actually run
+
+base cdi docs do not contain $compute: tags only those attached to actual gens (image/video embeds)
+
+ux:
+
+finds cool beast art
+drag drop to beast
+"hardware match detected! attempt re-creating on local hardware to verify?"
+or
+"hardware not match. exact reproducibility uncertain/impossible."
+
+may need one more tag for collapsible sections in beast cdi spec
+
+mabe hierarchy
+$$$$$pipeline
+$$$$generator
+$$$(collapsible section?)
+$$section (subsection?)
+$param
+
+ux: want positive prompt to be
+
+
+beast2 prototype1:
+section: has name only beast dev sees
+section: re-usable selectable list of text snippets
+snippet: auto numbered in ui. pattern match on section name and exact text in db
+
+sections together in collapsible group (positive or negative prompt) with snippets being underneath
+
+collapsibke group doesnt need to be arbitrary, fixed: input file(s) param model options, filepath model options, positive prompt, negative prompt were 5 collapsible sections
+
+
+
+
+
+
+
+yes, this is getting sharper.
+
+the key new distinction is:
+
+base cdi = portable intent
+embedded cdi = historical truth
+
+that is good.
+
+1. $compute: should stay out of base cdi
+
+that makes sense.
+
+base cdi should say:
+
+what to run
+
+not:
+
+where it happened last time
+
+but embedded / attached pipeline metadata should include:
+
+$compute:
+
+because then Beast can do exactly the UX you described:
+
+hardware match detected
+attempt local reproduction?
+
+or
+
+hardware mismatch
+exact reproducibility uncertain
+
+that is strong and honest.
+
+so:
+
+base cdi:
+no $compute:
+
+embedded / executed cdi:
+may include $compute:
+
+very good split.
+
+⸻
+
+2. $compute: meaning
+
+you just clarified the right meaning:
+
+$compute: = where it actually ran
+
+not desired target, not abstract route.
+
+that is better.
+
+then if later you want a routing / preference token, that should be different, mabe:
+
+$route:
+$prefer:
+$target:
+
+but not $compute:.
+
+⸻
+
+3. collapsible ui groups vs cdi structure
+
+this is the real design question.
+
+you have two different things:
+
+a. execution structure
+	•	pipeline
+	•	generator
+	•	params
+	•	handoff
+
+b. UI grouping structure
+	•	positive prompt
+	•	negative prompt
+	•	model options
+	•	input files
+	•	output files / paths
+
+those do not perfectly map.
+
+and that is okay.
+
+strongest recommendation
+
+do not make CDI hierarchy chase every UI collapsible behavior.
+
+keep CDI mostly about execution truth.
+
+then allow the UI to map known params into fixed collapsible groups.
+
+that fits what you said:
+
+collapsible group doesnt need to be arbitrary
+fixed:
+input files
+param model options
+filepath model options
+positive prompt
+negative prompt
+
+that is actually excellent.
+
+it means Beast UI can be opinionated and ergonomic without bloating CDI.
+
+⸻
+
+4. do you need one more tag?
+
+mabe, but probably not another dollar-depth hierarchy.
+
+i would avoid:
+
+$$$$$pipeline
+$$$$generator
+$$$group
+$$section
+$param
+
+because you were already moving away from symbol-count syntax for a good reason.
+
+if you need one more structure token, better something explicit like:
+
+$group:
+$block:
+$prompt-group:
+
+but honestly, for v0.1 / v1, i think fixed UI grouping is better than encoding collapsible UI groups deeply into CDI.
+
+⸻
+
+5. best split for prompt structure
+
+your prototype1 model was:
+	•	section = reusable selectable list of snippets
+	•	snippet = individual text item
+	•	snippets grouped under positive / negative prompt collapsible group
+
+that is good.
+
+i would model that more explicitly as:
+
+$section: positive-prompt
+$param: snippet
+green goblin
+leather armor
+full body
+facing camera
+
+or, better:
+
+$section: positive-prompt
+
+$param: subject
+green goblin
+
+$param: outfit
+leather armor
+
+$param: framing
+full body
+
+$param: pose
+facing camera
+
+this second version is stronger long-term because it gives more structure and cleaner reuse.
+
+then the UI can still show those as snippet-like chips under the fixed "positive prompt" group.
+
+⸻
+
+6. likely best CDI backbone now
+
+i think your spec should stay roughly:
+
+$pipeline:
+$generator:
+$section:
+$param:
+-> handoff ->
+
+with:
+	•	base cdi has no $compute:
+	•	embedded / attached cdi may include $compute:
+	•	UI collapsible groups are mostly fixed and derived from section names / param categories
+
+that is clean.
+
+⸻
+
+7. for executed / embedded pipelines
+
+here $compute: makes a lot of sense, maybe like:
+
+$compute: beast-workstation-intel-onnx-fp32
+
+or maybe richer metadata outside CDI proper.
+
+but if it is in attached pipeline text, Beast can compare:
+	•	runtime
+	•	hardware class
+	•	precision mode
+	•	backend
+
+and surface the exact UX you described.
+
+that is very strong product behavior.
+
+⸻
+
+8. concise architecture law
+
+base cdi = what should run
+embedded cdi = what did run
+ui groups = how humans browse it
+
+that feels close to sptm.
+
+⸻
+
+9. my recommendation on the extra tag
+
+for now:
+
+no extra hierarchy token
+
+use:
+
+$section:
+
+for logical grouping in CDI
+
+and let Beast UI map known section names into fixed collapsible groups.
+
+only add a new token later if you hit a real parsing / reuse limitation.
+
+⸻
+
+concise verdict
+	•	$compute: only in embedded / executed pipeline metadata: yes
+	•	$compute: means actual runtime location: yes
+	•	fixed UI collapsible groups instead of deeper CDI nesting: yes
+	•	avoid returning to symbol-count hierarchy: yes
+
+tight beast version:
+
+cdi says what
+embedded cdi says what happened
+ui says how to browse it
+
+that is lgtm trending setm.
+
+
+
+
+
+
+
+
+
+what about something for selected variant in embed
+
+$param: goblin-attire
+*red armor # chosen variant
+green leather # not used this gen but embedded so user can run
+
+alternative
+
+$param+used: goblin-attire
+red armor
+
+$param: goblin-attire
+green leather
+
+
+
+
+
+
+
+use the first idea in spirit, but not with inline comment syntax as the canonical machine form.
+
+best direction is:
+
+$param: goblin-attire
+*red armor
+green leather
+
+why
+
+1. chosen value should be visible inline
+
+embedded cdi is for:
+
+what ran
+what else could run
+
+so seeing the chosen variant inside the variant list is very strong.
+
+⸻
+
+2. * is a good marker
+
+it reads naturally:
+
+*red armor
+
+means:
+
+this one was used
+
+simple
+fast
+easy to scan
+
+⸻
+
+3. avoid # chosen variant in canonical syntax
+
+this part:
+
+*red armor # chosen variant
+
+is fine for human examples, but weaker as the real format because:
+	•	comment text is redundant
+	•	parser has more edge cases
+	•	comments inside value lines get messy
+	•	future llm edits may drift
+
+better:
+
+$param: goblin-attire
+*red armor
+green leather
+
+and define the law once in the spec:
+
+* at start of value line = selected / used value in embedded cdi
+
+
+⸻
+
+why i would avoid $param+used:
+
+$param+used: goblin-attire
+red armor
+
+$param: goblin-attire
+green leather
+
+problems
+	•	duplicates param name
+	•	breaks the nice clean $param: grammar
+	•	harder to scan
+	•	worse for copy/paste
+	•	worse when many params have one used and many unused variants
+
+it turns one param block into two blocks, when really it is still one param with one chosen value.
+
+⸻
+
+strongest split
+
+base cdi
+
+no selected marker needed, because it is template / intent
+
+$param: goblin-attire
+red armor
+green leather
+
+embedded cdi
+
+show chosen variant inline
+
+$param: goblin-attire
+*red armor
+green leather
+
+that is elegant.
+
+⸻
+
+one strong law
+
+embedded cdi keeps all available variants
+and marks the one actually used
+
+that is exactly what you want for drag-drop remix UX.
+
+⸻
+
+parser law suggestion
+
+value line starts with * = used value
+value line without * = available but unused value
+only one * value allowed per param in embedded cdi unless multi-select param
+
+very clean.
+
+⸻
+
+future extension
+
+if later you need multi-select, you can still keep this:
+
+$param: tags
+*pixel art
+*dark fantasy
+retro sprite
+
+still works.
+
+⸻
+
+concise verdict
+
+best form:
+
+$param: goblin-attire
+*red armor
+green leather
+
+that feels setm trending sptm
+
+tight beast summary:
+
+* marks what ran
+plain lines mark what can run
+
+that’s strong.
+
+
+
+
+
+update the cdi spec to include $compute: tag and selected computed variant mark (*)
+
+
+
+
+
+
+
+
+
+:::writing{variant="standard" id="84521"}
+
+beast2-cdi-spec-v0.2.md
+
+purpose
+
+define beast2 cdi (command document interface)
+
+used for:
+	•	pipelines
+	•	generators
+	•	sections
+	•	params
+	•	variants
+	•	handoff between steps
+
+cdi is execution truth
+
+⸻
+
+core law
+
+ui may edit cdi
+llm may suggest cdi
+cli may run cdi
+
+but cdi is the thing that says what beast does
+
+⸻
+
+design law
+
+cdi must be:
+	•	clear
+	•	line based
+	•	easy to parse
+	•	easy to diff
+	•	easy to write
+	•	easy to read
+	•	stable for years
+
+⸻
+
+token law
+
+$  = structure
++  = behavior
+#  = comment
+-> = handoff
+*  = selected value (embedded cdi only)
+
+
+⸻
+
+canonical structure tokens
+
+$pipeline:
+$generator:
+$section:
+$param:
+$compute:   # embedded / executed cdi only
+
+mabe later:
+	•	$route:
+	•	$if:
+	•	$loop:
+
+⸻
+
+canonical behavior tokens
+
++b2_null
++b2_join_null
++b2_join_space
++b2_join_newline
++b2_join_comma
+
+
+⸻
+
+canonical comment tokens
+
+# note:
+# intent:
+# todo:
+# warning:
+# wtf:
+# created:
+# updated:
+# author:
+
+
+⸻
+
+base vs embedded cdi
+
+base cdi      = portable intent (no $compute:, no *)
+embedded cdi  = executed truth (may include $compute:, *)
+
+law:
+
+cdi says what should run
+embedded cdi says what did run
+
+
+⸻
+
+main shape
+
+$pipeline: goblin-pixel-pipeline
+
+$generator: make-goblin
+
+$section: prompt
+
+$param: subject
+green goblin with leather armor
+gray goblin with rusty armor
+
++b2_join_comma
+
+$param: pose
+facing camera
+neutral pose
+full body in frame
+
+-> pixel-art.db ->
+
+$generator: animate-goblin
+
+$section: motion
+
+$param: action
+walk cycle
+idle loop
+
+-> goblin-loop.db ->
+
+
+⸻
+
+parsing law
+	•	blank lines allowed
+	•	# = comment line
+	•	$ = structure line
+	•	+ = behavior line
+	•	-> = handoff line
+	•	other lines = values
+	•	values belong to most recent $param:
+
+⸻
+
+name law
+
+lowercase
+kebab-case
+
+
+⸻
+
+variant law
+
+multiple values under one $param: mean variants
+
+default:
+
+cartesian product across params
+
+
+⸻
+
+selected value (embedded cdi)
+
+in embedded / executed cdi, mark the value used with *
+
+example:
+
+$param: goblin-attire
+*red armor
+green leather
+
+rules:
+
+* at start of line = selected value
+only one * per param (unless multi-select)
+non-* values = available variants
+
+law:
+
+* marks what ran
+plain lines mark what can run
+
+
+⸻
+
+behavior law
+
++b2_* modifies how values combine
+
+⸻
+
+handoff law
+
+-> name ->
+
+declares handoff between generator blocks
+
+meaning:
+
+previous generator writes here
+next generator reads here
+
+rules:
+	•	always use arrows on both sides
+	•	keep meaning narrow (artifact / db / output)
+
+⸻
+
+compute law (embedded cdi)
+
+$compute: declares where the following generator(s) actually ran
+
+example:
+
+$compute: beast-laptop
+$generator: make-goblin
+
+-> still.db ->
+
+$compute: beast-workstation
+$generator: animate-goblin
+
+rules:
+
+$compute applies to following generator blocks
+until next $compute
+
+meaning:
+
+actual execution location / environment
+
+not:
+
+desired target
+
+
+⸻
+
+compute usage
+
+used for:
+	•	reproducibility checks
+	•	hardware match detection
+	•	routing analysis
+	•	performance comparison
+
+example ux:
+
+hardware match detected
+attempt local reproduction?
+
+or
+
+hardware mismatch
+exact reproducibility uncertain
+
+
+⸻
+
+section
+
+$section: groups params inside a generator
+
+must belong to a $generator:
+
+⸻
+
+param
+
+$param: declares parameter
+
+values follow below
+
+⸻
+
+ui mapping law
+
+$pipeline:  → whole pipeline
+$generator: → generator block
+$section:   → collapsible section
+$param:     → editable param group
+-> name ->  → pipeline flow
+
+ui may group sections into fixed collapsible groups:
+
+input files
+model options
+filepath options
+positive prompt
+negative prompt
+
+these do not need extra CDI tokens
+
+⸻
+
+example embedded cdi
+
+# intent: generate and animate goblin
+
+$compute: beast-laptop
+$pipeline: goblin-demo
+
+$generator: make-goblin
+
+$section: prompt
+
+$param: subject
+*green goblin with leather armor
+gray goblin with rusty armor
+
+$param: style
+*pixel art
+oil painting
+
+-> still.db ->
+
+$compute: beast-workstation
+$generator: animate-goblin
+
+$section: motion
+
+$param: action
+*walk cycle
+idle loop
+
+-> goblin-loop.db ->
+
+
+⸻
+
+non goals v0.2
+	•	no branching syntax
+	•	no conditionals
+	•	no loops
+	•	no deep hierarchy tokens
+	•	no symbol-count semantics
+
+⸻
+
+short form
+
+$ declares structure
++ declares behavior
+# explains
+-> hands off
+* marks selected
+$compute marks where it ran
+
+
+⸻
+
+closing
+
+beast cdi is the stable language between:
+	•	human
+	•	ui
+	•	llm
+	•	cli
+	•	runtime
+
+clear enough for humans
+simple enough for parsers
+stable enough for years
+:::
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

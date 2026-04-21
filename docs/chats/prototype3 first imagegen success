@@ -1,0 +1,145 @@
+first successful beast2 prototype3 local image gen resulting in usable image:
+
+512x512 (note: using x instead of * cause less keystrokes on laptop/desktop keyboard)
+20 steps
+sd 1.5 downloaded from hugging face website in onnx format (no optimizations)
+
+254s runtime recorded on beast1 mbp
+
+
+
+
+
+
+
+
+that is a real milestone
+
+not "toy works in theory"
+not "ui mock talks to stub"
+but:
+
+beast2 prototype3
+local image gen
+usable output
+artifact path working
+runtime measured
+
+that matters a lot
+
+honest read of 254s
+
+for:
+
+512x512
+20 steps
+sd 1.5 onnx
+intel-ish mbp class machine
+no optimizations
+
+254s is slow, but not bad news
+
+why:
+	•	first successful end to end run matters more than speed
+	•	onnx model "as downloaded" is not tuned for your machine
+	•	laptop x86 mac was never going to be the heroic performance target
+	•	now you have a baseline
+
+so the result is:
+
+lgtm as proof
+not lgtm as final speed
+
+which is exactly where you want to be.
+
+what this proves
+
+it proves prototype3 has crossed into:
+
+real system
+
+because now you have:
+	•	UI
+	•	artifact graph stubs saving/loading
+	•	actual inference path
+	•	measured runtime
+	•	first usable output
+
+that is huge.
+
+what to record now
+
+lock this run down as a baseline artifact / log entry.
+
+minimum fields:
+
+date
+machine
+cpu
+ram
+backend = onnx runtime
+model = sd1.5 onnx hf raw
+resolution = 512x512
+steps = 20
+sampler if known
+prompt
+runtime = 254s
+result = usable
+
+because from now on, every optimization has something real to beat.
+
+likely next speed wins
+
+in rough order of leverage:
+
+1. apple silicon / stronger machine / workstation baseline
+2. onnx runtime settings + graph optimization
+3. model optimization / conversion
+4. backend alternatives
+5. reduce useless copies / pipeline overhead
+
+for current prototype stage, the important thing is not chasing every second yet. it is:
+
+prove repeatable run
+measure exactly
+then optimize one layer at a time
+
+important beast insight
+
+this result also validates your architecture instinct.
+
+prototype1 / prototype2 pain was about:
+	•	UI responsiveness
+	•	awkward integration
+	•	poor control
+
+prototype3 now has a real image result, and the architecture is holding.
+
+that means the rewrite was not overthinking. it was correct.
+
+beast style summary
+
+first usable local image gen = letm
+
+speed = lotm
+system direction = lgtm
+proof of core beast body = yes
+
+next practical move
+
+i would do exactly 3 things next:
+
+1. rerun same config and confirm same result class
+2. log every timing stage if mabe possible
+3. try one controlled optimization at a time
+
+because now you are no longer guessing.
+
+you have a living baseline.
+
+
+
+
+
+
+
