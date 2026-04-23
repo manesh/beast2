@@ -1,0 +1,1128 @@
+need to spend more time talking about supporting different backends. onnx feels too limiting. something that lets me use much more common safetensors and unet files from civitai with no intermediate conversion step major pain point. onnx seems to have few models compared to what you can drop into comfy
+
+
+
+
+
+
+
+
+Yes -- this is a real strategic issue, not a small implementation detail.
+
+If Beast stays too ONNX-first, you inherit a big ecosystem mismatch: ComfyUI explicitly supports loading ckpt and safetensors files, including standalone diffusion models, VAEs, and CLIP models, while the broader diffusion ecosystem treats safetensors as the common format.  ￼
+
+My blunt read:
+
+onnx = good backend
+onnx = bad primary model ecosystem
+
+That is the pain you are feeling.
+
+what ComfyUI uses
+
+ComfyUI’s own repo says it can load:
+	•	all-in-one checkpoints
+	•	safetensors
+	•	standalone diffusion models
+	•	VAEs
+	•	CLIP models
+	•	LoRAs and related variants.  ￼
+
+That is a huge practical advantage because it matches how people actually download and share models.
+
+why ONNX feels limiting
+
+ONNX is excellent when you want:
+	•	a portable graph
+	•	a runtime target
+	•	tighter deployment control
+
+But the public generative model ecosystem is not centered on ONNX. ONNX’s model zoo exists, but it is a curated repository and not remotely the same kind of living, messy, creator-heavy distribution world as Civitai / Comfy-style checkpoint ecosystems.  ￼
+
+So Beast has two different needs:
+
+model ecosystem compatibility
+runtime execution control
+
+ONNX helps mostly with the second.
+
+better Beast direction
+
+I think Beast should treat backend and model format as separate layers.
+
+Something like:
+
+model artifact
+→ loader / adapter
+→ runtime backend
+
+Where model artifact may be:
+	•	safetensors
+	•	checkpoint
+	•	split UNet / VAE / CLIP files
+	•	ONNX bundle later
+
+And runtime backend may be:
+	•	PyTorch
+	•	ONNX Runtime
+	•	TensorRT
+	•	later Beast-controlled kernels
+
+That is much closer to how the real world works.
+
+recommended architecture
+
+1. native import support for common model artifacts
+
+Beast should import and register:
+	•	safetensors
+	•	split model pieces
+	•	LoRAs
+	•	VAE files
+	•	text encoder files
+
+This is what will remove the "major pain point" of conversion before use.
+
+2. backend adapters
+
+Then Beast decides how to execute:
+	•	direct PyTorch path for maximum compatibility
+	•	ONNX path for deployment / control / experiments
+	•	TensorRT path for NVIDIA speed
+	•	maybe OpenVINO / CoreML later where useful
+
+3. runtime bundle resolution
+
+Given a generator, Beast resolves:
+	•	which model pieces are needed
+	•	whether they exist in compatible form
+	•	which backend can run them
+	•	whether conversion is optional, recommended, or required
+
+That is much better than:
+
+everything must become onnx first
+
+practical conclusion
+
+For Beast to feel like a real workbench, it probably needs to say:
+
+drop in common model files first
+optimize / convert later if wanted
+
+That is what users expect after living in Comfy land.
+
+what I would not do
+
+I would not make ONNX the only "blessed" import path.
+
+That would give you:
+	•	cleaner control
+	•	much smaller model universe
+	•	more friction
+	•	fewer fun experiments
+	•	worse adoption
+
+And it puts Beast at odds with where the actual creator ecosystem lives today. ComfyUI’s support for safetensors and standalone components is a big part of why people can move fast with it.  ￼
+
+best Beast framing
+
+formats are not backends
+models are not runtimes
+
+That distinction is probably the key design law here.
+
+my recommendation
+
+Short version:
+
+support common safetensors-first model artifacts
+treat onnx as one backend path
+keep pytorch path for ecosystem compatibility
+
+That feels much more Beast.
+
+strongest next doc to write
+
+You probably want a concise architecture note that defines:
+
+model artifact layer
+loader layer
+backend layer
+runtime bundle layer
+
+Because once that split is clear, the import system, memcache, artifact graph, and CDI all get cleaner.
+
+
+
+
+
+
+
+
+
+
+pytorch backend implementation vs onnx as examples in architecture doc you proposed
+
+
+
+
+
+
+
+
+
+
+yes -- that is the right way to write it.
+
+not:
+
+onnx vs pytorch as ideology fight
+
+but:
+
+backend adapter examples
+
+inside a cleaner architecture doc.
+
+core law
+
+the architecture doc should say:
+
+model artifact format
+!=
+backend runtime
+
+then show PyTorch backend and ONNX backend as two concrete backend implementations under the same beast layer.
+
+⸻
+
+recommended architecture shape
+
+user / ui / cdi
+→ beast runtime
+→ model loader layer
+→ backend adapter
+→ compute
+
+where:
+
+model loader layer
+
+understands:
+	•	safetensors
+	•	checkpoint bundles
+	•	split unet / vae / text encoder
+	•	onnx bundles
+
+backend adapter
+
+knows how to run loaded model pieces using:
+	•	pytorch
+	•	onnx runtime
+	•	tensorrt later
+	•	other backends later
+
+⸻
+
+why this is stronger
+
+because then Beast can say:
+
+same generator
+same cdi
+different backend
+
+which is exactly what you want for:
+	•	compatibility
+	•	benchmarking
+	•	determinism testing
+	•	performance comparison
+
+⸻
+
+example doc section
+
+something like this would work well:
+
+⸻
+
+backend layer
+
+beast separates:
+
+model files
+from
+runtime backend
+
+this allows beast to support common model formats while still swapping execution engines.
+
+backend examples
+
+pytorch backend
+
+purpose:
+	•	maximum model compatibility
+	•	direct support for common safetensors ecosystem
+	•	easiest path to using comfy-style model assets
+
+good for:
+	•	rapid experimentation
+	•	broad model support
+	•	loras / custom community assets
+	•	first-class civitai / comfy ecosystem compatibility
+
+cost:
+	•	less control
+	•	more python / runtime overhead
+	•	weaker determinism
+	•	harder to make cross-platform small and clean
+
+⸻
+
+onnx backend
+
+purpose:
+	•	controlled execution
+	•	portable graph runtime
+	•	easier benchmarking and reproducibility experiments
+
+good for:
+	•	deployment
+	•	runtime control
+	•	smaller dependency surface
+	•	future determinism testing
+	•	backend abstraction experiments
+
+cost:
+	•	smaller available model ecosystem
+	•	conversion pain
+	•	fewer plug-and-play community models
+	•	harder to use raw civitai assets directly
+
+⸻
+
+beast law
+
+beast does not bind model ecosystem to one backend
+
+same generator may be runnable by multiple backends if compatible.
+
+⸻
+
+beast strategy
+
+short term:
+	•	support common model artifacts
+	•	support pytorch backend for ecosystem reach
+	•	support onnx backend for controlled execution
+
+long term:
+	•	compare backends
+	•	benchmark backends
+	•	route work by backend strengths
+	•	replace weak points with beast-controlled runtime pieces over time
+
+⸻
+
+even tighter version
+
+you could compress it further:
+
+pytorch backend:
+best compatibility
+worst control
+
+onnx backend:
+better control
+worse compatibility
+
+that line is not perfect, but it communicates the tradeoff quickly.
+
+⸻
+
+important design consequence
+
+once you write the doc this way, several other things get cleaner:
+
+model import
+
+imports model artifacts once
+then marks which backends can use them
+
+memcache
+
+cache stores runtime-ready loaded objects per backend
+
+artifact graph
+
+artifacts record:
+	•	source model artifact
+	•	backend used
+	•	runtime version
+	•	precision mode
+
+determinism tests
+
+same pipeline can be tested across:
+	•	pytorch backend
+	•	onnx backend
+
+that is very powerful.
+
+⸻
+
+recommended wording for architecture doc
+
+i would explicitly include something like:
+
+beast must support multiple backend runtimes
+
+backend is an implementation detail under beast runtime
+not the defining identity of the system
+
+users work with generators, artifacts, and pipelines
+not backend-specific workflow hacks
+
+that line protects you from making Beast "the ONNX app" or "the PyTorch app."
+
+⸻
+
+concise verdict
+
+yes:
+	•	put PyTorch backend and ONNX backend in the architecture doc
+	•	present them as example backend adapters
+	•	keep model artifacts and backend runtimes as separate layers
+
+tight beast version:
+
+files are not backends
+backends are not beast
+beast sits above both
+
+If you want, I can draft that section repo-ready in beast language.
+
+
+
+
+
+
+
+
+
+
+attempt to draft full architecure doc separating model layer from runtime layer, and adding more runtime layers to beast than just onnx
+
+
+
+
+
+
+
+
+
+
+:::writing{variant="standard" id="84695"}
+
+beast2-architecture-runtime-model-separation-v0.1.md
+
+purpose
+
+define beast2 architecture with clear split between:
+	•	model layer
+	•	runtime layer
+
+reason:
+
+model files are not runtime
+runtime is not beast
+
+beast sits above both
+
+⸻
+
+core law
+
+same model artifact
+mabe many runtimes
+
+same runtime
+mabe many model artifacts
+
+beast must not bind these together too early
+
+⸻
+
+problem
+
+old simple idea:
+
+beast
+→ onnx
+→ ai
+
+too small
+
+why:
+	•	onnx model ecosystem too limited
+	•	comfy / civitai world mostly uses safetensors and related files
+	•	users want drop in model support
+	•	runtime control still matters for determinism and speed
+
+therefore:
+
+beast needs more layers
+
+
+⸻
+
+top level stack
+
+user
+→ ui / voice / cli
+→ cdi
+→ beast runtime
+→ model loader layer
+→ runtime adapter layer
+→ execution layer
+→ hardware
+
+
+⸻
+
+human layer
+
+ui
+
+purpose:
+	•	browse artifacts
+	•	edit generators
+	•	run pipelines
+	•	inspect memcache
+	•	inspect runtime state
+
+voice
+
+purpose:
+	•	convert speech to beast command flow
+
+cli
+
+purpose:
+	•	run beast from shell
+	•	integrate with scripts / llm / automation
+
+cdi
+
+purpose:
+	•	execution truth
+	•	stable text format
+	•	portable generator / pipeline definition
+
+law:
+
+ui may edit cdi
+llm may draft cdi
+cli may run cdi
+cdi is truth
+
+
+⸻
+
+beast runtime layer
+
+purpose:
+	•	orchestrate everything above model execution
+	•	keep one system across many backends
+
+beast runtime is responsible for:
+	•	artifact graph
+	•	generator execution
+	•	pipeline chaining
+	•	memcache
+	•	scheduler
+	•	compute routing
+	•	logging
+	•	reproducibility checks
+	•	determinism test suite
+	•	ui state
+
+beast runtime is not:
+	•	tied to onnx only
+	•	tied to pytorch only
+	•	tied to one machine only
+
+⸻
+
+model layer
+
+purpose:
+	•	represent model artifacts as loaded beast objects
+	•	separate file ecosystem from execution backend
+
+model layer answers:
+
+what files do we have
+what kind of model is this
+what pieces belong together
+what backends can use it
+
+
+⸻
+
+model artifact kinds
+
+beast should support model artifacts like:
+	•	safetensors checkpoints
+	•	split unet files
+	•	vae files
+	•	text encoder files
+	•	lora files
+	•	onnx bundles
+	•	mabe tensorrt engines later
+	•	mabe beast custom compiled formats later
+
+law:
+
+model artifact format != runtime backend
+
+
+⸻
+
+model registry
+
+beast should register imported models in db
+
+minimum fields:
+	•	model_id
+	•	display_name
+	•	model_family
+	•	artifact_type
+	•	source_path
+	•	file_set
+	•	hash mabe later
+	•	notes
+	•	compatible_backends
+	•	status
+
+law:
+
+generators point to model ids
+not raw file paths
+
+
+⸻
+
+model bundle layer
+
+purpose:
+	•	resolve a usable set of model pieces for a generator
+
+example:
+
+sd15 bundle =
+unet
+vae encoder
+vae decoder
+text encoder
+scheduler config
+
+law:
+
+bundle is logical
+files are physical
+
+
+⸻
+
+runtime adapter layer
+
+purpose:
+	•	translate beast model bundle into executable backend-specific loaded objects
+
+example adapters:
+	•	pytorch adapter
+	•	onnx runtime adapter
+	•	tensorrt adapter
+	•	openvino adapter mabe later
+	•	coreml / metal adapter mabe later
+	•	beast custom runtime adapter later
+
+law:
+
+backend adapter is implementation detail under beast
+
+
+⸻
+
+backend examples
+
+pytorch backend
+
+purpose:
+	•	maximum ecosystem compatibility
+	•	easiest path to using common safetensors / comfy style files
+
+good:
+	•	broad model support
+	•	community ecosystem compatibility
+	•	easier drop in experimentation
+	•	strong for civitai / comfy world
+
+bad:
+	•	more overhead
+	•	less control
+	•	harder determinism
+	•	more external runtime complexity
+
+⸻
+
+onnx runtime backend
+
+purpose:
+	•	controlled graph execution
+	•	portable runtime
+	•	good target for benchmarking and reproducibility work
+
+good:
+	•	easier execution control
+	•	smaller runtime surface
+	•	good for experiments in determinism and deployment
+	•	cleaner for some cross platform goals
+
+bad:
+	•	conversion pain
+	•	smaller available model universe
+	•	fewer direct plug and play community assets
+
+⸻
+
+tensorrt backend
+
+purpose:
+	•	high speed on nvidia hardware
+
+good:
+	•	fast inference
+	•	strong for production speed
+
+bad:
+	•	nvidia only
+	•	more opaque optimization path
+	•	weaker for strict reproducibility
+	•	less portable
+
+⸻
+
+beast custom runtime later
+
+purpose:
+	•	increase control
+	•	improve determinism where existing runtimes fail
+	•	support beast test suite and reproducibility goals
+
+good:
+	•	exact behavior control where implemented
+	•	path toward deterministic kernels
+
+bad:
+	•	large engineering cost
+	•	should be narrow and selective at first
+
+⸻
+
+execution layer
+
+purpose:
+	•	run loaded backend objects on compute devices
+
+execution layer includes:
+	•	cpu execution
+	•	gpu execution
+	•	device memory handling
+	•	precision mode
+	•	kernel launch path
+	•	backend-specific memcache objects
+
+law:
+
+execution layer is lower than runtime adapter
+
+
+⸻
+
+hardware layer
+
+purpose:
+	•	actual silicon
+	•	actual memory
+	•	actual devices
+
+examples:
+	•	beast phone
+	•	beast laptop
+	•	beast workstation
+	•	beast cloud node
+
+law:
+
+hardware is where work happens
+not where beast identity lives
+
+
+⸻
+
+compute layer
+
+purpose:
+	•	actual execution location used by a run
+
+this is recorded in embedded / executed cdi by:
+
+$compute:
+
+meaning:
+
+where it actually ran
+
+not:
+	•	desired route
+	•	abstract preference
+
+⸻
+
+scheduler layer
+
+purpose:
+	•	decide what runs where and when
+
+scheduler uses:
+	•	current memcache state
+	•	backend compatibility
+	•	compute availability
+	•	user urgency
+	•	determinism need
+	•	artifact locality
+
+scheduler should be able to choose:
+
+same generator
+different backend
+different node
+
+if compatible
+
+⸻
+
+memcache layer
+
+purpose:
+	•	keep loaded runtime objects warm
+
+memcache stores:
+	•	backend-loaded model objects
+	•	hot path bundles
+	•	reusable runtime state
+
+law:
+
+memcache belongs to beast runtime
+but contents are backend specific
+
+example:
+	•	same sd15 model id
+	•	pytorch loaded object in one cache slot
+	•	onnx loaded bundle in another
+
+⸻
+
+artifact layer
+
+purpose:
+	•	store outputs
+	•	store lineage
+	•	store execution truth
+
+artifact should record:
+	•	source cdi
+	•	source model ids
+	•	backend used
+	•	runtime version
+	•	precision mode
+	•	compute location
+	•	timing
+	•	determinism class mabe later
+
+law:
+
+artifact tells what happened
+not just what was intended
+
+
+⸻
+
+determinism layer
+
+purpose:
+	•	test and classify reproducibility across backends and hardware
+
+important because:
+
+same model
+different backend
+mabe different result
+
+beast should not hide this
+
+beast should measure it
+
+determinism tests may compare:
+	•	pytorch vs onnx
+	•	onnx vs tensorrt
+	•	laptop vs workstation
+	•	fp32 vs fp16
+
+law:
+
+beast does not assume determinism
+beast measures determinism
+
+
+⸻
+
+why this split matters
+
+without split:
+
+model = runtime
+
+problems:
+	•	users locked to tiny model ecosystem
+	•	import pain
+	•	conversion pain
+	•	weaker backend comparison
+	•	hard to support comfy / civitai style assets
+
+with split:
+
+model artifact layer
+separate from
+runtime backend layer
+
+benefits:
+	•	broader model support
+	•	easier backend comparison
+	•	cleaner import system
+	•	easier future routing
+	•	cleaner docs
+	•	cleaner memcache
+	•	cleaner artifact metadata
+
+⸻
+
+example flow 1
+
+safetensors to pytorch
+
+import safetensors checkpoint
+→ register model id
+→ resolve sd bundle
+→ pytorch adapter loads bundle
+→ execution on gpu
+→ artifact saved
+
+
+⸻
+
+example flow 2
+
+onnx bundle to onnx runtime
+
+import onnx bundle
+→ register model id
+→ resolve onnx bundle
+→ onnx adapter loads bundle
+→ execution on cpu or gpu
+→ artifact saved
+
+
+⸻
+
+example flow 3
+
+same generator many runtimes
+
+generator: goblin-walk
+
+model id: sd15-goblin-pixel
+
+run 1:
+pytorch backend on laptop
+
+run 2:
+onnx backend on workstation
+
+run 3:
+tensorrt backend on cloud
+
+same generator idea
+different execution path
+
+⸻
+
+ui implications
+
+ui should not force users to think in backend-first terms
+
+user should mostly see:
+	•	generator
+	•	model
+	•	backend if needed
+	•	compute if needed
+	•	artifact result
+
+default view:
+
+what am i running
+what model is it using
+where did it run
+
+not:
+	•	raw runtime internals first
+
+⸻
+
+import implications
+
+model import system should:
+	•	detect artifact kind
+	•	register model bundle
+	•	mark compatible backends
+	•	show if conversion is required or optional
+	•	never force onnx conversion as only path
+
+law:
+
+drop in first
+optimize later
+
+
+⸻
+
+config implications
+
+beast config may include backend preferences like:
+	•	prefer pytorch for safetensors
+	•	prefer onnx for reproducibility tests
+	•	prefer tensorrt for nvidia speed
+	•	prefer local first
+	•	fallback if backend unavailable
+
+⸻
+
+implementation order
+
+phase 1
+
+separate architecture in code
+
+deliver:
+	•	model registry
+	•	model ids not raw paths
+	•	backend adapter interface
+	•	onnx adapter working
+	•	pytorch adapter stub or early implementation
+
+⸻
+
+phase 2
+
+multi-backend model support
+
+deliver:
+	•	safetensors import
+	•	onnx import
+	•	compatibility flags
+	•	backend selection in runtime
+
+⸻
+
+phase 3
+
+artifact + memcache integration
+
+deliver:
+	•	artifact stores backend used
+	•	memcache stores backend-specific loaded objects
+	•	ui shows backend / compute clearly
+
+⸻
+
+phase 4
+
+backend comparison + determinism tests
+
+deliver:
+	•	same generator cross-backend runs
+	•	determinism classification
+	•	performance comparison
+
+⸻
+
+non goals v0.1
+
+not required yet:
+	•	every backend on every os
+	•	full beast custom runtime
+	•	automatic conversion for all model types
+	•	perfect cross-backend parity
+	•	full civitai / comfy compatibility on day one
+
+⸻
+
+short form
+
+files are not backends
+backends are not beast
+beast sits above both
+
+
+⸻
+
+final law
+
+beast should be:
+	•	broad enough to use common model ecosystems
+	•	structured enough to compare runtimes cleanly
+	•	strict enough to record what actually happened
+	•	flexible enough to improve runtimes later
+
+not:
+	•	the onnx app
+	•	the pytorch app
+	•	the tensorrt app
+
+beast is the system above them
+:::
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
