@@ -1,0 +1,9 @@
+ux for llm integration: user can enter context + document + instruction (3 inputs) gets one document out
+
+use case: context for how to use beast2 cdi + original document + desired change -> modified cdi
+
+beast2 gallery needs to support: plain text documents, creating new, importing
+
+drag and drop or click import to get text documents in beast2
+
+right sidebar has picker for 3 inputs
