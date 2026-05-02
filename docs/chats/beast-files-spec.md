@@ -1,0 +1,102 @@
+core law:
+
+beast2 does not hide files
+beast2 makes files understandable
+
+spec:
+
+# beast2-files-and-paths-v0.1.md
+## purpose
+define how beast2 uses file systems openly
+beast2 stores metadata in db  
+but keeps real files visible and usable by other apps
+## core law
+files are real  
+paths are real  
+users may browse them outside beast
+## crumb files
+beast2 places a crumb file in directories it manages
+crumb file:
+- begins with hyphen
+- identifies directory as beast-linked
+- links slow storage folder to fast db metadata
+- helps restore / reconnect folders later
+example:
+-beast2-crumb.txt
+## directory management
+beast2 app provides directory management ui
+user can:
+- add directory
+- remove directory from beast
+- reconnect missing directory
+- inspect linked db
+- choose purpose of directory
+examples:
+- images
+- videos
+- previews
+- models
+- exports
+- text docs
+- archive
+## storage law
+large files may live on slow storage  
+databases should live on fast storage when possible
+example:
+slow disk:
+/beast-artifacts/videos
+fast disk:
+/beast-db/artifacts.db
+crumb links them
+## beautiful filenames
+beast2 allows user-readable filenames
+reason:
+- interoperability
+- finder/file explorer readability
+- easier sharing
+- easier recovery
+- works with other apps
+beast2 should not require opaque names only
+## collision law
+beast2 must still avoid file collisions
+recommended:
+- readable prefix
+- short id or sequence
+- extension
+- db record remains source of truth
+example:
+goblin-walk-00042.png
+goblin-walk-00042.cdi
+goblin-walk-00042-preview.webp
+## openness law
+beast2 files should be usable by other apps when possible
+images are images  
+videos are videos  
+text docs are text  
+cdi is text  
+## db law
+db stores:
+- artifact id
+- file path
+- parent id
+- generator id
+- bundle id
+- hash mabe later
+- metadata
+- lineage
+file system stores:
+- artifact bytes
+- previews
+- exports
+- documents
+- models
+## short form
+db remembers  
+files remain real  
+crumb reconnects  
+names stay beautiful
+
+best line:
+
+beast2 does not hide the file system
+beast2 civilizes it
