@@ -1,0 +1,258 @@
+Yes--CUDA (from NVIDIA) is just one path. There are several other GPU acceleration stacks depending on hardware and goals:
+
+⸻
+
+🔧 Major CUDA Alternatives
+
+1. ROCm (AMD)
+
+* Vendor: AMD
+* Closest equivalent to CUDA
+* Supports HIP (CUDA-like API), OpenCL, and some PyTorch/TensorFlow builds
+* Works on AMD GPUs (Linux best, Windows improving)
+* Used for: ML training/inference, HPC
+
+Reality check:
+Still behind CUDA in ecosystem maturity, but viable if you commit to AMD hardware.
+
+⸻
+
+2. OpenCL (Cross-platform)
+
+* Vendor-neutral (managed by Khronos Group)
+* Runs on GPUs, CPUs, FPGAs (AMD, Intel, NVIDIA all support it)
+* Lower-level than CUDA
+
+Tradeoff:
+Portable but painful. Less tooling, less ML ecosystem momentum.
+
+⸻
+
+3. Vulkan Compute
+
+* Also from Khronos Group
+* Modern GPU API with compute shaders
+* Used in game engines + some ML experiments
+
+Use case:
+Interesting for custom engines (this might align with Beast2 long-term), but not mainstream for ML frameworks yet.
+
+⸻
+
+4. Metal (Apple)
+
+* Vendor: Apple
+* GPU acceleration for macOS/iOS
+* Used via:
+    * Metal Performance Shaders (MPS)
+    * PyTorch MPS backend
+
+For you (MacBook Pro):
+This is your native GPU path if you stay on Apple hardware.
+
+⸻
+
+5. DirectML (Windows)
+
+* Vendor: Microsoft
+* Runs on top of DirectX 12
+* Works with AMD, Intel, NVIDIA GPUs
+
+Use case:
+Inference-focused, Windows ecosystem
+
+⸻
+
+6. SYCL (oneAPI)
+
+* Vendor: Intel ecosystem (but cross-platform)
+* Higher-level abstraction over OpenCL / Level Zero
+* Used in Intel oneAPI stack
+
+Trend:
+Gaining traction as a "write once, run anywhere" alternative to CUDA
+
+⸻
+
+7. TensorRT / vendor runtimes (specialized)
+
+* Still tied to CUDA (NVIDIA), but worth noting:
+* Many vendors are building runtime-specific accelerators
+    * AMD: MIGraphX
+    * Apple: CoreML
+    * Intel: OpenVINO
+
+These are inference engines, not general compute APIs.
+
+⸻
+
+🧠 Strategic Take (for Beast2)
+
+Given your goals (deterministic local pipelines, C backend, multi-hardware):
+
+* Short-term reality
+    * CUDA = best performance + ecosystem (SD, ONNX, etc.)
+    * Metal = your Mac path
+    * ONNX Runtime = smartest abstraction layer
+* Mid-term (Beast direction)
+    * Vulkan compute or SYCL could be interesting for:
+        * deterministic pipelines
+        * cross-vendor backend
+        * custom scheduler control
+* Long-term Beast move
+    You already hinted at it:
+    replace ONNX runtime with Beast middleware
+
+That likely means:
+
+* abstract execution graph (you already have this)
+* plug backends:
+    * CUDA
+    * Metal
+    * ROCm
+    * maybe Vulkan
+
+⸻
+
+⚡ Simple mental model
+
+* CUDA → dominant, fastest, locked to NVIDIA
+* ROCm → AMD’s attempt at CUDA
+* Metal → Apple-only path
+* OpenCL/Vulkan → portable but lower-level
+* SYCL → future abstraction play
+
+⸻
+
+If you want, I can map this directly to:
+
+* ONNX Runtime execution providers (CUDA vs DirectML vs CoreML vs ROCm)
+* or what stack gives you fastest SD/wan22 on each hardware class
+
+That’s where this becomes very practical for Beast2.
+
+
+
+
+
+
+
+what stack on what hardware
+
+
+
+
+
+
+
+
+
+For Beast2, I’d think of it like this:
+
+Hardware	Best stack	Beast2 recommendation
+NVIDIA GPU, Windows/Linux	CUDA → TensorRT → ONNX Runtime CUDA/TensorRT	Best performance path. Prioritize for serious SD/Wan. TensorRT EP can outperform generic CUDA EP on NVIDIA.  ￼
+Apple Silicon Mac	Metal / CoreML / PyTorch MPS	Best Mac-native path. For C app: CoreML or Metal backend later; for experiments, PyTorch MPS.
+Intel Mac	CPU, maybe OpenVINO	Not ideal for diffusion. Use as dev machine, not performance target.
+AMD GPU, Linux	ROCm / HIP / MIGraphX	Viable but more painful. AMD PyTorch ROCm is Linux-focused.  ￼
+AMD/Intel/NVIDIA on Windows	DirectML	Good broad fallback. ONNX Runtime DirectML accelerates ONNX on commodity GPUs without vendor-specific installs.  ￼
+Intel Arc / Intel iGPU	OpenVINO / XPU / oneAPI	Good inference target. Especially if you want cheap local boxes.
+Android	NNAPI / Vulkan / Qualcomm QNN	Later target. Good for tiny models, not main SD/Wan path.
+iPhone/iPad	CoreML / Metal	Later Beast mobile target. Excellent for small local AI, not huge video gen.
+Cross-vendor experimental	Vulkan compute	Interesting long-term Beast backend. llama.cpp already supports Vulkan, SYCL, HIP, Metal, CUDA, OpenCL, etc.  ￼
+
+Practical priority order
+
+1. ONNX Runtime first
+
+Best abstraction for Beast2 now.
+
+ONNX Runtime is explicitly built around "Execution Providers," meaning one model runtime can target CUDA, TensorRT, DirectML, CoreML, OpenVINO, etc.  ￼
+
+For Beast2:
+
+beast graph
+  -> onnx runtime
+      -> cuda ep
+      -> tensorrt ep
+      -> directml ep
+      -> coreml ep
+      -> openvino ep
+      -> cpu fallback
+
+2. NVIDIA CUDA/TensorRT for power users
+
+This is the "it actually runs fast" path.
+
+Windows/Linux + NVIDIA RTX
+ONNX Runtime CUDA EP first
+TensorRT EP later for optimized deployment
+
+3. DirectML for Windows compatibility
+
+Good fallback when user has random GPU.
+
+Windows + AMD/Intel/NVIDIA
+ONNX Runtime DirectML EP
+
+4. CoreML/Metal for Apple
+
+For your Mac path:
+
+macOS Apple Silicon
+CoreML EP / Metal / PyTorch MPS
+
+But for your Intel MacBook, expect poor diffusion performance. It is okay for Beast2 UI, graph, CDI, docs browser, file system, database, pipeline logic.
+
+5. llama.cpp-style backend strategy for LLMs
+
+For local LLMs, llama.cpp is already close to the Beast philosophy: C/C++, CPU fallback, CUDA, Metal, HIP, Vulkan, SYCL, OpenCL, OpenVINO backends.  ￼
+
+So:
+
+images/video: ONNX Runtime first
+llms: llama.cpp first
+future beast runtime: custom backend layer
+
+My Beast2 answer
+
+Start with:
+
+Tier 1:
+NVIDIA RTX + ONNX Runtime CUDA
+Tier 2:
+NVIDIA RTX + TensorRT
+Tier 3:
+Windows fallback + DirectML
+Tier 4:
+Apple Silicon + CoreML/Metal
+Tier 5:
+Intel/cheap boxes + OpenVINO
+Experimental:
+Vulkan backend
+
+The clean Beast abstraction is:
+
+beastRunNode(node, backendPreference)
+backendPreference:
+  BEAST_BACKEND_AUTO
+  BEAST_BACKEND_CPU
+  BEAST_BACKEND_CUDA
+  BEAST_BACKEND_TENSORRT
+  BEAST_BACKEND_DIRECTML
+  BEAST_BACKEND_COREML
+  BEAST_BACKEND_OPENVINO
+  BEAST_BACKEND_VULKAN
+
+Best immediate move: ONNX Runtime with CPU + CUDA first, then add DirectML for Windows fallback.
+
+
+
+
+
+
+
+
+
+
+
+
