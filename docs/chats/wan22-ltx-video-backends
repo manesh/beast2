@@ -1,0 +1,703 @@
+backends for wan22 and ltx2
+
+
+
+
+
+
+
+
+For both Wan2.2 and LTX-2/LTX-Video, the backend situation currently looks roughly like this:
+
+Main backends
+
+Backend	Wan2.2	LTX-2	Notes
+PyTorch	Excellent	Excellent	Primary reference backend
+HuggingFace Diffusers	Partial-good	Excellent	LTX has stronger official support
+ComfyUI	Excellent	Excellent	Most common community backend
+ONNX Runtime	Experimental/manual	Possible	More DIY than SDXL today
+TensorRT	Experimental	Experimental-good	Faster on NVIDIA, more setup pain
+Vulkan/DirectML	Weak	Weak	Not mature for these models yet
+Apple Metal (MPS)	Partial	Partial-good	Works, but slower and less tested
+Custom C/C++ runtime	Possible	Possible	Harder than SDXL due to video transformers
+
+⸻
+
+Wan2.2 backends
+
+Best-supported today
+
+1. ComfyUI
+
+The dominant Wan backend right now. Native support landed quickly.  ￼
+
+Advantages:
+
+* easiest workflows
+* best community support
+* fastest updates
+* advanced pipelines already exist
+* easier multi-model chaining
+
+Good for Beast2-style experimentation.
+
+⸻
+
+2. PyTorch reference backend
+
+Official repo/backend style.  ￼
+
+Advantages:
+
+* maximum flexibility
+* easiest to modify internals
+* easiest to integrate into custom systems
+* best for research/custom schedulers
+
+Disadvantages:
+
+* VRAM heavy
+* slower startup
+* dependency hell
+* harder deployment
+
+If Beast2 wants deep latent experimentation or custom schedulers, PyTorch is still the cleanest first implementation.
+
+⸻
+
+3. ONNX Runtime
+
+Possible, but much rougher than SDXL.
+
+Problems:
+
+* video transformer graphs are huge
+* dynamic temporal dimensions complicate export
+* attention ops become painful
+* model fragmentation
+* many custom ops
+
+Still potentially worthwhile for:
+
+* deterministic inference
+* cross-platform runtime
+* future C integration
+
+This aligns with your Beast2 direction, but expect substantial engineering work.
+
+⸻
+
+4. TensorRT
+
+Very promising for NVIDIA-only deployments, but immature for Wan compared to SDXL/Flux.  ￼
+
+Potential:
+
+* major speedups
+* lower latency
+* lower VRAM
+* better batching
+
+Problems:
+
+* engine compilation complexity
+* shape constraints
+* workflow brittleness
+* unsupported/custom layers
+
+Likely future path:
+PyTorch → ONNX → TensorRT engine cache.
+
+⸻
+
+LTX-2 / LTX-Video backends
+
+LTX is much more backend-friendly than Wan overall.
+
+⸻
+
+Best-supported today
+
+1. ComfyUI
+
+Native support.  ￼
+
+Good because:
+
+* fast iteration
+* lower VRAM than Wan
+* strong workflow ecosystem
+* easier realtime experimentation
+
+⸻
+
+2. HuggingFace Diffusers
+
+LTX officially supports Diffusers well.  ￼
+
+This is a major advantage.
+
+Advantages:
+
+* easier integration
+* easier Python scripting
+* easier scheduler swapping
+* easier export tooling
+* cleaner APIs
+
+If you want a programmable backend first, LTX + Diffusers is very attractive.
+
+⸻
+
+3. PyTorch native
+
+Still strongest for low-level experimentation.
+
+Useful for:
+
+* latent caching
+* vector math experiments
+* realtime interpolation
+* partial denoise pipelines
+* custom temporal schedulers
+
+⸻
+
+4. TensorRT
+
+LTX is actually one of the better candidates for TensorRT acceleration because:
+
+* architecture is cleaner
+* optimized for speed already
+* lower parameter count
+* more inference-focused design
+
+Could become very strong for Beast2 realtime preview systems.
+
+⸻
+
+Beast2-oriented recommendation
+
+Given your goals:
+
+For Wan2.2
+
+Recommended stack:
+
+ComfyUI backend initially
+↓
+PyTorch direct integration
+↓
+Custom ONNX export/runtime
+↓
+Optional TensorRT acceleration
+↓
+Custom Beast runtime later
+
+Wan is the "quality backend."
+
+⸻
+
+For LTX-2
+
+Recommended stack:
+
+Diffusers backend
+↓
+Direct PyTorch
+↓
+ONNX Runtime
+↓
+TensorRT
+↓
+Realtime Beast renderer
+
+LTX is the "interactive backend."
+
+⸻
+
+Strategic difference
+
+Wan2.2
+
+Optimized for:
+
+* quality
+* coherence
+* cinematic output
+* high-noise/low-noise expert architecture  ￼
+
+Feels closer to:
+
+* offline render engine
+* "final render"
+
+⸻
+
+LTX-2
+
+Optimized for:
+
+* speed
+* responsiveness
+* long clips
+* low VRAM
+* realtime-ish workflows  ￼
+
+Feels closer to:
+
+* interactive graphics engine
+* "preview/playback"
+
+⸻
+
+For Beast2 specifically, I could easily see:
+
+* LTX powering realtime latent exploration/UI previews
+* Wan powering final cinematic export passes
+
+That pairing actually makes architectural sense.
+
+
+
+
+
+
+
+
+
+
+
+huggingface diffusers vs pytorch
+
+
+
+
+
+
+
+
+Relationship
+
+Hugging Face Diffusers is built on top of PyTorch.
+
+So this is not really:
+
+Diffusers vs PyTorch
+
+It is more:
+
+High-level framework vs low-level backend
+
+⸻
+
+Mental model
+
+PyTorch
+
+PyTorch gives you:
+
+* tensors
+* GPU ops
+* autograd
+* model execution
+* attention kernels
+* neural network primitives
+
+You manually assemble systems.
+
+⸻
+
+Diffusers
+
+Diffusers gives you:
+
+* model loading
+* schedulers
+* pipelines
+* tokenizer handling
+* VAE wiring
+* CFG logic
+* prompt encoding
+* inference orchestration
+
+It is basically:
+
+"Stable diffusion/video plumbing framework"
+
+⸻
+
+Example
+
+Pure PyTorch
+
+You manually do:
+
+latent = randn()
+for step in scheduler:
+    noise = transformer(latent, timestep, text)
+    latent = update(latent, noise)
+
+You manage:
+
+* timestep math
+* CFG batching
+* scheduler logic
+* latent scaling
+* VAE decode
+* memory optimization
+
+Everything.
+
+⸻
+
+Diffusers
+
+You do:
+
+pipe = LTXPipeline.from_pretrained(...)
+video = pipe(
+    prompt="robot walking",
+    num_frames=81
+)
+
+Massive abstraction layer.
+
+⸻
+
+Advantages of Diffusers
+
+Faster development
+
+Huge advantage.
+
+You get:
+
+* schedulers
+* quantization hooks
+* LoRA support
+* CPU offload
+* attention optimizations
+* model download/cache
+* multi-GPU helpers
+
+almost for free.
+
+⸻
+
+Ecosystem compatibility
+
+Most open-source diffusion/video projects now target:
+
+* Diffusers
+* ComfyUI
+
+first.
+
+⸻
+
+Easier experimentation
+
+Swapping:
+
+* schedulers
+* VAEs
+* transformers
+* quantization
+* LoRAs
+
+becomes trivial.
+
+⸻
+
+Better portability
+
+Many export tools expect Diffusers format:
+
+* ONNX export
+* TensorRT tooling
+* quantization stacks
+
+⸻
+
+Advantages of raw PyTorch
+
+Total control
+
+Critical for Beast2 long-term.
+
+You control:
+
+* memory layout
+* execution order
+* caching
+* latent lifecycle
+* partial denoise
+* streaming
+* realtime systems
+* scheduler internals
+
+⸻
+
+Easier custom architectures
+
+If you invent:
+
+* new schedulers
+* hybrid renderers
+* latent caching systems
+* continuous generation systems
+* realtime pipelines
+
+Diffusers eventually becomes constraining.
+
+⸻
+
+Less abstraction leakage
+
+Diffusers can become:
+
+easy until it suddenly isn't
+
+Then you fight:
+
+* wrappers
+* hooks
+* hidden tensor transforms
+* undocumented assumptions
+
+Raw PyTorch is more explicit.
+
+⸻
+
+Performance
+
+Important reality
+
+Diffusers is usually:
+
+~95-99% of raw PyTorch speed
+
+because it still executes PyTorch underneath.
+
+The actual bottleneck is:
+
+* transformer inference
+* attention kernels
+* VRAM bandwidth
+
+not the framework wrapper.
+
+⸻
+
+Where Diffusers hurts
+
+Realtime systems
+
+Diffusers assumes:
+
+generate whole thing
+→ return result
+
+But Beast2 wants:
+
+* interruptible generation
+* progressive rendering
+* persistent latents
+* branching timelines
+* latent vector operations
+* resumable pipelines
+
+This pushes beyond standard Diffusers assumptions.
+
+⸻
+
+Beast2 recommendation
+
+Phase 1
+
+Use:
+
+Diffusers + PyTorch
+
+Advantages:
+
+* faster prototyping
+* easier model support
+* easier scheduler testing
+* easier backend swaps
+
+Especially for:
+
+* LTX
+* Flux
+* SDXL
+* Wan experimentation
+
+⸻
+
+Phase 2
+
+Gradually replace subsystems:
+
+Diffusers scheduler
+→ custom scheduler
+Diffusers latent manager
+→ Beast artifact graph
+Diffusers generation loop
+→ Beast dispatcher
+Diffusers memory handling
+→ Beast runtime
+
+⸻
+
+Strategic insight
+
+You probably do NOT want:
+
+"replace PyTorch"
+
+first.
+
+You probably want:
+
+replace Diffusers orchestration first
+
+while still using:
+
+* PyTorch tensors
+* CUDA kernels
+* FlashAttention
+* xformers
+* cuDNN
+
+underneath.
+
+That is a far more realistic path.
+
+⸻
+
+Very concise summary
+
+Goal	Best choice
+Fast prototyping	Diffusers
+Easy model support	Diffusers
+Research	PyTorch
+Custom runtime	PyTorch
+Realtime systems	PyTorch
+Full Beast control	PyTorch
+Easy ONNX export	Diffusers
+Long-term Beast runtime	Hybrid
+
+For Beast2 specifically:
+
+Diffusers now
+PyTorch core forever
+Custom orchestration gradually
+
+
+
+
+
+
+
+
+
+
+
+
+onnx seems to be lomited value. i wanted a fast c backend but since it doesnt support or support well most of the gens i want to use (sdxl, wan22 and ltx2) ive decided to remove it from beast2 and just go with pytorch and maybe hfd. 
+
+
+
+
+
+
+
+
+
+
+
+Yes. I’d remove ONNX from the critical path.
+
+Best Beast2 stack now:
+
+C app shell / UI / artifact graph / dispatcher
+        ↓
+Python worker process
+        ↓
+PyTorch native pipelines + maybe HuggingFace Diffusers
+        ↓
+CUDA / MPS / ROCm / DirectML where available
+
+ONNX is still okay for later optional acceleration, especially SDXL, where Diffusers/Optimum documents ONNX Runtime support. But for your actual target set -- SDXL + Wan2.2 + LTX-2 -- PyTorch/HFD gives you much better model coverage and less yak shaving. Diffusers has official LTX-Video/LTX-2 support, Wan pipelines exist in Diffusers but are still actively evolving, and LTX’s own docs say native pipelines expose more features than Diffusers.  ￼
+
+The Beast2 move:
+
+Do not make ONNX a backend.
+Make PyTorch the backend.
+Make HuggingFace Diffusers an adapter.
+Make ComfyUI import/export optional later.
+Keep C as the control system.
+
+Architecture:
+
+beast2.exe / beast2.app
+  - C UI
+  - gallery
+  - artifact graph
+  - CDI parser
+  - scheduler/dispatcher
+  - process manager
+beast-python-worker
+  - pytorch
+  - diffusers
+  - ltx native pipelines
+  - wan native/diffusers pipelines
+  - model loading
+  - generation loop
+
+Crucial design point: don’t let Python own Beast2. Python should be a replaceable generator worker, not the app.
+
+So the internal boundary should be:
+
+C sends:
+  generator id
+  model path
+  prompt
+  seed
+  steps
+  resolution
+  parent artifact ids
+  output path
+Python returns:
+  status
+  previews
+  final artifact paths
+  metadata
+  logs
+  reproducibility info
+
+For now:
+
+ONNX = remove
+PyTorch = core backend
+Diffusers = compatibility layer
+native model repos = feature-complete escape hatch
+TensorRT = maybe later for NVIDIA acceleration
+
+That is cleaner, more honest, and much more aligned with Beast2.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
