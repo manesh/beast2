@@ -1,0 +1,158 @@
+define inference
+
+
+
+
+
+
+
+
+Inference in AI means:
+
+using a trained model to produce an output from an input
+
+Examples:
+
+* text → response
+* prompt → image
+* image → caption
+* audio → transcription
+
+The model is already trained.
+Inference is the "running" phase, not the "learning" phase.
+
+⸻
+
+simple example
+
+You type:
+
+make image with red armor
+
+The model processes tokens and generates output.
+
+That generation step is inference.
+
+⸻
+
+training vs inference
+
+training
+
+adjust weights
+learn patterns
+very expensive
+
+inference
+
+use existing weights
+produce output
+usually cheaper
+
+⸻
+
+llm inference
+
+For an LLM:
+
+input:
+
+hello
+
+model predicts:
+
+world
+
+Then predicts next token again.
+
+Inference is basically:
+
+predict next token repeatedly
+
+⸻
+
+diffusion inference
+
+For SDXL / Wan / LTX:
+
+Inference means:
+
+* start with noise or latent
+* repeatedly denoise
+* decode final latent into image/video
+
+Each denoise step is part of inference.
+
+⸻
+
+beast2 context
+
+In Beast2 terms:
+
+generator execution
+→ model runtime
+→ inference
+→ artifact
+
+The runtime layer executes inference jobs.  ￼
+
+Your scheduler docs also separate:
+
+* UI
+* workers
+* GPU inference thread
+
+very cleanly.  ￼
+
+⸻
+
+important distinction
+
+Inference usually does not change the model.
+
+So:
+
+run model
+→ output changes
+→ weights stay same
+
+That is why earlier we distinguished:
+
+* think
+* remember
+* memorize
+
+because normal inference is "thinking," not learning.
+
+⸻
+
+hardware meaning
+
+People also use "inference" to mean:
+
+running AI efficiently on hardware
+
+Example:
+
+llama.cpp inference
+
+means:
+
+* loading weights
+* token generation
+* kv cache
+* sampling
+* cpu/gpu execution
+
+not training.
+
+⸻
+
+concise definition
+
+training = teach model
+inference = use model
+
+
+
+

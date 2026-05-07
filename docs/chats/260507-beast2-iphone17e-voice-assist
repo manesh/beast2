@@ -1,0 +1,324 @@
+ram usage beast2 voice assistant iphone 17e
+
+
+
+
+
+
+
+
+
+
+For an iPhone-class Beast2 assistant on something like your "iPhone 17e" target, realistic RAM usage depends mostly on:
+
+* model size
+* context window
+* whether audio/video models are active
+* whether you keep models resident
+* how aggressive Beast caching is
+
+Based on your current Beast2 direction (tiny Beast LLM + phonetic/db/tool pipeline), a practical target is:
+
+beast voice assistant ram targets
+
+ultra-light beast assistant
+
+text + voice commands only
+
+* phonetic layer
+* tokenizer
+* tiny beast llm
+* contacts/docs/tool routing
+* no image generation loaded
+
+target:
+
+400MB - 1.5GB RAM
+
+This is the realistic "always on" mobile assistant tier.
+Fits your architecture well: external dbs + small reasoning core.  ￼
+
+⸻
+
+practical breakdown
+
+ios app + ui
+
+80MB - 250MB
+
+depends on:
+
+* gallery previews
+* cached thumbs
+* ring buffers
+* live voice ui
+
+your ring-buffer-first architecture helps here.  ￼
+
+⸻
+
+vosk / phonetic backend
+
+50MB - 300MB
+
+small vosk models are surprisingly lightweight.
+
+your planned pipeline:
+
+audio
+-> voice backend
+-> phonetic normalize
+-> llm decode
+
+is efficient because decode happens after capture.  ￼
+
+⸻
+
+tiny beast llm
+
+depending on quantization:
+
+1B-ish model
+
+600MB - 1.2GB
+
+3B-ish model
+
+2GB - 4GB
+
+7B model
+
+4GB - 8GB+
+
+For phone-first Beast, your architecture strongly favors:
+
+tiny model
++ db retrieval
++ tools
++ phonetic layer
+
+instead of giant weights.  ￼
+
+That is the correct direction for mobile.
+
+⸻
+
+biggest ram saver in beast
+
+This line from your docs is extremely important:
+
+the model should not be the memory
+beast is the memory  ￼
+
+That single principle massively reduces required RAM.
+
+Instead of:
+
+* huge context
+* giant always-loaded model
+* giant conversational memory
+
+you use:
+
+* sql/db lookup
+* artifacts
+* retrieval
+* phonetic compression
+* explicit tools
+
+That shifts memory pressure from:
+
+VRAM/RAM
+
+to:
+
+storage + indexed retrieval
+
+Much more scalable on phones.
+
+⸻
+
+likely best iphone beast architecture
+
+always resident
+
+keep loaded:
+
+* tokenizer
+* phonetic db
+* tiny assistant model
+* hot memory ring
+* tool router
+
+~1GB total target
+
+⸻
+
+lazy loaded
+
+load only when needed:
+
+* image gen
+* code assistant
+* larger llms
+* latent explorer
+* video tooling
+
+This matches your:
+
+lazy + safe
+
+philosophy almost perfectly.  ￼
+
+⸻
+
+important ios reality
+
+iOS aggressively kills apps using too much RAM in background.
+
+Practical safe background target:
+
+< 2GB
+
+Especially for:
+
+* persistent voice assistant
+* background listening
+* fast resume
+
+If Beast tries to idle at:
+
+5GB+
+
+ios will probably murder it eventually.
+
+⸻
+
+recommended beast mobile tiers
+
+tier 1
+
+always-on assistant
+
+~1GB
+
+tier 2
+
+active coding/doc assistant
+
+2GB - 4GB
+
+tier 3
+
+temporary heavy generation mode
+
+6GB - 12GB+
+
+with explicit:
+
+enter gen mode
+
+not always resident.
+
+⸻
+
+strongest architectural choice you already made
+
+Your separation of:
+
+think
+remember
+memorize
+
+plus:
+
+llm reasons
+db remembers
+tools act
+
+is unusually RAM-efficient compared to mainstream assistant architectures.  ￼
+
+You are effectively designing:
+
+* a small orchestration intelligence
+* around external persistent systems
+
+instead of:
+
+* one gigantic monolithic memory blob
+
+That scales much better to phones.
+
+
+
+
+
+
+
+
+
+do you remember my app instabrowser?
+
+
+
+
+
+
+
+
+
+
+Yes -- you mentioned Instabrowser before.
+
+The main detail I remember is:
+
+* it used an Objective-C glue layer over a C core
+* you were using it as an example of keeping:
+    * a stable C backend
+    * thin platform bindings
+    * clean separation between engine and UI/platform code
+
+That architecture thread directly connects to your current Beast2 direction:
+
+* C core
+* thin OS bindings
+* reusable backend
+* multi-platform targets (iOS/macOS/etc)  ￼
+
+You also referenced an "Instabrowser-style" lightweight fallback/web UI concept in earlier Beast3 discussions:
+
+* minimal
+* text-first
+* resilient
+* low-overhead
+
+So it seems Instabrowser influenced your current:
+
+* phone-first thinking
+* responsiveness focus
+* lightweight native architecture
+* avoidance of bloated abstraction layers
+
+The Obj-C ↔ C bridge discipline is especially relevant for Beast mobile, because on iOS you’ll almost certainly end up with:
+
+swift/ui kit layer
+↓
+objc bridge
+↓
+beast c core
+
+or:
+
+objc ui
+↓
+beast c core
+
+depending how native/minimal you want the frontend.
+
+
+
+
+
+
+
+

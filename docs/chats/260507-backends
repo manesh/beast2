@@ -1,0 +1,107 @@
+backends that can be used for api image and video gen with beast2 as the artifact layer frontend
+
+
+
+
+
+
+Yes -- Beast2 can treat API generators exactly like local generators:
+
+beast2 frontend
+→ generator spec / CDI
+→ api backend adapter
+→ remote image/video generation
+→ artifact saved locally
+→ lineage + params + provider metadata stored
+
+best API backends to support
+
+image
+
+1. OpenAI Images API
+Good for image generation, editing, inpainting/outpainting-style workflows, and prompt-to-image. Current docs list gpt-image-1.5, gpt-image-1, gpt-image-1-mini, and chatgpt-image-latest for image edits.  ￼
+
+2. Google / Gemini image + Vertex
+Useful if you already support Google accounts or want a broader Google media stack. Stronger if paired with Veo for video.
+
+3. Replicate
+Best "model zoo API." Useful because Beast2 can expose tons of image/video models through one adapter instead of writing one integration per model.  ￼
+
+4. Stability AI API
+Good for SD-style image generation if you want API fallback for users without local GPUs.
+
+5. Fal.ai / Together / Fireworks-style inference APIs
+Good for fast hosted open-model inference, especially if Beast2 wants "cloud when local impossible."
+
+video
+
+1. Google Veo / Gemini API / Vertex AI
+Probably the most important video API backend. Google docs now describe Veo 3.1 via Gemini API and Veo 3 via Vertex AI video generation API.  ￼
+
+2. Runway API
+Strong choice for production video generation APIs; their docs position Runway API for integrating their generative video models into apps/products.  ￼
+
+3. Replicate
+Good for open-source video models and experimental models through one common API wrapper.  ￼
+
+4. Luma / Kling / Pika
+Worth adapter slots later, but I would not make them core first unless their APIs are stable and terms fit Beast.
+
+Beast2 adapter interface
+
+Use one internal shape:
+
+beastApiGenRequest
+  provider
+  model
+  taskKind: text2image | image2image | text2video | image2video
+  prompt
+  negativePrompt
+  inputArtifactIds
+  seed
+  width
+  height
+  durationMs
+  fps
+  aspectRatio
+  providerParamsJson
+
+Result:
+
+beastApiGenResult
+  status
+  providerJobId
+  outputUrls
+  downloadedFilePaths
+  costEstimate
+  providerMetadataJson
+  errorText
+
+Then Beast2 stores:
+
+artifact
+provider
+model
+prompt
+input artifact ids
+remote job id
+downloaded media hash
+cost
+created time
+lineage
+
+key design law
+
+API output is not trusted memory until Beast2 downloads it, hashes it, stores it, and records lineage.
+
+remote url is temp
+local artifact is truth
+
+This fits your artifact layer perfectly: meta in SQL, big media on filesystem, lineage always recorded.
+
+
+
+
+
+
+
