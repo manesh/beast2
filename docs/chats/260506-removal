@@ -1,0 +1,412 @@
+i removed onnx and sd support today, going to focus on sdxl, wan22 and ltx. gwen image also on pytorch?
+
+
+
+
+
+
+
+Yes -- Qwen Image official Hugging Face page￼ is fundamentally a PyTorch ecosystem model family.
+
+Current reality for the stack you care about:
+
+* SDXL → PyTorch / Diffusers first-class
+* Wan2.2 → PyTorch first-class
+* LTX-Video → PyTorch first-class
+* Qwen Image → PyTorch first-class
+
+So your decision to remove ONNX and standard SD support actually simplifies Beast2 substantially.
+
+A likely Beast2 runtime stack now becomes:
+
+* Core language/runtime/UI: C
+* Model execution layer: embedded Python bridge
+* Inference backend:
+    * PyTorch
+    * Diffusers
+    * Transformers
+    * Safetensors
+    * Optional:
+        * xFormers
+        * Flash Attention
+        * Triton kernels
+* Acceleration:
+    * CUDA on NVIDIA
+    * Metal/MPS on Apple
+    * ROCm on AMD Linux (eventually)
+
+That aligns much better with where open-source generative AI actually moved in 2025–2026.
+
+Big advantages of your new direction:
+
+1. Much less backend fragmentation
+    You no longer need:
+
+* ONNX conversion pipelines
+* ONNX graph debugging
+* scheduler incompatibility layers
+* tensor naming mismatch handling
+* operator support nightmares
+* separate execution graphs
+
+2. Faster adoption of new models
+    Most new generators ship:
+
+* PyTorch checkpoints
+* Diffusers pipelines
+* reference Python code
+
+ONNX support often arrives late or never.
+
+3. Better support for modern architectures
+    Especially important for:
+
+* Wan video transformers
+* LTX temporal systems
+* Qwen multimodal/editing systems
+
+These evolve too fast for ONNX exporters to keep up cleanly.
+
+4. Shared infrastructure
+    You can unify:
+
+* tokenizer loading
+* scheduler handling
+* VAE loading
+* LoRA injection
+* quantization
+* caching
+* memory management
+
+across SDXL / Wan / LTX / Qwen.
+
+That is a major architectural simplification.
+
+A good Beast2 abstraction now might be:
+
+BeastGeneratorBackend
+{
+    type: diffusion | video | llm | multimodal
+    runtime: pytorch
+    pipeline: diffusers | custom
+}
+
+Then each generator pack becomes mostly:
+
+* model refs
+* scheduler refs
+* tensor precision
+* pipeline topology
+* UI schema
+* CDI schema
+
+rather than entirely separate runtimes.
+
+One important note:
+
+Qwen Image is more likely to push Beast2 toward:
+
+* Transformers-style execution
+* multimodal token streams
+* instruction/image editing paradigms
+
+instead of classic SD latent workflows.
+
+So long term you may end up with two major generation families inside Beast2:
+
+1. Diffusion graph family
+
+* SDXL
+* Wan
+* LTX
+
+2. Multimodal transformer family
+
+* Qwen Image
+* future OpenAI-style image models
+* instruction editing systems
+* unified image/video/language models
+
+Designing Beast2 around "generator interfaces" instead of "diffusion assumptions" is probably the right long-term move.
+
+
+
+
+
+
+
+
+
+more on ollama.cpp
+
+
+
+
+
+
+
+i meant llama.cpp
+
+
+
+
+
+
+
+
+llama.cpp is the better long-term Beast2 fit than Ollama.
+
+Core idea:
+
+Beast2 C app
+-> llama.cpp
+-> GGUF local LLM
+-> constrained CDI / JSON / patch output
+
+Why it fits Beast2:
+
+* native C/C++ core
+* local-first
+* GGUF files are simple to distribute/version/hash
+* works well on CPU and GPU backends
+* supports Metal on Mac, CUDA on NVIDIA, Vulkan/SYCL/HIP depending on build
+* can run as a server or embedded library
+* supports grammars / constrained output
+* no Python required for LLM inference
+
+Best use cases inside Beast2:
+
+voice text -> command guess
+natural language -> CDI
+CDI edit -> replacement section only
+artifact summary -> tags/title
+generator assistant -> parameter suggestions
+docs teacher assistant -> feedback
+
+Main integration options:
+
+1. subprocess llama-server
+   easiest, clean boundary, HTTP API
+2. link llama.cpp as library
+   more control, harder build/dependency work
+3. fork/maintain Beast-local inference layer
+   only later, if needed
+
+I would start with llama-server.
+
+Architecture:
+
+beastLlmRequest(...)
+    -> builds prompt
+    -> sends HTTP request to localhost llama-server
+    -> receives streamed tokens
+    -> validates output
+    -> applies patch only if valid
+
+For CDI editing, the key is not "smart chat." The key is contracted output:
+
+return exactly one replacement section
+no markdown
+no explanation
+no invented generator fields
+must preserve unknown fields
+must pass Beast CDI parser
+
+So Beast2 flow should be:
+
+user asks edit
+-> Beast extracts target section in C
+-> Beast sends only that section + schema + instruction to llama.cpp
+-> llama returns replacement section
+-> Beast parses replacement
+-> Beast diffs old/new
+-> user previews
+-> Beast replaces section
+
+Important: never let the LLM edit the whole file unless necessary. Your C backend doing section find/replace is exactly right.
+
+GGUF is also nice for Beast CDI:
+
+$model: qwen3-coder-7b-q4.gguf
+$model_hash: ...
+$runtime: llama.cpp
+$ctx: 32768
+$temp: 0.1
+$grammar: beast-cdi-section
+
+Good first model categories:
+
+small fast command model:
+3B–8B instruct/coder GGUF
+better CDI/doc editor:
+14B–32B coder GGUF
+big local workstation model:
+70B+ quantized if hardware allows
+
+For your one-shot CDI editing failure, try:
+
+temperature: 0.0–0.2
+top_p: 0.8–0.95
+repeat_penalty: mild
+grammar: strict if possible
+context: smaller, cleaner, only target section
+output: replacement only
+
+Verdict:
+
+llama.cpp should probably be Beast2’s first serious local LLM runtime.
+
+PyTorch handles SDXL/Wan/LTX/Qwen Image.
+llama.cpp handles local command intelligence.
+C remains the Beast spine.
+
+
+
+
+
+
+
+
+
+llama.cpp not server, requirements for direct integration
+
+
+
+
+
+
+
+
+
+
+
+
+Direct llama.cpp integration means Beast2 links libllama, not llama-server.
+
+Minimum requirements:
+
+Beast2 C/C++ boundary
+llama.cpp source or static/shared library
+GGUF model files
+llama.h include
+ggml headers/libs
+backend libs: CPU / Metal / CUDA / Vulkan / etc.
+sampler code
+token streaming buffer
+grammar / JSON-schema validator
+CDI parser validation after output
+
+Important: llama.cpp is C++ internally, but exposes a C API through llama.h. Current API flow includes llama_backend_init(), llama_model_default_params(), llama_context_default_params(), llama_model_load_from_file(), llama_init_from_model(), then cleanup with llama_free(), llama_model_free(), and llama_backend_free().  ￼
+
+Basic Beast wrapper shape:
+
+typedef struct BeastLlama {
+    struct llama_model   *model;
+    struct llama_context *ctx;
+    struct llama_sampler *sampler;
+    int context_tokens;
+    int max_output_tokens;
+} BeastLlama;
+
+Startup:
+
+llama_backend_init();
+struct llama_model_params model_params = llama_model_default_params();
+model_params.n_gpu_layers = 99; // GPU offload if available
+struct llama_model *model =
+    llama_model_load_from_file(model_path, model_params);
+struct llama_context_params ctx_params = llama_context_default_params();
+ctx_params.n_ctx = 8192;
+ctx_params.n_batch = 512;
+ctx_params.n_threads = beastThreadCount();
+struct llama_context *ctx =
+    llama_init_from_model(model, ctx_params);
+
+For Mac/Metal static linking, expect more than just libllama.a. A real example links libllama.a, ggml libraries, pthread, Accelerate, Foundation, Metal, and MetalKit.  ￼
+
+Recommended Beast2 integration:
+
+beast_llama.c      thin C-facing wrapper
+beast_llama.cpp    actual llama.cpp calls
+beast_llama.h      stable Beast API
+
+Why .cpp wrapper: easier linking, fewer C/C++ ABI headaches.
+
+Your Beast API should hide llama.cpp completely:
+
+bool beastLlamaLoad(BeastLlama *llm, BeastLlamaConfig *cfg);
+bool beastLlamaGenerate(BeastLlama *llm, BeastLlamaRequest *req, BeastTextBuffer *out);
+void beastLlamaUnload(BeastLlama *llm);
+
+Generation loop concept:
+
+format prompt
+tokenize
+prefill prompt with llama_decode
+sample next token
+append token text
+decode new token
+repeat until stop token / max tokens / valid CDI section complete
+parse output with Beast CDI parser
+reject if invalid
+
+For Beast2 CDI editing, do not expose raw chat.
+
+Use direct integration like a compiler pass:
+
+C finds target section
+C builds minimal prompt
+llama.cpp generates replacement section
+C validates section
+C diffs old/new
+user previews
+C replaces section
+
+Critical requirements:
+
+1. pin llama.cpp commit
+2. record llama.cpp commit/hash in CDI
+3. record GGUF filename + hash
+4. record quantization
+5. record ctx size
+6. record sampler settings
+7. record backend: cpu/metal/cuda/vulkan
+8. never trust output until Beast parser accepts it
+
+Good default settings for CDI patching:
+
+temperature: 0.0–0.2
+top_p: 0.8–0.95
+max tokens: small
+context: target section only
+grammar: strict if possible
+output: replacement only
+
+For model loading, keep model long-lived. Context can be long-lived too, but you need reset/clear logic between tasks. Do not load/free per request.
+
+app start -> load model once
+request -> clear KV/session state
+generate
+request -> clear KV/session state
+generate
+app close -> free context/model/backend
+
+Best Beast2 stance:
+
+PyTorch = image/video generators
+llama.cpp = local command intelligence
+C = orchestration, validation, files, UI, CDI
+
+Direct integration is worth it, but only behind a tiny Beast wrapper. Keep llama.cpp quarantined.
+
+
+
+
+
+
+
+
+
+
+
+
