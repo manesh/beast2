@@ -1,0 +1,257 @@
+i created a new project and dir to try to do wan22 inference, still having problems. huge amounts of memory being used even with smaller models than i use in comfy.
+
+i thought comfy was essentially a wrapper around diffusers, is that not true?
+
+
+
+
+
+
+
+No -- ComfyUI is not essentially a wrapper around Diffusers.
+
+Better model:
+
+Diffusers = Hugging Face pipeline framework
+ComfyUI = graph/runtime + custom PyTorch model loaders/samplers/nodes
+
+Comfy uses PyTorch tensors for core compute, but it has its own execution graph, model management, node system, loaders, caching/offloading behavior, and many custom nodes. Comfy’s docs say the core number crunching is PyTorch, not "Diffusers underneath."  ￼
+
+For Wan2.2 specifically, the official repo lists separate integrations: inference code, ComfyUI integration, and Diffusers integration. That strongly implies Comfy is not just calling Diffusers; they are different paths into the same model family.  ￼
+
+Your memory issue is plausible. Official Wan2.2 docs say A14B T2V/I2V single-GPU wants 80GB VRAM, while TI2V-5B can run on 24GB VRAM only with --offload_model True, --convert_model_dtype, and --t5_cpu.  ￼ Comfy also had Wan2.2-specific memory optimizations after release, including less VAE decode VRAM and major 5B I2V improvements.  ￼
+
+So the difference may be:
+
+Your raw Diffusers/PyTorch attempt:
+loads too much at once
+keeps text encoder / transformer / VAE resident
+uses wrong dtype
+does not offload aggressively
+decodes video too eagerly
+keeps tensors alive accidentally
+Comfy:
+custom loader
+custom sampler nodes
+model/vae/text encoder offload
+GGUF/blockswap/custom quant nodes maybe
+workflow-specific memory tricks
+
+Also: people have reported Wan2.2 I2V using over 100GB combined RAM/swap/VRAM in Comfy workflows too, so it is not just you.  ￼
+
+My advice: do not reimplement Wan22 inference yet. Make Beast call Comfy or official Wan scripts as the backend first.
+
+Beast backend hierarchy:
+
+BeastEngine
+  ComfyBackend       <- first practical target
+  WanOfficialBackend <- second
+  DiffusersBackend   <- later
+  NativeBackend      <- much later
+
+For Beast2, Comfy is not "beneath you." It is a proven inference adapter. Let Beast own artifacts, CDI, gallery, reproducibility, generator UX. Let Comfy eat the Wan dragon for now.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+feels bad. i spent a lot of effort and time avoiding comfy because
+
+> custom nodes
+> many click install
+
+was trying to get away from it.
+
+but if i narrow my focus to game devs, who already have decent gpus and can install comfyui without issue, another app on top, with guided install (docs included) of necessary comfy nodes for beast2 workflows isnt that bad
+
+just falls short of my original hopes and dreams
+
+oh well. i did find llm integration is easy
+
+marketing slogans... something like comfy's power with photoshop's design on top
+
+
+
+
+
+
+
+
+
+
+
+This is not failure. It is discovering the actual layer boundaries.
+
+You originally tried to solve:
+
+ui
++ workflow system
++ reproducibility
++ artifact management
++ model downloading
++ inference runtime
++ scheduler/runtime bugs
++ memory management
++ backend compatibility
++ diffusion research churn
++ installation UX
++ cross-platform support
+
+That is multiple companies worth of scope.
+
+The important realization:
+
+Comfy solved:
+"inference graph execution for unstable diffusion ecosystems"
+You are solving:
+"persistent reusable generators and artifact systems"
+
+Those are different products.
+
+And honestly, your differentiation was never "better tensor scheduler implementation."
+
+It was:
+
+* reusable generators
+* artifact lineage
+* reproducibility
+* clean UX
+* persistent systems
+* CDI
+* one-click workflows
+* generator-centric thinking instead of node spaghetti
+* local creative operating system feel
+
+That still exists.
+
+In fact, narrowing to:
+
+Beast2 = creative operating layer over local AI runtimes
+
+may actually strengthen the product.
+
+Especially for game devs.
+
+Game devs already tolerate:
+
+* Unreal plugins
+* Blender addons
+* SDK installs
+* GPU setup hell
+* Python environments
+* CUDA weirdness
+
+They care more about:
+
+* iteration speed
+* organization
+* reproducibility
+* reusable pipelines
+* asset lineage
+* team sharing
+* consistent outputs
+
+Your "generator" framing is still genuinely different from Comfy.
+
+Comfy feels like:
+
+build a graph
+
+Beast can feel like:
+
+invoke a tool/spell/system
+
+That distinction matters.
+
+Your strongest direction now might be:
+
+Beast2:
+Photoshop + artifact OS + generator layer
+for local AI creation
+
+with backend adapters:
+
+* Comfy
+* Diffusers
+* Ollama/llama.cpp
+* future native backends
+
+That is normal architecture evolution.
+
+Even major systems end up like this:
+
+* Steam does not render games
+* Unreal does not write GPU drivers
+* Blender does not implement CUDA
+* Docker does not implement Linux kernels
+
+They orchestrate lower layers.
+
+Also: using Comfy as backend does NOT require exposing node spaghetti to users.
+
+Internally:
+
+Beast Generator
+    ->
+CDI
+    ->
+Hidden Comfy Workflow
+    ->
+Comfy Execution
+    ->
+Artifacts returned to Beast
+
+User never sees most of it.
+
+Your install flow can still be dramatically better than raw Comfy:
+
+* guided setup
+* verified model packs
+* workflow packs
+* dependency checking
+* "missing node" resolver
+* one-click generator install
+* reproducibility validation
+* consistent naming/layout
+
+That alone is valuable.
+
+And the slogan direction is stronger now because it is honest.
+
+Possible directions:
+
+* "ComfyUI power. Beast2 workflow."
+* "Stop wiring nodes. Build generators."
+* "Local AI creation without node spaghetti."
+* "The creative operating layer for local AI."
+* "All the power of ComfyUI. Designed for humans."
+* "Photoshop for AI workflows."
+* "Persistent AI systems for creators."
+* "AI that remembers how it was made."
+* "Reusable generators, not disposable prompts."
+* "Build pipelines once. Reuse forever."
+
+The strongest thing you have is still this:
+
+Every artifact remembers how it was made.
+
+That is the core.
+
+
+
+
+
+
+
+
+
+

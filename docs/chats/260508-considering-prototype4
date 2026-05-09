@@ -1,0 +1,129 @@
+considering yet another app redesign.
+
+my attempts to have ai handle the inference layer and model files keep failing. its been the area ive struggled to make progress on the most.
+
+im currently stuck on getting a wan22 backend developed and integrated to a frontend. not looking forward to doing gwen or ltx2
+
+ive thought about moving to cpp instead of c and using a more object oriented approach like ive used for many objective c apps. eg gallery becomes a view object, which gets passed a pointer to a model object and a frame size, then gets render called
+
+for the backend ill have beastEngine, singleton, 
+job = beastEngine.createWan22Type(*options);
+beastEngine.queueJob(job);
+
+i was going to do a lecture as well on "implementation details", i was going to just use as much ai suggested naming as possible, but i think i may need to do more naming architecute and division of responsibility
+
+the backend in particular i have to get right, frontend i have much higher confidence in ai because its general
+
+specific apis like diffusion ai struggles with
+
+
+
+
+
+
+
+
+
+
+Yes. Redesign the architecture. Not necessarily the whole app.
+
+My read:
+
+Frontend: C or C++ both fine. You have confidence here.
+
+Backend: stop trying to make AI invent the inference layer. Treat model APIs as hostile/fragile/external.
+
+Best architecture:
+
+BeastApp
+  BeastGalleryView
+  BeastPipelineView
+  BeastInspectorView
+BeastProjectModel
+  artifacts
+  generators
+  jobs
+BeastEngine
+  queueJob()
+  cancelJob()
+  getJobStatus()
+BeastBackend
+  Wan22Backend
+  QwenImageBackend
+  Ltx2Backend
+  ComfyBackend
+  DiffusersBackend
+
+The important split:
+
+BeastEngine = stable Beast world
+Backend = unstable model-specific adapter
+
+So your app never "is Wan22." Your app says:
+
+job = BeastJob::wan22(options);
+engine.queue(job);
+
+Then only Wan22Backend knows the ugly facts: file names, safetensors, VAE, scheduler, Python, PyTorch, diffusers, Comfy paths.
+
+C++ is probably a good move for app structure, especially since your brain already likes Objective-C style view/model objects.
+
+I would not make the backend deeply object-oriented though. Keep it boring:
+
+class BeastBackend {
+public:
+    virtual BackendInfo info() = 0;
+    virtual ValidationResult validate(const BeastJob& job) = 0;
+    virtual JobResult run(const BeastJob& job, BeastJobContext& ctx) = 0;
+};
+
+Then each backend is an adapter.
+
+For Wan22 specifically, your failure point is probably not "C vs C++." It is that Wan/Qwen/LTX are moving targets with model-specific pipelines. Wan2.2 has official Diffusers model repos, ComfyUI has separate model placement expectations, Qwen-Image has its own pipeline/edit variants, and LTX-2 has native pipeline tooling plus Diffusers support.  ￼
+
+So Beast should not own inference yet.
+
+Suggested 0.1 path:
+
+1. Beast C++ shell/app
+Gallery, artifacts, jobs, CDI, generator UI.
+
+2. Backend bridge first
+Call Python/diffusers or Comfy as a subprocess. Stable JSON in/out.
+
+3. Beast model registry
+Do not hardcode paths in UI. Have:
+
+models/
+  wan22/
+    beast-model.json
+  qwen-image/
+    beast-model.json
+  ltx2/
+    beast-model.json
+
+4. One golden backend first
+Do Wan22 only. No Qwen, no LTX2 until the adapter pattern survives one real model.
+
+5. Later: native backend
+After the app works, replace subprocess/Python backend with tighter integration if still worth it.
+
+Lecture title should maybe be:
+
+"Implementation Details Are Architecture"
+
+Core thesis:
+
+Naming is not decoration. File layout is not decoration. Backend boundaries are not decoration. These are the control surfaces that decide whether the system survives contact with reality.
+
+Final recommendation: move to C++ for Beast2 app architecture, but keep the inference layer behind a brutally small adapter interface. Let Python/PyTorch/diffusers/Comfy absorb model chaos until Beast has enough working artifacts to justify native inference.
+
+
+
+
+
+
+
+  
+
+

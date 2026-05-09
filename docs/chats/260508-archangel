@@ -1,0 +1,996 @@
+archangel.my is a golang based social network focuses on sharing claims and evidence, along with counter-claims and counter evidence
+
+any competitors?
+
+
+
+
+
+
+
+Yes -- but most existing platforms only partially overlap with what you’re describing.
+
+Your positioning sounds closer to a structured epistemics / debate / evidence graph system than a normal social network.
+
+Closest competitors or adjacent systems:
+
+* Kialo￼
+    Probably the closest conceptual match. Structured debate trees with claims/pros/cons. Strong for argument mapping, weak for rich evidence systems, identity, media, realtime discussion, and social-network dynamics.
+* Polis￼
+    Focuses on consensus discovery through voting on statements. More civic-tech and clustering than evidence graphs.
+* Metaculus￼
+    Prediction-market-adjacent forecasting platform. Claims tied to future outcomes rather than evidence chains.
+* LessWrong￼
+    Rationalist discussion platform. Strong epistemic culture, but mostly longform threaded discussion rather than structured claim/evidence graphs.
+* Wikipedia￼ + Wikidata￼
+    Evidence/citation oriented, but collaborative encyclopedia instead of adversarial claims/counterclaims.
+* DebateGraph￼
+    Explicit argument graphing system. Feels more academic / ontology-focused than social.
+* Rationale￼
+    Old-school argument mapping software.
+* Truth Social￼ / X￼ / Reddit￼
+    Compete indirectly because they dominate "claims without structure." Your differentiation is explicit evidence topology and counter-evidence lineage.
+* Community Notes on X￼
+    Very relevant conceptually. It attaches evidence/corrections to claims, but only as annotations, not first-class graph objects.
+* Mastodon￼ / Bluesky￼
+    Federated social platforms. Potential architectural competitors if archangel.my becomes decentralized/federated.
+
+What’s still relatively open territory:
+
+* Claim objects with immutable evidence lineage
+* First-class counter-claims and rebuttal trees
+* Explicit confidence scoring
+* Source reliability tracking over time
+* Evidence versioning
+* "Show strongest counterargument automatically"
+* Reproducible epistemic history ("why did people believe this?")
+* AI-assisted argument graphing
+* Social + epistemics combined cleanly
+
+The biggest challenge is usually not technology -- it’s incentive design.
+
+Most systems fail because:
+
+* outrage spreads faster than rigor
+* users optimize for tribe/status instead of truth
+* long structured arguments are expensive cognitively
+* moderation becomes political extremely quickly
+* evidence quality scoring is hard
+
+Architecturally, your "artifact lineage" thinking from Beast/Starfleet actually maps surprisingly well here:
+
+* claim = artifact
+* evidence = supporting artifact
+* counterclaim = competing artifact
+* lineage/history preserved
+* immutable references + timestamps
+* visible reasoning chains
+
+That’s a more novel angle than "Reddit but smarter."
+
+
+
+
+
+
+
+
+philosophy: consensus is not truth, the minority report may be right, show me steel man of both sides for any controversial issue
+
+
+
+
+
+
+
+
+That is a strong differentiator.
+
+Most platforms implicitly assume:
+
+consensus = truth
+
+Your philosophy is closer to:
+
+truth is independent of popularity
+minority positions may contain critical signal
+strongest arguments from both sides should be visible
+
+That immediately changes the platform architecture.
+
+Core principles you’re describing:
+
+* Claims compete on evidence, not likes
+* Consensus is metadata, not authority
+* Steelmanning is mandatory for understanding
+* Counterarguments are first-class objects
+* Historical reversals matter
+    * heliocentrism
+    * germ theory
+    * continental drift
+    * ulcers/bacteria
+    * etc.
+* Users should be able to inspect reasoning lineage
+
+That places archangel.my philosophically closer to:
+
+* scientific peer review
+* intelligence analysis
+* legal adversarial systems
+* Bayesian reasoning
+* structured epistemology
+
+…rather than traditional social media.
+
+Interesting implication:
+you may want multiple truth metrics instead of a single score.
+
+Example dimensions:
+
+* consensus score
+* expert score
+* predictive accuracy
+* evidence quality
+* falsifiability
+* source diversity
+* historical reliability
+* emotional volatility
+* contradiction density
+
+Because:
+
+* a claim can be unpopular but evidence-rich
+* popular but weakly evidenced
+* emotionally viral but historically unreliable
+
+The "show steelman of both sides" feature is especially powerful.
+
+A possible UX:
+
+Claim:
+
+"AI will replace most programming jobs."
+
+Tabs:
+
+* strongest supporting argument
+* strongest opposing argument
+* highest quality evidence
+* disputed assumptions
+* prediction markets
+* historical analogies
+* unresolved questions
+
+That is fundamentally different from:
+
+* Reddit upvotes
+* X reposts
+* algorithmic rage amplification
+
+The hardest problem becomes:
+how do you prevent infinite low-quality counterclaims from drowning signal?
+
+You’ll likely need:
+
+* claim compression
+* duplicate detection
+* evidence inheritance
+* argument graph merging
+* credibility/reputation systems
+* maybe AI-assisted summarization
+
+Otherwise every claim becomes:
+
+"nuh uh"
+
+One particularly novel direction:
+track historical accuracy of users and claims over time.
+
+Example:
+
+* user predicted X in 2024
+* evidence later confirmed/refuted it
+* reputation updates based on calibration accuracy, not popularity
+
+That moves toward:
+
+* forecasting systems
+* intelligence analysis tooling
+* epistemic infrastructure
+
+rather than conventional "social networking."
+
+Also notable:
+your "minority report may be right" philosophy directly conflicts with many current moderation models.
+
+So moderation policy becomes critical:
+
+* illegal content removal
+* harassment/spam filtering
+* but avoid ideology-based suppression
+* preserve dissent without enabling chaos
+
+That balance is extremely difficult -- and probably the central design challenge of the platform.
+
+
+
+
+
+
+
+
+
+
+
+like a cross between wikipedia and a court
+
+i am the cheif judge and moderators are judges. no anonymous moderation. honor-based and fully auditable moderation logs.
+
+biases can be seen by reviewing moderator logs
+
+
+
+
+
+
+
+
+
+That creates a much clearer identity.
+
+You are not building:
+
+* "free speech Twitter"
+* "Reddit with evidence"
+* or "fact checking"
+
+You are building something closer to:
+
+a public epistemic court system
+
+That framing is important because courts already solved some problems social media never seriously attempted to solve:
+
+* adversarial presentation
+* evidence submission
+* appeals
+* public records
+* procedural transparency
+* visible judges
+* dissenting opinions
+* burden of proof
+* standards of evidence
+
+Your moderation philosophy is especially differentiated:
+
+no anonymous moderation
+moderation actions are public
+moderator reasoning is inspectable
+moderator bias is measurable historically
+
+That is genuinely uncommon.
+
+Most platforms intentionally obscure moderation because:
+
+* it reduces backlash
+* prevents scrutiny
+* avoids political accountability
+
+You’re proposing the opposite:
+
+legitimacy through transparency
+
+That has major implications.
+
+Potential architecture:
+
+Claim
+
+* title
+* body
+* evidence attachments
+* confidence level
+* categories/tags
+
+Counterclaim
+
+* linked directly to claim
+* inherits evidence graph visibility
+
+Evidence
+
+* source
+* archive hash
+* timestamp
+* chain of custody
+* media attachments
+* credibility annotations
+
+Judicial Actions
+
+* remove
+* label disputed
+* merge duplicate
+* insufficient evidence
+* harassment/spam ruling
+* temporary quarantine
+
+Every action produces:
+
+* moderator identity
+* timestamp
+* reasoning
+* cited policy/rule
+* appeal path
+
+Then moderator profiles become inspectable:
+
+* reversal rate
+* ideological clustering
+* moderation domains
+* appeal success rate
+* consistency metrics
+
+Interesting consequence:
+moderators themselves become accountable public actors.
+
+A user could say:
+
+"Judge X disproportionately removes claims from ideology Y."
+
+…and actually show evidence.
+
+That is radically different from modern opaque moderation systems.
+
+You could even allow:
+
+* majority rulings
+* dissenting moderator opinions
+* appellate moderators
+* precedent systems
+
+Example:
+
+"This moderation ruling references precedent case A-194."
+
+Now you’re approaching:
+
+* common law systems
+* constitutional moderation
+* institutional memory
+
+Which is honestly much more scalable intellectually than ad hoc moderator vibes.
+
+The biggest risk:
+courts work because they are slow.
+
+Social media rewards:
+
+* speed
+* emotion
+* virality
+* simplicity
+
+Your system rewards:
+
+* evidence
+* procedure
+* auditability
+* nuance
+
+Those are opposing optimization targets.
+
+So one of the central product questions becomes:
+
+how much friction can users tolerate?
+
+Because high-quality epistemics usually requires friction.
+
+You may actually benefit from embracing that instead of fighting it:
+
+* slower posting
+* evidence requirements
+* confidence declarations
+* forced steelmanning
+* delayed verdicts
+
+That could become part of the identity:
+
+"not instant reaction media"
+
+The "chief judge" framing also suggests strong institutional branding possibilities:
+
+* rulings
+* chambers
+* precedents
+* appeals
+* evidence vaults
+* minority opinions
+* closed/open cases
+
+Very distinct from existing social products.
+
+
+
+
+
+
+
+
+
+an early ux idea was user most post a 30 second video stating their name, username, and intent to sign up to archangel.my, which requires human verification. may be pointless in the era of ai. but may be other evidence or in combination with other evidence like a license constitute a level of proof of identity.
+
+define epistemics
+
+
+
+
+
+
+
+
+
+
+"Epistemics" is the study and practice of:
+
+how we know things
+how confident we should be
+what counts as evidence
+how beliefs should change when new evidence appears
+
+It comes from epistemology in philosophy, but online it usually means:
+
+* truth-seeking systems
+* reasoning quality
+* evidence evaluation
+* belief formation
+* calibration
+* intellectual honesty
+
+Examples of epistemic questions:
+
+* What evidence supports this claim?
+* How reliable is the source?
+* Could this be falsified?
+* What assumptions are hidden?
+* What would change my mind?
+* How certain should I be?
+* What is the strongest counterargument?
+* Are we confusing consensus with truth?
+
+Your platform is fundamentally an epistemic system because:
+
+* claims are explicit
+* evidence is explicit
+* counterclaims are explicit
+* moderation is inspectable
+* reasoning lineage matters
+* dissent is preserved
+* confidence can evolve over time
+
+That is very different from engagement-driven systems.
+
+Your identity-verification idea also fits the "court" metaphor:
+
+* witnesses identify themselves
+* testimony has accountability
+* anonymous testimony exists but has different evidentiary weight
+* chain-of-custody matters
+
+You’re probably converging toward:
+not binary identity verification,
+but tiers of evidentiary trust.
+
+Example:
+
+Levels:
+
+* anonymous
+* persistent pseudonym
+* video verified
+* government ID verified
+* expert credential verified
+* institutional verified
+
+And importantly:
+
+identity verification ≠ truth
+
+A fully verified person can still lie.
+An anonymous person can still be correct.
+
+So verification should probably affect:
+
+* accountability
+* reputation persistence
+* anti-spam resistance
+* evidentiary weighting
+
+…but not determine truth directly.
+
+The 30-second video idea is actually interesting for another reason:
+it creates friction.
+
+Friction can dramatically reduce:
+
+* bot swarms
+* throwaway abuse
+* low-effort trolling
+
+Even in an AI era, combined signals still matter:
+
+* live video
+* temporal consistency
+* device history
+* behavioral patterns
+* optional ID
+* social trust webs
+* moderator review
+
+Banks and courts already use layered evidence systems rather than single proof sources.
+
+You may eventually want a concept like:
+
+confidence in identity
+
+instead of:
+
+verified / unverified
+
+because that maps more naturally to your broader philosophy:
+
+* certainty is probabilistic
+* evidence accumulates
+* confidence changes over time
+
+Which is a very epistemic way to think about identity itself.
+
+
+
+
+
+
+
+
+"heaven doesnt have a court, but if it did, it would be archangel.my"
+
+
+
+
+
+
+
+
+
+
+
+That line is memorable and tonally distinctive, but it carries a few very strong implications.
+
+What works well:
+
+* instantly communicates "judgment/evidence/truth-seeking"
+* reinforces the court metaphor
+* "Archangel" + "court" has mythic weight
+* sounds like a tagline, not generic startup copy
+* emotionally memorable
+
+Potential risks:
+
+* "heaven" + "court" + "archangel" can sound explicitly religious or ideological
+* some users may infer moral absolutism
+* others may assume the platform claims divine authority/truth
+* could alienate users outside that framing
+
+The strongest part is probably not "heaven," but:
+
+justice beyond popularity
+evidence over mob consensus
+
+You could preserve that feeling while softening the implied absolutism.
+
+Variants:
+
+* "If the internet had a court, it would be archangel.my"
+* "Claims. Evidence. Counter-evidence."
+* "Consensus is not truth."
+* "Every claim deserves its strongest counterargument."
+* "Public reasoning, not mob consensus."
+* "A court for claims and evidence."
+* "Truth survives scrutiny."
+* "The minority report may be right."
+* "Show the evidence."
+* "Steelman both sides."
+
+Or lean fully into the court identity:
+
+* "Court is now in session."
+* "Present your evidence."
+* "All claims may be challenged."
+* "Reasoning under oath."
+* "Public records for public claims."
+
+Your original line actually feels strongest as a manifesto-style quote rather than the primary homepage tagline.
+
+Example structure:
+
+Hero:
+
+Consensus is not truth.
+
+Subtext:
+
+Archangel.my is a public court for claims, evidence, counterclaims, and transparent moderation.
+
+Then deeper in the site:
+
+"Heaven doesn’t have a court. But if it did, it would be archangel.my."
+
+
+
+
+
+
+
+
+
+
+
+my name is michael (my is the first syllable of my-cull), so archangel my is archangel my-cull (me). i will have my photo/videos up on the site and it will be clear that if theres a bias its me
+
+i was trying to be more tongue-in-cheek/funny, osho told several jokes about heaven not having any lawyers or courts. can we be more mythic/humorous and also personal, this is me aspiring to be archangelic in giving harmless, helpful attention to both sides
+
+
+
+
+
+
+
+
+
+
+That framing helps a lot. It changes the tone from:
+
+"I am divine authority"
+
+to something more like:
+
+"a flawed human publicly attempting fairness"
+
+That is much more approachable -- and honestly more interesting.
+
+The fact that:
+
+* the bias is visible
+* the moderator logs are visible
+* you are visible
+* the system openly admits subjectivity exists
+
+…actually increases credibility.
+
+You are not claiming:
+
+"this platform is perfectly objective"
+
+You are claiming:
+
+"bias exists; let’s expose it instead of hiding it."
+
+That’s philosophically coherent with the whole project.
+
+And the "Archangel My / Michael" wordplay is genuinely memorable once explained. It gives the project:
+
+* personality
+* mythic flavor
+* founder identity
+* humor
+* a slightly strange/art-project energy
+
+Which is probably better than sounding like sterile civic-tech software.
+
+You can lean into:
+
+* mythic
+* judicial
+* humorous
+* self-aware
+* aspirational
+
+without sounding authoritarian.
+
+The key is maintaining:
+
+humility + transparency
+
+Examples closer to the tone you’re describing:
+
+* "Heaven probably doesn’t need courts. The internet does."
+* "Every angel needs a devil’s advocate."
+* "Even archangels should hear both sides."
+* "Consensus is not truth."
+* "The minority report may be right."
+* "Present your evidence, mortal."
+* "A slightly mythological court for claims and counterclaims."
+* "Trying very hard to be fair."
+* "Public reasoning for a fallen world."
+* "No anonymous judges."
+* "Steelman first. Smite later."
+* "Court is now in session."
+* "All claims may be challenged."
+* "Built by Michael. Biases included."
+* "If I’m biased, you’ll be able to prove it."
+* "Transparent moderation logs because even archangels drift."
+* "A court where the judges are visible."
+* "Harmless attention for both sides."
+* "Truth can survive cross-examination."
+
+This line in particular feels very aligned with the spirit you described:
+
+"If I’m biased, you’ll be able to prove it."
+
+Because it combines:
+
+* humor
+* humility
+* transparency
+* adversarial reasoning
+* accountability
+
+all in one sentence.
+
+The strongest version of archangel.my is probably not:
+
+perfect truth machine
+
+but:
+
+visible humans attempting honest adjudication in public
+
+That’s rare.
+
+
+
+
+
+
+
+
+
+
+draft a repo-ready why archangel.my exists doc.
+
+"if im biased.."
+
+and
+
+"truth can survive cross-examination." (very starfleet)
+
+and
+
+"a slightly mythological court"
+
+
+
+
+
+
+
+
+
+
+why archangel.my exists
+
+the internet became very powerful.
+
+it did not become very wise.
+
+today, most online systems optimize for:
+
+* outrage
+* speed
+* tribe formation
+* emotional reaction
+* algorithmic engagement
+
+not truth.
+
+not understanding.
+
+not honest disagreement.
+
+a claim becomes popular, repeated, and emotionally reinforced -- and people begin treating consensus itself as evidence.
+
+but consensus is not truth.
+
+history repeatedly demonstrates this:
+
+* minority reports were sometimes correct
+* experts were sometimes wrong
+* institutions drift
+* crowds panic
+* narratives calcify
+* evidence changes
+
+the internet needs a place where claims can survive scrutiny instead of merely surviving virality.
+
+that is why archangel.my exists.
+
+⸻
+
+what is archangel.my?
+
+archangel.my is a slightly mythological court for:
+
+* claims
+* evidence
+* counterclaims
+* counterevidence
+* public reasoning
+
+it is part social network, part wikipedia, part court record.
+
+users can:
+
+* make claims
+* attach evidence
+* challenge evidence
+* present counterarguments
+* inspect moderation
+* review reasoning histories
+* see the strongest arguments from multiple sides
+
+the goal is not forced consensus.
+
+the goal is better thinking.
+
+⸻
+
+steelman both sides
+
+most platforms reward caricatures.
+
+archangel.my attempts the opposite.
+
+before dismissing a position, users should be able to see:
+
+* the strongest supporting argument
+* the strongest opposing argument
+* the evidence each side considers important
+* what assumptions are disputed
+* what remains unresolved
+
+truth can survive cross-examination.
+
+weak ideas usually cannot.
+
+⸻
+
+consensus is metadata, not authority
+
+a million people repeating something does not automatically make it true.
+
+consensus may contain wisdom.
+
+it may also contain:
+
+* fear
+* incentives
+* inertia
+* social pressure
+* incomplete information
+
+archangel.my does not treat popularity as proof.
+
+consensus is displayed as information -- not divine revelation.
+
+the minority report may be right.
+
+⸻
+
+transparent moderation
+
+most internet moderation is opaque.
+
+posts disappear.
+accounts vanish.
+rules shift.
+biases hide behind anonymous systems.
+
+archangel.my takes a different approach.
+
+moderators are visible.
+
+moderation actions are logged.
+
+reasoning is inspectable.
+
+appeals are public.
+
+biases can be studied historically instead of denied rhetorically.
+
+if i’m biased, you’ll be able to prove it.
+
+⸻
+
+identity and accountability
+
+anonymous speech can contain truth.
+
+verified speech can contain lies.
+
+archangel.my recognizes both realities.
+
+identity is treated as evidence, not absolute authority.
+
+over time, the platform may support multiple levels of identity verification:
+
+* pseudonymous
+* persistent identity
+* video verification
+* government identification
+* expert credentialing
+
+these do not determine truth.
+
+they provide context.
+
+⸻
+
+a human system
+
+archangel.my is not a machine god.
+
+it is not an oracle.
+
+it is a human system built by humans attempting -- imperfectly and publicly -- to reason honestly.
+
+the founder’s name is michael.
+
+"archangel.my" is partially a joke, partially a personal aspiration:
+to give harmless, helpful attention to multiple sides of difficult questions.
+
+the system assumes:
+
+* humans are biased
+* moderators are biased
+* institutions drift
+* certainty is dangerous
+* evidence matters
+* transparency matters more
+
+instead of pretending bias does not exist, archangel.my attempts to expose it to scrutiny.
+
+⸻
+
+the long-term idea
+
+the internet already has systems optimized for:
+
+* entertainment
+* status
+* speed
+* persuasion
+* addiction
+
+archangel.my is an attempt to build one optimized for:
+
+* evidence
+* reasoning
+* accountability
+* historical memory
+* adversarial truth-seeking
+
+heaven probably does not need courts.
+
+the internet does.
+
+
+
+
+
+
+
+
+
+
+
+
+
