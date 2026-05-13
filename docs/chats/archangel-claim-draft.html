@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Archangel Claim Page</title>
+  <style>
+    :root {
+      --bg: #0f1020;
+      --panel: #181a2f;
+      --panel2: #20233d;
+      --text: #f4f1ff;
+      --muted: #b9b2d6;
+      --line: #343858;
+      --claim: #9be7c0;
+      --counter: #ffb3b3;
+      --evidence: #b8c7ff;
+      --gold: #ffd166;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #29224a, var(--bg));
+      color: var(--text);
+    }
+
+    a {
+      color: var(--evidence);
+      text-decoration: none;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 16px;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: .5px;
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: rgba(24, 26, 47, .92);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+
+    .claim-card {
+      border-top: 5px solid var(--claim);
+    }
+
+    .counter-card {
+      border-top: 5px solid var(--counter);
+    }
+
+    .label {
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: .12em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: 34px;
+      line-height: 1.05;
+    }
+
+    h2 {
+      font-size: 22px;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .confidence {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      background: var(--panel2);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .section {
+      margin-bottom: 18px;
+    }
+
+    .figure-list,
+    .evidence-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .person,
+    .evidence {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 12px;
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .avatar,
+    .photo-placeholder {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6d5dfc, #d66efd);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: white;
+    }
+
+    .photo-placeholder {
+      border-radius: 12px;
+      background: linear-gradient(135deg, #2f365f, #6474d4);
+    }
+
+    .name {
+      font-weight: 700;
+    }
+
+    .stance {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .quote {
+      margin-top: 8px;
+      padding-left: 12px;
+      border-left: 3px solid var(--gold);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .event {
+      border-left: 3px solid var(--line);
+      padding-left: 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .related {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    footer {
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 850px) {
+      .grid,
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <div class="logo">archangel.my</div>
+        <div class="tagline">truth can survive cross-examination</div>
+      </div>
+      <div class="pill">public claim record</div>
+    </header>
+
+    <section class="grid">
+      <article class="card claim-card">
+        <div class="label">claim</div>
+        <h1>Lab leak remains a plausible origin of covid-19.</h1>
+        <p>
+          This claim argues that a laboratory-associated incident remains a serious possible explanation
+          for the origin of covid-19, especially given unresolved evidence, research context, and proximity
+          to relevant virology work.
+        </p>
+        <div class="confidence">
+          <span class="pill">status: contested</span>
+          <span class="pill">confidence: mixed</span>
+          <span class="pill">last updated: 2026-05-13</span>
+        </div>
+      </article>
+
+      <article class="card counter-card">
+        <div class="label">counterclaim</div>
+        <h2>Covid-19 most likely originated through natural spillover.</h2>
+        <p>
+          This counterclaim argues that the strongest public evidence points toward animal-to-human
+          transmission, possibly connected to wildlife trade and early case clustering.
+        </p>
+        <div class="confidence">
+          <span class="pill">status: contested</span>
+          <span class="pill">confidence: mixed</span>
+          <span class="pill">linked claim: direct opposition</span>
+        </div>
+      </article>
+    </section>
+
+    <main class="main">
+      <section>
+        <div class="card section">
+          <div class="label">public figures</div>
+          <div class="figure-list">
+            <div class="person">
+              <div class="avatar">JS</div>
+              <div>
+                <div class="name">Jon Stewart</div>
+                <div class="stance">publicly argued the lab-leak theory deserved serious attention</div>
+                <div class="quote">"The proximity question should not be dismissed without examination."</div>
+              </div>
+            </div>
+
+            <div class="person">
+              <div class="avatar">AF</div>
+              <div>
+                <div class="name">Dr. Anthony Fauci</div>
+                <div class="stance">argued that available scientific evidence favored natural spillover</div>
+                <div class="quote">"The evidence should be followed, not political certainty."</div>
+              </div>
+            </div>
+
+            <div class="person">
+              <div class="avatar">RP</div>
+              <div>
+                <div class="name">Senator Rand Paul</div>
+                <div class="stance">argued that lab safety and research funding questions require investigation</div>
+              </div>
+            </div>
+
+            <div class="person">
+              <div class="avatar">KA</div>
+              <div>
+                <div class="name">Kristian Andersen</div>
+                <div class="stance">associated with arguments favoring natural-origin explanations</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card section">
+          <div class="label">evidence</div>
+          <div class="evidence-list">
+            <div class="evidence">
+              <div class="photo-placeholder">TXT</div>
+              <div>
+                <div class="name">Witness testimony from <a href="#">@riverwatch</a></div>
+                <p>
+                  User-submitted testimony describing early local reporting, archived posts, and timeline
+                  inconsistencies. Marked as testimony, not verified fact.
+                </p>
+                <span class="pill">type: testimony</span>
+                <span class="pill">verification: pending</span>
+              </div>
+            </div>
+
+            <div class="evidence">
+              <div class="photo-placeholder">IMG</div>
+              <div>
+                <div class="name">Photo evidence submitted by <a href="#">@fieldnotes</a></div>
+                <p>
+                  A photo set claiming to show market conditions during the relevant period. Image metadata,
+                  location, and date are disputed.
+                </p>
+                <span class="pill">type: photo</span>
+                <span class="pill">status: disputed</span>
+              </div>
+            </div>
+
+            <div class="evidence">
+              <div class="photo-placeholder">DOC</div>
+              <div>
+                <div class="name">Government intelligence assessment</div>
+                <p>
+                  Official assessment cited by both sides, with different interpretations of uncertainty,
+                  confidence levels, and missing data.
+                </p>
+                <span class="pill">type: document</span>
+                <span class="pill">status: partial public record</span>
+              </div>
+            </div>
+
+            <div class="evidence">
+              <div class="photo-placeholder">SCI</div>
+              <div>
+                <div class="name">Early case clustering study</div>
+                <p>
+                  Scientific evidence often cited by natural-spillover advocates. Critics dispute whether
+                  clustering proves origin or merely early detection.
+                </p>
+                <span class="pill">type: scientific study</span>
+                <span class="pill">status: cited by counterclaim</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside>
+        <div class="card section">
+          <div class="label">claim syntax</div>
+          <p>
+            This page can be rendered from markdown-like claim syntax:
+          </p>
+          <pre style="white-space: pre-wrap; color: var(--muted); background: #101225; padding: 12px; border-radius: 12px;"># claim: lab leak remains plausible
+
+counter:
+[[natural spillover most likely]]
+
+figures:
+@jon-stewart supports
+@anthony-fauci opposes
+
+evidence:
+@riverwatch testimony
+photo: market-archive-01
+doc: intelligence-assessment</pre>
+        </div>
+
+        <div class="card section">
+          <div class="label">timeline</div>
+          <div class="timeline">
+            <div class="event"><strong>2019</strong> -- early outbreak period</div>
+            <div class="event"><strong>2020</strong> -- initial scientific and public debate</div>
+            <div class="event"><strong>2021</strong> -- lab-leak theory re-enters mainstream discussion</div>
+            <div class="event"><strong>2023</strong> -- intelligence assessments remain divided</div>
+            <div class="event"><strong>2026</strong> -- claim remains contested</div>
+          </div>
+        </div>
+
+        <div class="card section">
+          <div class="label">related claims</div>
+          <div class="related">
+            <a class="pill" href="#">wildlife markets can cause pandemics</a>
+            <a class="pill" href="#">gain-of-function research increases risk</a>
+            <a class="pill" href="#">public health agencies should disclose uncertainty</a>
+            <a class="pill" href="#">consensus is not proof</a>
+          </div>
+        </div>
+
+        <div class="card section">
+          <div class="label">reader prompt</div>
+          <p>
+            After reading both sides, what changed?
+          </p>
+          <button style="width:100%; padding:12px; border-radius:12px; border:0; background:var(--gold); font-weight:800;">
+            record confidence change
+          </button>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      A slightly mythological court for claims, counterclaims, public witnesses, evidence, and doubt.
+    </footer>
+  </div>
+</body>
+</html>
