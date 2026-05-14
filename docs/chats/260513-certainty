@@ -1,0 +1,327 @@
+levels of certainty: suspect, believe, strongly believe, others?
+
+
+
+
+
+
+
+A good Archangel certainty ladder should separate confidence from truth. The user is not saying "this is true." They are saying "this is my current stance."
+
+certainty:
+- impossible
+- almost impossible
+- doubt
+- suspect false
+- lean false
+- uncertain
+- suspect
+- lean true
+- believe
+- strongly believe
+- near certain
+- certain
+
+Cleaner user-facing version:
+
+stance certainty:
+- doubt
+- suspect false
+- lean false
+- uncertain
+- suspect
+- lean true
+- believe
+- strongly believe
+- near certain
+
+Best practical set:
+
+certainty:
+- reject
+- doubt
+- lean against
+- uncertain
+- suspect
+- lean toward
+- believe
+- strongly believe
+- near certain
+
+For Archangel, I’d use this as the main ladder:
+
+# certainty levels
+reject:
+I currently think this claim is false.
+doubt:
+I think this claim is probably false, but I am open to evidence.
+lean against:
+I slightly oppose this claim.
+uncertain:
+I do not know.
+suspect:
+I think this may be true, but my confidence is low.
+lean toward:
+I slightly support this claim.
+believe:
+I think this claim is probably true.
+strongly believe:
+I think this claim is very likely true.
+near certain:
+I would be surprised if this claim were false.
+
+Optional ultra-high level:
+
+certain:
+I treat this as settled unless extraordinary evidence appears.
+
+But I would avoid making certain common. It encourages brittle certainty. Better to cap most UI at:
+
+near certain
+
+You can also split stance and certainty:
+
+stance:
+- support
+- oppose
+- mixed
+- uncertain
+certainty:
+- low
+- medium
+- high
+- near certain
+
+Example:
+
+@user stance:
+claim: nuclear power is necessary for climate stability
+position: support
+certainty: believe
+date: 2026-05-13
+reason: grid reliability evidence changed my view
+
+Best Archangel-native wording:
+
+confidence:
+- idk
+- suspect false
+- lean false
+- uncertain
+- suspect
+- lean true
+- believe
+- strongly believe
+- near certain
+
+Or more mythic:
+
+light level:
+- shadow
+- dim
+- uncertain
+- glimmer
+- lantern
+- flame
+- beacon
+
+But for serious claims, I’d keep the plain version. Mythic UI can surround it; certainty labels should stay clear.
+
+
+
+
+
+
+
+
+
+reduce to 5 or 7 options, shortest words possible (idk good).
+
+do not include certain as a certainty option
+
+
+
+
+
+
+
+
+Best 5-option set:
+
+certainty:
+- no
+- doubt
+- idk
+- think
+- trust
+
+Meaning:
+
+no    = i think this is false
+doubt = i lean false
+idk   = i do not know
+think = i lean true
+trust = i strongly believe
+
+Best 7-option set:
+
+certainty:
+- no
+- doubt
+- lean no
+- idk
+- lean yes
+- think
+- trust
+
+Shorter 7-option variant:
+
+certainty:
+- no
+- doubt
+- maybe no
+- idk
+- maybe yes
+- think
+- trust
+
+Most Archangel-native recommendation:
+
+certainty:
+- no
+- doubt
+- maybe no
+- idk
+- maybe yes
+- think
+- trust
+
+Why this works:
+
+no        = reject
+doubt     = probably false
+maybe no  = slightly against
+idk       = unknown
+maybe yes = slightly for
+think     = probably true
+trust     = strongly believe
+
+If you want the shortest clean UI labels:
+
+no | doubt | maybe no | idk | maybe yes | think | trust
+
+For a 5-button mobile UI:
+
+no | doubt | idk | think | trust
+
+I would use 5 by default and allow advanced users to expand to 7.
+
+
+
+
+
+
+
+
+For the question "do you believe this claim?", the cleanest 5 options are:
+
+- no
+- doubt
+- idk
+- think
+- yes
+
+Meanings:
+
+no    = i believe this claim is false
+doubt = i lean false / probably not
+idk   = i do not know
+think = i lean true / probably
+yes   = i believe this claim is true
+
+Best UI form:
+
+do you believe this claim?
+[ no ] [ doubt ] [ idk ] [ think ] [ yes ]
+
+If you want slightly more mythic but still clear:
+
+[ no ] [ doubt ] [ idk ] [ glimmer ] [ yes ]
+
+But I’d use the plain version:
+
+no | doubt | idk | think | yes
+
+It is short, mobile-friendly, and avoids "certain."
+
+
+
+
+
+
+
+
+
+reject - doubt - idk - suspect - believe
+
+
+
+
+
+
+
+
+
+That set is strong.
+
+reject - doubt - idk - suspect - believe
+
+I’d define it like this:
+
+reject:
+I think this claim is false.
+doubt:
+I lean against this claim.
+idk:
+I do not know.
+suspect:
+I lean toward this claim.
+believe:
+I think this claim is true.
+
+Best UI:
+
+do you believe this claim?
+[ reject ] [ doubt ] [ idk ] [ suspect ] [ believe ]
+
+Why it works:
+
+reject  = active no
+doubt   = soft no
+idk     = unknown
+suspect = soft yes
+believe = active yes
+
+This is better than "think/yes" because suspect preserves uncertainty. It says:
+
+I think there may be something here, but I am not fully committed.
+
+That is very Archangel.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

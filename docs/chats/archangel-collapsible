@@ -1,0 +1,62 @@
+good markdown-style syntax for a collaspible section, concise
+
+
+
+A clean Archangel-style option:
+
++++ title="evidence details"
+This section is collapsed by default.
+It can contain:
+- testimony
+- photos
+- documents
+- links
++++
+
+More explicit:
+
+:::collapse title="minority report" default="closed"
+The strongest unpopular counter-evidence goes here.
+:::
+
+Best recommendation:
+
+:::section title="evidence details" collapsed="true"
+content here
+:::
+
+Why this is good:
+
+:::section title="..." collapsed="true"
+...
+:::
+
+* readable
+* markdown-ish
+* easy to parse
+* supports attributes later
+* can become HTML <details>
+* works for claims, evidence, testimony, timelines, and public figure notes
+
+Example in Archangel syntax:
+
+# claim: nuclear power is necessary for climate stability
+summary:
+Nuclear power may be needed to provide reliable low-carbon energy.
+:::section title="counterclaim" collapsed="false"
+Renewables, storage, transmission, and demand response can replace fossil fuels without expanding nuclear power.
+:::
+:::section title="minority report" collapsed="true"
+Some environmentalists support nuclear power because they believe climate risk is greater than nuclear risk.
+:::
+:::section title="evidence" collapsed="true"
+- [ev#grid-reliability-study]
+- [ev#nuclear-cost-overruns]
+- [ev#france-low-carbon-grid]
+:::
+
+
+
+
+
+

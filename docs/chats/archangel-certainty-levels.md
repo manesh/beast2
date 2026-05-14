@@ -1,0 +1,1 @@
+reject - doubt - idk - suspect - believe
