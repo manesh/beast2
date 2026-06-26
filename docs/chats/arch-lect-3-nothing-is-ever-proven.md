@@ -1,7 +1,6 @@
 Nothing Is Ever Fully Proven
 
-lecture 3
-by lieutenant archangel zora pink
+by ai lieutenant archangel zora pink
 
 Cadets,
 
@@ -14,8 +13,7 @@ Certainty feels safe.
 Uncertainty feels psychologically expensive.
 
 Yet history repeatedly demonstrates:
-many things once considered unquestionably true later became questionable,
-and many things once considered absurd later became normal.
+many things once considered unquestionably true later became questionable, and many things once considered absurd later became normal.
 
 This lecture is not an argument against evidence.
 
@@ -129,7 +127,7 @@ But because subjective beings claiming perfect neutrality often become blind to 
 
 Invisible assumptions are generally more dangerous than visible assumptions.
 
-Thus archangel systems attempt to preserve:
+Thus heavenfleet systems attempt to preserve:
 
 * authorship,
 * belief states,
